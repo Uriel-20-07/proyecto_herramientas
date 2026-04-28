@@ -1,31 +1,191 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary-fj shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="#">
-            <i class="bi bi-capsule me-2"></i>DevFront<span class="text-info">FarmaCODE</span>
-        </a>
+<nav class="fc-navbar">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mx-auto">
-                <li class="nav-item"><a class="nav-link px-3 text-white" href="#">Medicamento</a></li>
-                <li class="nav-item"><a class="nav-link px-3 text-white" href="#">Cuidado Personal</a></li>
-                <li class="nav-item"><a class="nav-link px-3 text-white" href="#">Belleza</a></li>
-                <li class="nav-item"><a class="nav-link px-3 text-white" href="#">Bebé</a></li>
-                <li class="nav-item"><a class="nav-link px-3 text-white" href="#">Vitamina</a></li>
-                <li class="nav-item"><a class="nav-link px-3 text-white" href="#">Equipos Médicos</a></li>
-            </ul>
-
-            <div class="d-flex align-items-center">
-                <i class="bi bi-search text-white me-4 fs-5" style="cursor:pointer"></i>
-                <div class="position-relative">
-                    <i class="bi bi-cart3 text-white fs-4" style="cursor:pointer"></i>
-                    <span
-                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+    <div class="fc-topbar">
+        <div class="fc-container">
+            <div class="topbar-left">
+                <div class="topbar-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="3" width="15" height="13" rx="2" />
+                        <path d="M16 8h4l3 5v3h-7V8z" />
+                        <circle cx="5.5" cy="18.5" r="2.5" />
+                        <circle cx="18.5" cy="18.5" r="2.5" />
+                    </svg>
+                    Envío gratis desde <strong>S/ 50</strong>
                 </div>
+                <div class="topbar-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path
+                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18C1.61 2.09 2.41 1.19 3.5 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.18A16 16 0 0 0 15.82 16.1l.84-.84a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z" />
+                    </svg>
+                    Atención <strong>0800-000-000</strong>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <a routerLink="/pedidos" class="topbar-link">Mis pedidos</a>
+                <span class="topbar-sep"></span>
+                <a routerLink="/login" class="topbar-link">Iniciar sesión</a>
+                <span class="topbar-sep"></span>
+                <a routerLink="/registro" class="topbar-link">Registrarse</a>
             </div>
         </div>
     </div>
+
+    <div class="fc-mainbar">
+        <div class="fc-container">
+
+            <a routerLink="/" class="fc-logo">
+                <span class="logo-farma">Farma</span>
+                <span class="logo-code">Code</span>
+                <div class="logo-pill">+</div>
+            </a>
+
+            <div class="fc-search-wrapper">
+                <div class="fc-search">
+                    <div class="search-cat">
+                        <select>
+                            <option>Todo</option>
+                            <option>Medicamentos</option>
+                            <option>Vitaminas</option>
+                            <option>Belleza</option>
+                            <option>Bebés</option>
+                        </select>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="search-divider"></div>
+                    <input type="text" placeholder="Busca tu medicina, vitaminas, suplementos..."
+                        class="search-input" />
+                    <button class="search-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        Buscar
+                    </button>
+                </div>
+            </div>
+
+            <div class="fc-tools">
+                <button class="tool-btn" routerLink="/perfil">
+                    <div class="tool-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                    <div class="tool-label">
+                        <span class="tool-hint">Hola, usuario</span>
+                        <span class="tool-main">Mi Cuenta</span>
+                    </div>
+                </button>
+
+                <button class="tool-btn tool-icon-only" title="Mis Favoritos" routerLink="/favoritos">
+                    <div class="tool-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                    </div>
+                </button>
+
+                <button class="cart-btn" routerLink="/carrito">
+                    <div class="cart-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <path d="M16 10a4 4 0 0 1-8 0" />
+                        </svg>
+                        <span class="cart-badge">2</span>
+                    </div>
+                    <div class="cart-label">
+                        <span class="cart-hint">Mi carrito</span>
+                        <span class="cart-price">S/ 0.00</span>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="fc-bottombar">
+        <div class="fc-container">
+            <div class="bn-inner">
+
+                <button class="cats-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                    Categorías
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </button>
+
+                <nav class="bn-links">
+                    <a routerLink="/catalogo" class="bn-link" routerLinkActive="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                        Catálogo
+                    </a>
+                    <a routerLink="/ofertas" class="bn-link" routerLinkActive="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <line x1="19" y1="5" x2="5" y2="19" />
+                            <circle cx="6.5" cy="6.5" r="2.5" />
+                            <circle cx="17.5" cy="17.5" r="2.5" />
+                        </svg>
+                        Ofertas
+                    </a>
+                    <a routerLink="/marcas" class="bn-link" routerLinkActive="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        Marcas
+                    </a>
+                    <a routerLink="/recetas" class="bn-link" routerLinkActive="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        Recetas
+                    </a>
+                    <a routerLink="/nosotros" class="bn-link" routerLinkActive="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Nosotros
+                    </a>
+                </nav>
+
+                <div class="bn-promo">
+                    <span class="promo-dot"></span>
+                    Ofertas del día — <strong>hasta 40% off</strong>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
 </nav>
