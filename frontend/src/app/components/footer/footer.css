@@ -1,0 +1,504 @@
+/* ===========================
+   FARMACODE — FOOTER STYLES
+   =========================== */
+
+.fc-footer {
+    margin-top: 60px;
+}
+
+/* ── WAVE ──────────────────────────────── */
+.footer-wave {
+    display: block;
+    line-height: 0;
+
+    svg {
+        display: block;
+        width: 100%;
+        height: 60px;
+    }
+}
+
+/* ── BODY ──────────────────────────────── */
+.footer-body {
+    background: #1a2a4a;
+    padding: 60px 0 40px;
+}
+
+.footer-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ── GRID ──────────────────────────────── */
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1.3fr;
+    gap: 50px;
+    padding-bottom: 48px;
+}
+
+/* ── BRAND COL ─────────────────────────── */
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 16px;
+
+    .text-orange {
+        color: var(--fc-orange, #ea580c);
+    }
+
+    .footer-plus {
+        background: var(--fc-red, #dc2626);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 900;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 4px;
+    }
+}
+
+.brand-desc {
+    color: #8fa8c8;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.rating-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 8px 16px;
+    width: fit-content;
+    margin-bottom: 24px;
+
+    .stars {
+        display: flex;
+        gap: 2px;
+
+        i {
+            color: #facc15;
+            font-size: 12px;
+        }
+    }
+
+    span {
+        font-size: 12px;
+        color: #8fa8c8;
+    }
+}
+
+.social-links {
+    display: flex;
+    gap: 10px;
+}
+
+.social-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 16px;
+    color: #fff;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+        transform: translateY(-3px);
+    }
+
+    &.fb {
+        background: #1877f2;
+
+        &:hover {
+            box-shadow: 0 6px 18px rgba(24, 119, 242, 0.4);
+        }
+    }
+
+    &.ig {
+        background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+
+        &:hover {
+            box-shadow: 0 6px 18px rgba(220, 39, 67, 0.4);
+        }
+    }
+
+    &.wa {
+        background: #25d366;
+
+        &:hover {
+            box-shadow: 0 6px 18px rgba(37, 211, 102, 0.4);
+        }
+    }
+
+    &.tt {
+        background: #111;
+
+        &:hover {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        }
+    }
+}
+
+/* ── HEADINGS ──────────────────────────── */
+.footer-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 22px;
+
+    i {
+        color: var(--fc-orange, #ea580c);
+        font-size: 15px;
+    }
+}
+
+/* ── LISTS ─────────────────────────────── */
+.footer-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+        margin-bottom: 10px;
+
+        a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #8fa8c8;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s, padding-left 0.2s;
+
+            i {
+                font-size: 10px;
+                transition: transform 0.2s;
+            }
+
+            &:hover {
+                color: #fff;
+                padding-left: 4px;
+
+                i {
+                    transform: translateX(2px);
+                }
+            }
+        }
+    }
+}
+
+/* ── CONTACT CARD ──────────────────────── */
+.contact-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(43, 120, 228, 0.15);
+    border: 1px solid rgba(43, 120, 228, 0.25);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-top: 20px;
+
+    >i {
+        font-size: 20px;
+        color: var(--fc-primary-lt, #2b78e4);
+    }
+
+    div {
+        display: flex;
+        flex-direction: column;
+
+        span {
+            font-size: 11px;
+            color: #8fa8c8;
+        }
+
+        strong {
+            font-size: 16px;
+            color: #fff;
+        }
+    }
+}
+
+/* ── NEWSLETTER ────────────────────────── */
+.newsletter-desc {
+    color: #8fa8c8;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+
+.newsletter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+
+    input {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 11px 16px;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+
+        &::placeholder {
+            color: #5a7a9a;
+        }
+
+        &:focus {
+            border-color: var(--fc-primary-lt, #2b78e4);
+        }
+    }
+
+    .newsletter-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--fc-orange, #ea580c);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+
+        &:hover {
+            background: #c2410c;
+            transform: translateY(-1px);
+        }
+    }
+}
+
+.newsletter-perks {
+    display: flex;
+    gap: 16px;
+
+    span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #8fa8c8;
+
+        i {
+            color: #4ade80;
+            font-size: 12px;
+        }
+    }
+}
+
+/* ── DIVIDER ───────────────────────────── */
+.footer-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 36px;
+}
+
+/* ── PAYMENTS ──────────────────────────── */
+.footer-payments {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: 8px;
+}
+
+.payments-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #8fa8c8;
+    font-weight: 600;
+    flex-shrink: 0;
+
+    i {
+        color: #4ade80;
+        font-size: 14px;
+    }
+}
+
+.payment-cards {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.p-card {
+    background: #fff;
+    border-radius: 8px;
+    height: 38px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s;
+
+    &:hover {
+        transform: translateY(-2px);
+    }
+
+    img {
+        height: 22px;
+        width: auto;
+    }
+
+    &.amex img {
+        height: 18px;
+    }
+
+    &.yape {
+        background: #5b21b6;
+
+        span {
+            color: #fff;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+    }
+
+    &.plin {
+        background: #0ea5e9;
+
+        span {
+            color: #fff;
+            font-weight: 900;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+    }
+
+    &.diners {
+        background: #1a1a1a;
+
+        span {
+            color: #fff;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+    }
+}
+
+.ssl-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: #4ade80;
+    flex-shrink: 0;
+}
+
+/* ── BAR FINAL ─────────────────────────── */
+.footer-bar {
+    background: #111d2e;
+    padding: 16px 0;
+}
+
+.footer-bar-inner {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    p {
+        font-size: 12px;
+        color: #4a6480;
+        margin: 0;
+    }
+
+    .footer-bar-links {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        a {
+            font-size: 12px;
+            color: #4a6480;
+            text-decoration: none;
+
+            &:hover {
+                color: #8fa8c8;
+            }
+        }
+
+        span {
+            color: #2a3a50;
+        }
+    }
+
+    .made-with {
+        font-size: 12px;
+        color: #4a6480;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        i {
+            font-size: 11px;
+        }
+    }
+}
+
+/* ── RESPONSIVE ────────────────────────── */
+@media (max-width: 1024px) {
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 36px;
+    }
+}
+
+@media (max-width: 640px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .footer-payments {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+
+    .footer-bar-inner {
+        flex-direction: column;
+        text-align: center;
+        gap: 6px;
+    }
+}
