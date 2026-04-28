@@ -31,6 +31,16 @@
                             </div>
 
                             <div class="card-body p-2 d-flex flex-column">
+                                <!-- INPUT IMAGEN DEL CARRUSEL -->
+                                <input type="hidden" [name]="'product_' + product.id" [id]="'product_' + product.id"
+                                    [value]="product.name" [attr.alt]="product.name" [attr.max]="product.stock"
+                                    [attr.min]="0" [attr.maxlength]="100" [attr.size]="50" [attr.pattern]="product.name"
+                                    [attr.list]="'product-list-' + product.id" form="productForm" />
+
+                                <datalist [id]="'product-list-' + product.id">
+                                    <option [value]="product.name"></option>
+                                </datalist>
+
                                 <small class="text-muted mb-1">{{ product.size }}</small>
                                 <p class="fw-semibold mb-2 flex-grow-1" style="font-size:0.82rem; color:#495057;">
                                     {{ product.name }}
