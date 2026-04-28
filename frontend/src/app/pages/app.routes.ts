@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
-import { InicioComponent } from './inicio'; // Tu importación original
-
-// Importación corregida: apuntamos directamente a la carpeta catalogo
-import { CatalogoComponent } from './catalogo/catalogo'; 
+import { InicioComponent } from './inicio';
+import { CatalogoComponent } from './catalogo/catalogo';
+import { BlogComponent } from './blog/blog.component';
 
 export const routes: Routes = [
-  { path: '', component: InicioComponent }, // Tu ruta de inicio original que no tocamos
-  { path: 'catalogo', component: CatalogoComponent }, // La nueva ruta
+  { path: '', component: InicioComponent },
+  { path: 'catalogo', component: CatalogoComponent },
+  { path: 'blog', component: BlogComponent },
+  { path: '**', redirectTo: '' }
 ];
