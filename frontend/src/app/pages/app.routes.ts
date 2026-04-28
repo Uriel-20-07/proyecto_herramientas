@@ -1,10 +1,11 @@
 import { Routes } from '@angular/router';
 import { InicioComponent } from './inicio';
+import { CatalogoComponent } from './catalogo/catalogo';
 import { BlogComponent } from './blog/blog.component';
-import { CatalogoComponent } from './catalogo/catalogo'; 
 
 export const routes: Routes = [
   { path: '', component: InicioComponent },
+  { path: 'catalogo', component: CatalogoComponent },
   { path: 'blog', component: BlogComponent },
-  { path: 'catalogo', component: CatalogoComponent }
+  { path: '**', redirectTo: '' }
 ];
