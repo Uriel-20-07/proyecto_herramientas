@@ -24,10 +24,17 @@
             </div>
             <div class="topbar-right">
                 <a routerLink="/pedidos" class="topbar-link">Mis pedidos</a>
-                <span class="topbar-sep"></span>
-                <a routerLink="/login" class="topbar-link">Iniciar sesión</a>
-                <span class="topbar-sep"></span>
-                <a routerLink="/registro" class="topbar-link">Registrarse</a>
+                @if (currentUser$ | async; as usuario) {
+                    <span class="topbar-sep"></span>
+                    <span class="topbar-user">Hola, {{ usuario.nombre }}</span>
+                    <span class="topbar-sep"></span>
+                    <button type="button" class="topbar-link topbar-action topbar-logout" (click)="logout()">Cerrar sesión</button>
+                } @else {
+                    <span class="topbar-sep"></span>
+                    <button type="button" class="topbar-link topbar-action" (click)="openLogin()">Iniciar sesión</button>
+                    <span class="topbar-sep"></span>
+                    <button type="button" class="topbar-link topbar-action" (click)="openRegister()">Registrarse</button>
+                }
             </div>
         </div>
     </div>
@@ -44,12 +51,10 @@
             <div class="fc-search-wrapper">
                 <div class="fc-search">
                     <div class="search-cat">
-                        <select>
-                            <option>Todo</option>
-                            <option>Medicamentos</option>
-                            <option>Vitaminas</option>
-                            <option>Belleza</option>
-                            <option>Bebés</option>
+                        <select [(ngModel)]="categoriaSeleccionada">
+                            @for (categoria of categorias; track categoria) {
+                                <option [value]="categoria">{{ categoria }}</option>
+                            }
                         </select>
                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -57,9 +62,14 @@
                         </svg>
                     </div>
                     <div class="search-divider"></div>
-                    <input type="text" placeholder="Busca tu medicina, vitaminas, suplementos..."
-                        class="search-input" />
-                    <button class="search-btn">
+                    <input
+                        type="text"
+                        placeholder="Busca tu medicina, vitaminas, suplementos..."
+                        class="search-input"
+                        [(ngModel)]="terminoBusqueda"
+                        (keyup.enter)="buscarCatalogo()"
+                    />
+                    <button type="button" class="search-btn" (click)="buscarCatalogo()">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                             <circle cx="11" cy="11" r="8" />
@@ -80,7 +90,7 @@
                         </svg>
                     </div>
                     <div class="tool-label">
-                        <span class="tool-hint">Hola, usuario</span>
+                        <span class="tool-hint">@if (currentUser$ | async; as usuario) { Hola, {{ usuario.nombre }} } @else { Hola, usuario }</span>
                         <span class="tool-main">Mi Cuenta</span>
                     </div>
                 </button>
@@ -103,7 +113,7 @@
                             <line x1="3" y1="6" x2="21" y2="6" />
                             <path d="M16 10a4 4 0 0 1-8 0" />
                         </svg>
-                        <span class="cart-badge">2</span>
+                        <span class="cart-badge">{{ getCartCount((cartCount$ | async) ?? []) }}</span>
                     </div>
                     <div class="cart-label">
                         <span class="cart-hint">Mi carrito</span>
