@@ -6,6 +6,5 @@ import { BlogComponent } from './blog/blog.component';
 export const routes: Routes = [
   { path: '', component: InicioComponent },
   { path: 'catalogo', component: CatalogoComponent },
-  { path: 'blog', component: BlogComponent },
-  { path: '**', redirectTo: '' }
+  { path: 'blog', component: BlogComponent }
 ];
