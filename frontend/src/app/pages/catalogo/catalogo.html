@@ -4,53 +4,86 @@
             <div class="carousel-text">
                 <h1>Cuida tu salud con <span>FarmaCode</span></h1>
                 <p>Las mejores ofertas en medicamentos y cuidado personal</p>
-                <button class="btn-banner">Ver ofertas</button>
+                <button class="btn-banner" (click)="limpiarFiltros()">Ver ofertas</button>
             </div>
         </div>
     </section>
+
+    <section class="filtros-section">
+        <div class="categorias-bar">
+            <button
+                type="button"
+                class="categoria-chip"
+                [class.active]="categoriaSeleccionadaId === null"
+                (click)="seleccionarCategoria(null)"
+            >
+                Todas
+            </button>
+
+            <button
+                type="button"
+                class="categoria-chip"
+                *ngFor="let categoria of categorias"
+                [class.active]="categoriaSeleccionadaId === categoria.idCategoria"
+                (click)="seleccionarCategoria(categoria.idCategoria)"
+            >
+                {{ categoria.nombre }}
+            </button>
+        </div>
+    </section>
+
+    @if (mensaje) {
+        <section class="mensaje-panel">
+            {{ mensaje }}
+        </section>
+    }
+
     <section class="productos-section">
         <div class="section-header">
             <div class="header-title">
                 <h2>Elegidos para ti</h2>
                 <div class="header-line"></div>
             </div>
-            <a href="#" class="ver-mas">Ver todo el catálogo →</a>
+            <button type="button" class="ver-mas ver-mas-btn" (click)="limpiarFiltros()">Ver todo el catálogo →</button>
         </div>
-        <div class="productos-grid">
-            <div class="producto-card" *ngFor="let producto of productos">
-                <div *ngIf="producto.etiquetaPromo" class="promo-badge"
-                    [ngClass]="producto.colorPromo === 'red' ? 'bg-red' : 'bg-orange'">
-                    {{ producto.etiquetaPromo }}
-                </div>
-                <div class="producto-imagen-container">
-                    <img src="assets/img/placeholder-pill.png" alt="Producto" class="producto-img">
-                    <div class="quick-view">Vista rápida</div>
-                </div>
-                <div class="producto-info">
-                    <span class="producto-marca">FARMACODE LAB</span>
-                    <h3 class="producto-nombre">{{ producto.nombre }}</h3>
-                    <p class="producto-unidad">{{ producto.unidad }}</p>
-                    <div class="tag-interesar">
-                        <span class="star-icon">★</span> Te puede interesar
+        @if (cargando) {
+            <div class="estado-vacio">Cargando productos...</div>
+        } @else if (productosFiltrados.length === 0) {
+            <div class="estado-vacio">No encontramos productos para esos filtros.</div>
+        } @else {
+            <div class="productos-grid">
+                <div class="producto-card" *ngFor="let producto of productosFiltrados; trackBy: trackByProductoId">
+                    <div *ngIf="producto.etiquetaPromo" class="promo-badge"
+                        [ngClass]="producto.colorPromo === 'red' ? 'bg-red' : 'bg-orange'">
+                        {{ producto.etiquetaPromo }}
                     </div>
-                    <div class="producto-precios">
-                        <div class="precios-wrapper">
-                            <span class="precio-actual">S/ {{ producto.precioActual | number:'1.2-2' }}</span>
-                            <span class="precio-original" *ngIf="producto.precioOriginal">
-                                S/ {{ producto.precioOriginal | number:'1.2-2' }}
-                            </span>
+                    <div class="producto-imagen-container">
+                        <img [src]="producto.imagen" [alt]="producto.nombre" class="producto-img">
+                        <div class="quick-view">{{ producto.categoriaNombre }}</div>
+                    </div>
+                    <div class="producto-info">
+                        <span class="producto-marca">FARMACODE</span>
+                        <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+                        <p class="producto-unidad">{{ producto.descripcion }}</p>
+                        <div class="tag-interesar">
+                            <span class="star-icon">★</span> {{ producto.categoriaNombre }}
                         </div>
-                        <span class="precio-regular">Precio regular</span>
+                        <div class="producto-precios">
+                            <div class="precios-wrapper">
+                                <span class="precio-actual">S/ {{ producto.precio | number:'1.2-2' }}</span>
+                            </div>
+                            <span class="precio-regular">Precio regular</span>
+                        </div>
                     </div>
+                    <button type="button" class="btn-agregar" (click)="agregarProducto(producto)">
+                        <span>Agregar</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor"
+                            stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
                 </div>
-                <button class="btn-agregar">
-                    <span>Agregar</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor"
-                        stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                </button>
             </div>
-        </div>
+        }
     </section>
 </div>
