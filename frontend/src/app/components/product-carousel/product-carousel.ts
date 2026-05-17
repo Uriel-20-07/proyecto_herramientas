@@ -16,7 +16,8 @@ export class ProductCarouselComponent {
       price: 89.90,
       oldPrice: null,
       badge: '3x2 AGREGA 3 PAGA 2',
-      badgeColor: '#ea580c'
+      badgeColor: '#ea580c',
+      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/038166L.jpg'
     },
     {
       name: 'Toallitas Húmedas Huggies Cuidado 4 en 1',
@@ -24,7 +25,8 @@ export class ProductCarouselComponent {
       price: 33.90,
       oldPrice: null,
       badge: '¡SOLO POR TIEMPO LIMITADO!',
-      badgeColor: '#dc2626'
+      badgeColor: '#dc2626',
+      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/037902L.jpg'
     },
     {
       name: 'Pañales Ninet Suave Cuidado Talla S',
@@ -32,7 +34,8 @@ export class ProductCarouselComponent {
       price: 31.90,
       oldPrice: 34.90,
       badge: null,
-      badgeColor: null
+      badgeColor: null,
+      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/032606L.jpg'
     },
     {
       name: 'Pañal Recién Nacido Huggies Natural Care',
@@ -40,7 +43,8 @@ export class ProductCarouselComponent {
       price: 11.90,
       oldPrice: 13.90,
       badge: null,
-      badgeColor: null
+      badgeColor: null,
+      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/PACKMB300L.jpg'
     },
     {
       name: 'Vitamina C 1000mg Efervescente',
@@ -48,7 +52,8 @@ export class ProductCarouselComponent {
       price: 19.90,
       oldPrice: null,
       badge: null,
-      badgeColor: null
+      badgeColor: null,
+      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/PACKNT32L.jpg'
     },
     {
       name: 'Alcohol Gel Antibacterial 500ml',
@@ -56,7 +61,8 @@ export class ProductCarouselComponent {
       price: 12.50,
       oldPrice: 15.00,
       badge: null,
-      badgeColor: null
+      badgeColor: null,
+      image: 'https://lineaebriel.com.pe/wp-content/uploads/2020/09/GEL-ALCOHOL-500-ML-1-1.jpg'
     },
     {
       name: 'Ibuprofeno 400mg',
@@ -64,7 +70,8 @@ export class ProductCarouselComponent {
       price: 8.90,
       oldPrice: null,
       badge: null,
-      badgeColor: null
+      badgeColor: null,
+      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/230447L.jpg'
     },
     {
       name: 'Termómetro Digital Infrarrojo',
@@ -72,7 +79,8 @@ export class ProductCarouselComponent {
       price: 45.90,
       oldPrice: 55.00,
       badge: 'OFERTA',
-      badgeColor: '#0056B3'
+      badgeColor: '#0056B3',
+      image: 'https://media.falabella.com/falabellaPE/118391047_01/w=1200,h=1200,fit=pad'
     }
   ];
 

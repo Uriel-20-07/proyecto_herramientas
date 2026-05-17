@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { BlogComponent } from './pages/blog/blog.component';
+import { InicioComponent } from './pages/inicio';
 import { CatalogoComponent } from './pages/catalogo/catalogo';
 import { CarritoComponent } from './pages/carrito/carrito';
 import { LoginComponent } from './components/login/login.component';
@@ -11,7 +12,7 @@ import { NosotrosComponent } from './pages/nosotros/nosotros';
 
 export const routes: Routes = [
 
-  { path: '', component: BlogComponent },
+  { path: '', component: InicioComponent },
 
   { path: 'blog', component: BlogComponent },
   { path: 'catalogo', component: CatalogoComponent },
@@ -30,6 +31,6 @@ export const routes: Routes = [
   { path: 'favoritos', component: LoginComponent },
   { path: 'pedidos', component: LoginComponent },
 
-  { path: '**', component: BlogComponent }
+  { path: '**', component: InicioComponent }
 
 ];
