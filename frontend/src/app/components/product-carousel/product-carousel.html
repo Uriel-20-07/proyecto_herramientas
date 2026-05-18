@@ -4,7 +4,7 @@
         <h5 class="fw-bold" style="color:#495057;">
             Elegidos especialmente para ti
         </h5>
-        <a href="#" style="color:#2b78e4; font-size:0.85rem;">
+        <a href="/catalogo" style="color:#2b78e4; font-size:0.85rem; text-decoration:none; font-weight:600;">
             Ver más productos
         </a>
     </div>
@@ -16,52 +16,23 @@
             <div *ngFor="let chunk of chunkedProducts; let i = index" class="carousel-item" [class.active]="i === 0">
 
                 <div class="row g-3">
-                    <div class="col-6 col-md-3" *ngFor="let product of chunk">
-                        <div class="card h-100 border-0 shadow-sm position-relative">
-
-                            <span *ngIf="product.badge"
-                                class="position-absolute top-0 start-0 m-2 badge rounded-pill text-white"
-                                [style.background-color]="product.badgeColor" style="font-size:0.65rem; z-index:1;">
-                                {{ product.badge }}
-                            </span>
-
-                            <div class="d-flex align-items-center justify-content-center bg-light"
-                                style="height:300px; border-radius:0.375rem 0.375rem 0 0; overflow:hidden;">
-                                <img [src]="product.image || 'assets/img/placeholder-pill.png'"
-                                    [attr.alt]="product.name"
-                                    style="max-height:100%; max-width:100%; object-fit:contain; display:block;" />
+                    <div class="col-6 col-md-3" *ngFor="let producto of chunk">
+                        <div class="producto-card h-100 d-flex flex-column">
+                            <div class="producto-imagen-container">
+                                <img [src]="producto.imagen" [alt]="producto.nombre" class="producto-img">
                             </div>
-
-                            <div class="card-body p-2 d-flex flex-column">
-                                <!-- INPUT IMAGEN DEL CARRUSEL<3 SOMOS EL ÉXITO CHICOS-->
-                                <input type="hidden" [name]="'product_' + product.id" [id]="'product_' + product.id"
-                                    [value]="product.name" [attr.alt]="product.name" [attr.max]="product.stock"
-                                    [attr.min]="0" [attr.maxlength]="100" [attr.size]="50" [attr.pattern]="product.name"
-                                    [attr.list]="'product-list-' + product.id" form="productForm" />
-
-                                <datalist [id]="'product-list-' + product.id">
-                                    <option [value]="product.name"></option>
-                                </datalist>
-
-                                <small class="text-muted mb-1">{{ product.size }}</small>
-                                <p class="fw-semibold mb-2 flex-grow-1" style="font-size:0.82rem; color:#495057;">
-                                    {{ product.name }}
-                                </p>
-                                <div class="mb-2">
-                                    <small *ngIf="product.oldPrice"
-                                        class="text-decoration-line-through text-muted me-1">
-                                        S/ {{ product.oldPrice | number:'1.2-2' }}
-                                    </small>
-                                    <span class="fw-bold d-block" style="color:#0056B3;">
-                                        S/ {{ product.price | number:'1.2-2' }}
-                                    </span>
+                            <div class="producto-info d-flex flex-column flex-grow-1">
+                                <span class="producto-marca">FARMACODE</span>
+                                <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+                                <p class="producto-unidad">{{ producto.descripcion }}</p>
+                                <div class="producto-precios mt-auto">
+                                    <span class="precio-actual">S/ {{ producto.precio | number:'1.2-2' }}</span>
+                                    <span class="precio-regular">Precio regular: S/ {{ producto.precio * 1.2 | number:'1.2-2' }}</span>
                                 </div>
-                                <button class="btn btn-sm w-100 text-white mt-auto"
-                                    style="background-color:#0056B3; font-size:0.8rem;">
-                                    <i class="bi bi-cart-plus me-1"></i>Agregar al carrito
+                                <button type="button" class="btn-agregar w-100" (click)="agregarProducto(producto)">
+                                    Agregar
                                 </button>
                             </div>
-
                         </div>
                     </div>
                 </div>

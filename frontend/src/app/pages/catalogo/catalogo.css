@@ -277,9 +277,9 @@
 /* Botón Agregar */
 .btn-agregar {
     margin-top: 15px;
-    background: white;
-    border: 2px solid var(--primary-orange);
-    color: var(--primary-orange);
+    background: #0056B3;
+    border: 2px solid #0056B3;
+    color: white;
     padding: 10px;
     border-radius: 12px;
     font-weight: bold;
@@ -292,7 +292,8 @@
 }
 
 .btn-agregar:hover {
-    background: var(--primary-orange);
+    background: #004494;
+    border-color: #004494;
     color: white;
 }
 
