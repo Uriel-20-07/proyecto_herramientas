@@ -157,7 +157,7 @@ export class CatalogoComponent implements OnInit {
   private mapProducto(producto: ProductoApi): ProductoVista {
     const categoriaNombre = producto.categoria?.nombre ?? 'General';
     const categoriaKey = categoriaNombre.toLowerCase();
-    const imagen = this.imagenPorCategoria[categoriaKey] ?? 'assets/img/placeholder-pill.png';
+    const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
 
     return {
       id: producto.idProducto,

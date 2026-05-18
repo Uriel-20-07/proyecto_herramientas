@@ -1,18 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 
-import { ProductCarousel } from './product-carousel';
+import { ProductCarouselComponent } from './product-carousel';
 
-describe('ProductCarousel', () => {
-  let component: ProductCarousel;
-  let fixture: ComponentFixture<ProductCarousel>;
+describe('ProductCarouselComponent', () => {
+  let component: ProductCarouselComponent;
+  let fixture: ComponentFixture<ProductCarouselComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ProductCarousel]
+      imports: [ProductCarouselComponent],
+      providers: [provideHttpClient()]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ProductCarousel);
+    fixture = TestBed.createComponent(ProductCarouselComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
