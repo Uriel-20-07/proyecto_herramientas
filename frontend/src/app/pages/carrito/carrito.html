@@ -1,0 +1,63 @@
+<div class="carrito-page">
+  <section class="carrito-hero">
+    <div>
+      <p class="eyebrow">Tu carrito</p>
+      <h1>Revisa tus productos y continúa al pago</h1>
+      <p class="subtitle">Los productos que agregaste se guardan en esta sesión del navegador.</p>
+    </div>
+    <a routerLink="/catalogo" class="volver-link">Seguir comprando</a>
+  </section>
+
+  <div class="carrito-layout" *ngIf="getCount() > 0; else emptyState">
+    <section class="items-panel">
+      <div class="panel-header">
+        <h2>Productos seleccionados</h2>
+        <button type="button" class="text-button" (click)="clear()">Vaciar carrito</button>
+      </div>
+
+      <div class="cart-item" *ngFor="let item of getItems()">
+        <div class="item-image">{{ item.producto.nombre | slice:0:1 }}</div>
+        <div class="item-info">
+          <h3>{{ item.producto.nombre }}</h3>
+          <p>{{ item.producto.descripcion }}</p>
+          <span class="item-category">{{ item.producto.categoria?.nombre || 'General' }}</span>
+        </div>
+
+        <div class="item-actions">
+          <div class="qty-control">
+            <button type="button" (click)="decrease(item.producto.idProducto)">-</button>
+            <span>{{ item.cantidad }}</span>
+            <button type="button" (click)="increase(item.producto.idProducto)">+</button>
+          </div>
+          <div class="price-block">
+            <strong>S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}</strong>
+            <button type="button" class="remove-link" (click)="remove(item.producto.idProducto)">Quitar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="checkout-panel">
+      <h2>Resumen de compra</h2>
+      <div class="summary-row">
+        <span>Productos</span>
+        <strong>{{ getCount() }}</strong>
+      </div>
+      <div class="summary-row total">
+        <span>Total</span>
+        <strong>S/ {{ getSubtotal() | number:'1.2-2' }}</strong>
+      </div>
+
+      <button type="button" class="pay-button" (click)="pagar()">Pagar ahora</button>
+      <p class="checkout-note">Esta es una simulación de pago. Luego puedes conectarla a tu pasarela real.</p>
+    </aside>
+  </div>
+
+  <ng-template #emptyState>
+    <section class="empty-state">
+      <h2>No hay productos en el carrito</h2>
+      <p>Agrega productos desde el catálogo para verlos aquí.</p>
+      <a routerLink="/catalogo" class="volver-link primary">Ir al catálogo</a>
+    </section>
+  </ng-template>
+</div>
