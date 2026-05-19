@@ -6,8 +6,6 @@ import { InicioComponent } from './pages/inicio';
 import { CatalogoComponent } from './pages/catalogo/catalogo';
 import { CarritoComponent } from './pages/carrito/carrito';
 
-import { LoginComponent } from './components/login/login.component';
-import { RegistroComponent } from './components/registro/registro.component';
 import { RecuperarContraseñaComponent } from './components/recuperar-contrasena/recuperar-contrasena.component';
 
 import { OfertasComponent } from './pages/ofertas/ofertas';
@@ -66,12 +64,14 @@ export const routes: Routes = [
 
   {
     path: 'login',
-    component: LoginComponent
+    redirectTo: '',
+    pathMatch: 'full'
   },
 
   {
     path: 'registro',
-    component: RegistroComponent
+    redirectTo: '',
+    pathMatch: 'full'
   },
 
   {
@@ -88,12 +88,14 @@ export const routes: Routes = [
 
   {
     path: 'favoritos',
-    component: LoginComponent
+    redirectTo: '',
+    pathMatch: 'full'
   },
 
   {
     path: 'pedidos',
-    component: LoginComponent
+    redirectTo: '',
+    pathMatch: 'full'
   },
 
   // 404

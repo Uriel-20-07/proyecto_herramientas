@@ -46,6 +46,14 @@ export class NavbarComponent {
     this.authModalService.open('registro');
   }
 
+  goToPerfil(): void {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/perfil']);
+    } else {
+      this.authModalService.open('login');
+    }
+  }
+
   buscarCatalogo(): void {
     const queryParams: Record<string, string> = {};
 
@@ -67,5 +75,13 @@ export class NavbarComponent {
 
   getCartCount(counts: Array<{ cantidad: number }> | null): number {
     return counts?.reduce((total, item) => total + item.cantidad, 0) ?? 0;
+  }
+
+  getCartTotal(items: Array<{ producto: any, cantidad: number }> | null): string {
+    const total = items?.reduce(
+      (acc, item) => acc + Number(item.producto.precioVenta) * item.cantidad,
+      0
+    ) ?? 0;
+    return total.toFixed(2);
   }
 }

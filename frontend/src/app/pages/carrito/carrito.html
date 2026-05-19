@@ -16,7 +16,9 @@
       </div>
 
       <div class="cart-item" *ngFor="let item of getItems()">
-        <div class="item-image">{{ item.producto.nombre | slice:0:1 }}</div>
+        <div class="item-image">
+          <img [src]="getProductImage(item.producto)" [alt]="item.producto.nombre" class="cart-product-img" />
+        </div>
         <div class="item-info">
           <h3>{{ item.producto.nombre }}</h3>
           <p>{{ item.producto.descripcion }}</p>

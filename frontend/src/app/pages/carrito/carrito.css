@@ -107,13 +107,19 @@
   width: 72px;
   height: 72px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #f97316, #ffb347);
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 28px;
-  font-weight: 900;
+  overflow: hidden;
+}
+
+.cart-product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
 }
 
 .item-info h3 {

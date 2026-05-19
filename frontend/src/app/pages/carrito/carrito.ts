@@ -11,10 +11,28 @@ import { CartService } from '../../services/cart.service';
   styleUrl: './carrito.css'
 })
 export class CarritoComponent {
+  private readonly imagenPorCategoria: Record<string, string> = {
+    medicamentos: 'assets/img/producto1.png',
+    'cuidado personal': 'assets/img/producto2.png',
+    belleza: 'assets/img/producto3.png',
+    bebé: 'assets/img/producto4.png',
+    'vitaminas / suplementos': 'assets/img/producto1.png',
+    'equipo médicos': 'assets/img/producto2.png',
+    'equipos médicos': 'assets/img/producto2.png'
+  };
+
   constructor(private readonly cartService: CartService) {}
 
   getItems() {
     return this.cartService.getItems();
+  }
+
+  getProductImage(producto: any): string {
+    if (producto.imgUrl) {
+      return producto.imgUrl;
+    }
+    const cat = producto.categoria?.nombre?.toLowerCase() || 'general';
+    return this.imagenPorCategoria[cat] || 'assets/img/placeholder-pill.png';
   }
 
   getSubtotal(): number {
