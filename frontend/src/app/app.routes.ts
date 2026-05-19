@@ -7,6 +7,7 @@ import { CatalogoComponent } from './pages/catalogo/catalogo';
 import { CarritoComponent } from './pages/carrito/carrito';
 
 import { LoginComponent } from './components/login/login.component';
+
 import { RegistroComponent } from './components/registro/registro.component';
 import { RecuperarContraseñaComponent } from './components/recuperar-contrasena/recuperar-contrasena.component';
 
@@ -94,6 +95,65 @@ export const routes: Routes = [
   {
     path: 'pedidos',
     component: LoginComponent
+  },
+
+  // 404
+
+  { path: '**', component: InicioComponent }
+  {
+    path: 'carrito',
+    component: CarritoComponent
+  },
+
+  {
+    path: 'ofertas',
+    component: OfertasComponent
+  },
+
+  {
+    path: 'marcas',
+    component: MarcasComponent
+  },
+
+  {
+    path: 'nosotros',
+    component: NosotrosComponent
+  },
+
+  {
+    path: 'perfil',
+    component: PerfilComponent
+  },
+
+  // AUTH (using modal)
+
+  {
+    path: 'registro',
+    component: RegistroComponent
+  },
+
+  {
+    path: 'recuperar-contrasena',
+    component: RecuperarContraseñaComponent
+  },
+
+  {
+    path: 'reset-password/:token',
+    component: RecuperarContraseñaComponent
+  },
+
+  // FUTURO
+
+  {
+    path: 'favoritos',
+    redirectTo: '',
+    pathMatch: 'full'
+  },
+
+  {
+    path: 'pedidos',
+    redirectTo: '',
+    pathMatch: 'full'
   },
 
   // 404
