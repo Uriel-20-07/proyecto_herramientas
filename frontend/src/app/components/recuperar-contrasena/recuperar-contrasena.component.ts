@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AuthModalService } from '../../services/auth-modal.service';
 
 @Component({
   selector: 'app-recuperar-contrasena',
@@ -25,8 +24,7 @@ export class RecuperarContraseñaComponent {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute,
-    private authModal: AuthModalService
+    private route: ActivatedRoute
   ) {
     // Verificar si viene con token en la URL
     this.route.params.subscribe(params => {
@@ -99,7 +97,7 @@ export class RecuperarContraseñaComponent {
         next: (response) => {
           this.success = 'Te hemos enviado un correo con instrucciones para recuperar tu contraseña';
           setTimeout(() => {
-            this.authModal.open('login');
+            this.router.navigate(['/login']);
           }, 3000);
         },
         error: (error) => {
@@ -113,7 +111,7 @@ export class RecuperarContraseñaComponent {
         next: (response) => {
           this.success = 'Contraseña cambiada exitosamente. Redirigiendo a login...';
           setTimeout(() => {
-            this.authModal.open('login');
+            this.router.navigate(['/login']);
           }, 2000);
         },
         error: (error) => {
@@ -125,6 +123,6 @@ export class RecuperarContraseñaComponent {
   }
 
   goToLogin(): void {
-    this.authModal.open('login');
+    this.router.navigate(['/login']);
   }
 }
