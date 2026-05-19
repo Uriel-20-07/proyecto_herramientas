@@ -434,13 +434,21 @@
 .cta-box{
     max-width: 1400px;
     margin: auto;
-    background: linear-gradient(135deg,#0f172a,#1e3a8a);
+    background-image: url('/merecesMejor.jpeg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
     border-radius: 40px;
-    padding: 90px 40px;
+    min-height: 440px;
+    padding: 40px 40px 80px;
     text-align: center;
     color: white;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .cta-box::before{
@@ -454,23 +462,9 @@
     right: -80px;
 }
 
-.cta-box span{
-    color: #ffb067;
-    font-weight: 700;
-    letter-spacing: 1px;
-}
-
-.cta-box h2{
-    font-size: 3.3rem;
-    margin: 22px 0;
-}
-
-.cta-box p{
-    max-width: 700px;
-    margin: auto;
-    line-height: 1.9;
-    color: rgba(255,255,255,.8);
-    margin-bottom: 35px;
+.cta-box .primary-btn{
+    margin: 0;
+    align-self: center;
 }
 
 /* =========================

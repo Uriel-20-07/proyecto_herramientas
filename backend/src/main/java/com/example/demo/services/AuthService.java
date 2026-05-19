@@ -1,7 +1,9 @@
 package com.example.demo.services;
 
+import com.example.demo.models.Cupon;
 import com.example.demo.models.PasswordResetToken;
 import com.example.demo.models.User;
+import com.example.demo.repositories.CuponRepository;
 import com.example.demo.repositories.PasswordResetTokenRepository;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +30,9 @@ public class AuthService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private CuponRepository cuponRepository;
 
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
@@ -57,16 +63,36 @@ public class AuthService {
 
         User usuarioGuardado = userRepository.save(usuario);
 
-        // Enviar email de bienvenida
-        emailService.sendWelcomeEmail(email, nombre);
+        // Crear cupón de bienvenida y enviar código por email
+        Cupon cuponBienvenida = crearCuponBienvenida(usuarioGuardado);
+        emailService.sendWelcomeCouponEmail(email, nombre, cuponBienvenida.getCodigo());
 
         return usuarioGuardado;
+    }
+
+    private Cupon crearCuponBienvenida(User usuario) {
+        Cupon cupon = new Cupon();
+        cupon.setCodigo(generarCodigoCupon());
+        cupon.setUsuario(usuario);
+        cupon.setTipoDescuento("PORCENTAJE");
+        cupon.setValorDescuento(BigDecimal.valueOf(30));
+        cupon.setFechaCreacion(LocalDateTime.now());
+        cupon.setFechaExpiracion(LocalDateTime.now().plusDays(30));
+        cupon.setUsado(false);
+        cupon.setDescripcion("Cupón de bienvenida 30% descuento");
+        cupon.setActivo(true);
+
+        return cuponRepository.save(cupon);
+    }
+
+    private String generarCodigoCupon() {
+        return "BIENVENIDA-" + UUID.randomUUID().toString().replaceAll("[-]", "").substring(0, 10).toUpperCase();
     }
 
     // Login
     public String login(String email, String password) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-        
+
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
@@ -91,7 +117,7 @@ public class AuthService {
     // Solicitar recuperación de contraseña
     public void solicitarRecuperacionContraseña(String email) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-        
+
         if (usuarioOpt.isEmpty()) {
             // No revelar si el email existe o no
             return;
@@ -122,7 +148,7 @@ public class AuthService {
     // Validar token de recuperación
     public boolean validarTokenRecuperacion(String token) {
         Optional<PasswordResetToken> resetTokenOpt = passwordResetTokenRepository.findByToken(token);
-        
+
         if (resetTokenOpt.isEmpty()) {
             return false;
         }
@@ -134,7 +160,7 @@ public class AuthService {
     // Cambiar contraseña con token
     public void cambiarContraseña(String token, String nuevaContraseña) {
         Optional<PasswordResetToken> resetTokenOpt = passwordResetTokenRepository.findByToken(token);
-        
+
         if (resetTokenOpt.isEmpty()) {
             throw new RuntimeException("Token inválido");
         }
@@ -164,7 +190,7 @@ public class AuthService {
     // Cambiar contraseña (usuario autenticado)
     public void cambiarContraseñaAutenticado(String email, String contraseñaActual, String nuevaContraseña) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-        
+
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
