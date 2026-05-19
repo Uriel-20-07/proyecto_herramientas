@@ -10,7 +10,6 @@ import {
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { AuthModalService } from '../../services/auth-modal.service';
 
 @Component({
   selector: 'app-perfil',
@@ -37,15 +36,12 @@ export class PerfilComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private http: HttpClient
-    ,
-    private authModal: AuthModalService
   ) {}
 
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
 
     if (!user) {
-      this.authModal.open('login');
       this.router.navigate(['/login']);
       return;
     }

@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AuthModalService } from '../../services/auth-modal.service';
 
 @Component({
   selector: 'app-registro',
@@ -22,8 +21,7 @@ export class RegistroComponent {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private router: Router,
-    private authModal: AuthModalService
+    private router: Router
   ) {
     this.registroForm = this.formBuilder.group({
       nombre: ['', [Validators.required]],
@@ -67,9 +65,9 @@ export class RegistroComponent {
       this.f['telefono'].value
     ).subscribe({
       next: (response) => {
-        this.success = 'Registro exitoso. Abriendo login...';
+        this.success = 'Registro exitoso. Redirigiendo a login...';
         setTimeout(() => {
-          this.authModal.open('login');
+          this.router.navigate(['/login']);
         }, 2000);
       },
       error: (error) => {
@@ -80,6 +78,6 @@ export class RegistroComponent {
   }
 
   goToLogin(): void {
-    this.authModal.open('login');
+    this.router.navigate(['/login']);
   }
 }

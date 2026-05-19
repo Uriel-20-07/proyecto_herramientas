@@ -28,9 +28,6 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private CuponService cuponService;
-
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
 
@@ -60,16 +57,6 @@ public class AuthService {
 
         User usuarioGuardado = userRepository.save(usuario);
 
-        // Generar cupón de bienvenida
-        try {
-            com.example.demo.models.Cupon cupon = cuponService.generarCuponBienvenida(usuarioGuardado);
-            // Enviar email con cupón
-            cuponService.enviarCuponPorEmail(usuarioGuardado, cupon);
-        } catch (Exception e) {
-            System.err.println("Error generando cupón de bienvenida: " + e.getMessage());
-            // No interrumpir el flujo de registro si hay error en el cupón
-        }
-
         // Enviar email de bienvenida
         emailService.sendWelcomeEmail(email, nombre);
 
@@ -79,7 +66,7 @@ public class AuthService {
     // Login
     public String login(String email, String password) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-
+        
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
@@ -104,7 +91,7 @@ public class AuthService {
     // Solicitar recuperación de contraseña
     public void solicitarRecuperacionContraseña(String email) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-
+        
         if (usuarioOpt.isEmpty()) {
             // No revelar si el email existe o no
             return;
@@ -135,7 +122,7 @@ public class AuthService {
     // Validar token de recuperación
     public boolean validarTokenRecuperacion(String token) {
         Optional<PasswordResetToken> resetTokenOpt = passwordResetTokenRepository.findByToken(token);
-
+        
         if (resetTokenOpt.isEmpty()) {
             return false;
         }
@@ -147,7 +134,7 @@ public class AuthService {
     // Cambiar contraseña con token
     public void cambiarContraseña(String token, String nuevaContraseña) {
         Optional<PasswordResetToken> resetTokenOpt = passwordResetTokenRepository.findByToken(token);
-
+        
         if (resetTokenOpt.isEmpty()) {
             throw new RuntimeException("Token inválido");
         }
@@ -177,7 +164,7 @@ public class AuthService {
     // Cambiar contraseña (usuario autenticado)
     public void cambiarContraseñaAutenticado(String email, String contraseñaActual, String nuevaContraseña) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-
+        
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
