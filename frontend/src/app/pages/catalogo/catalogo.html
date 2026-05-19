@@ -53,13 +53,8 @@
         } @else {
             <div class="productos-grid">
                 <div class="producto-card" *ngFor="let producto of productosFiltrados; trackBy: trackByProductoId">
-                    <div *ngIf="producto.etiquetaPromo" class="promo-badge"
-                        [ngClass]="producto.colorPromo === 'red' ? 'bg-red' : 'bg-orange'">
-                        {{ producto.etiquetaPromo }}
-                    </div>
                     <div class="producto-imagen-container">
                         <img [src]="producto.imagen" [alt]="producto.nombre" class="producto-img">
-                        <div class="quick-view">{{ producto.categoriaNombre }}</div>
                     </div>
                     <div class="producto-info">
                         <span class="producto-marca">FARMACODE</span>

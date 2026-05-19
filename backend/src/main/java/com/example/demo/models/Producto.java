@@ -25,4 +25,7 @@ public class Producto {
     @ManyToOne
     @JoinColumn(name = "id_categoria")
     private Categoria categoria;
+
+    @Column(name = "img_url", length = 500)
+    private String imgUrl;
 }

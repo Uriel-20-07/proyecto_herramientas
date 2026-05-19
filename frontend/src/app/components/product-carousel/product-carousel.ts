@@ -1,93 +1,88 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CatalogoService, ProductoApi, CategoriaApi } from '../../services/catalogo.service';
+import { CartService } from '../../services/cart.service';
+
+interface ProductoVista {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  categoriaNombre: string;
+  imagen: string;
+}
 
 @Component({
   selector: 'app-product-carousel',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './product-carousel.html'
+  templateUrl: './product-carousel.html',
+  styleUrls: ['../../pages/catalogo/catalogo.css']
 })
-export class ProductCarouselComponent {
+export class ProductCarouselComponent implements OnInit {
+  productos: ProductoVista[] = [];
+  categorias: CategoriaApi[] = [];
 
-  products = [
-    {
-      name: 'Geriaplus DB Inmunoact Polvo Sabor Vainilla',
-      size: 'FRASCO 1000 GR',
-      price: 89.90,
-      oldPrice: null,
-      badge: '3x2 AGREGA 3 PAGA 2',
-      badgeColor: '#ea580c',
-      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/038166L.jpg'
-    },
-    {
-      name: 'Toallitas Húmedas Huggies Cuidado 4 en 1',
-      size: 'BOLSA 240 UN',
-      price: 33.90,
-      oldPrice: null,
-      badge: '¡SOLO POR TIEMPO LIMITADO!',
-      badgeColor: '#dc2626',
-      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/037902L.jpg'
-    },
-    {
-      name: 'Pañales Ninet Suave Cuidado Talla S',
-      size: 'BOLSA 60 UN',
-      price: 31.90,
-      oldPrice: 34.90,
-      badge: null,
-      badgeColor: null,
-      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/032606L.jpg'
-    },
-    {
-      name: 'Pañal Recién Nacido Huggies Natural Care',
-      size: 'BOLSA 20 UN',
-      price: 11.90,
-      oldPrice: 13.90,
-      badge: null,
-      badgeColor: null,
-      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/PACKMB300L.jpg'
-    },
-    {
-      name: 'Vitamina C 1000mg Efervescente',
-      size: 'CAJA 10 UN',
-      price: 19.90,
-      oldPrice: null,
-      badge: null,
-      badgeColor: null,
-      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/PACKNT32L.jpg'
-    },
-    {
-      name: 'Alcohol Gel Antibacterial 500ml',
-      size: 'FRASCO 500 ML',
-      price: 12.50,
-      oldPrice: 15.00,
-      badge: null,
-      badgeColor: null,
-      image: 'https://lineaebriel.com.pe/wp-content/uploads/2020/09/GEL-ALCOHOL-500-ML-1-1.jpg'
-    },
-    {
-      name: 'Ibuprofeno 400mg',
-      size: 'CAJA 20 UN',
-      price: 8.90,
-      oldPrice: null,
-      badge: null,
-      badgeColor: null,
-      image: 'https://dcuk1cxrnzjkh.cloudfront.net/imagesproducto/230447L.jpg'
-    },
-    {
-      name: 'Termómetro Digital Infrarrojo',
-      size: 'UNIDAD',
-      price: 45.90,
-      oldPrice: 55.00,
-      badge: 'OFERTA',
-      badgeColor: '#0056B3',
-      image: 'https://media.falabella.com/falabellaPE/118391047_01/w=1200,h=1200,fit=pad'
-    }
-  ];
+  private readonly imagenPorCategoria: Record<string, string> = {
+    medicamentos: 'assets/img/producto1.png',
+    'cuidado personal': 'assets/img/producto2.png',
+    belleza: 'assets/img/producto3.png',
+    bebé: 'assets/img/producto4.png',
+    'vitaminas / suplementos': 'assets/img/producto1.png',
+    'equipo médicos': 'assets/img/producto2.png',
+    'equipos médicos': 'assets/img/producto2.png'
+  };
+
+  constructor(
+    private readonly catalogoService: CatalogoService,
+    private readonly cartService: CartService
+  ) {}
+
+  ngOnInit(): void {
+    this.catalogoService.getCategorias().subscribe({
+      next: (categorias) => {
+        this.categorias = categorias;
+        this.catalogoService.getProductos().subscribe({
+          next: (productos) => {
+            this.productos = productos
+              .filter((p) => p.categoria?.idCategoria === 4)
+              .map((p) => this.mapProducto(p));
+          }
+        });
+      }
+    });
+  }
+
+  agregarProducto(producto: ProductoVista): void {
+    const productoApi: ProductoApi = {
+      idProducto: producto.id,
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      precioVenta: producto.precio,
+      categoria: this.categorias.find((c) => c.nombre === producto.categoriaNombre) ?? null
+    };
+    this.cartService.add(productoApi);
+  }
+
+  private mapProducto(producto: ProductoApi): ProductoVista {
+    const categoriaNombre = producto.categoria?.nombre ?? 'General';
+    const categoriaKey = categoriaNombre.toLowerCase();
+    const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
+
+    return {
+      id: producto.idProducto,
+      nombre: producto.nombre,
+      descripcion: producto.descripcion ?? 'Producto del catálogo FarmaCode',
+      precio: Number(producto.precioVenta),
+      categoriaNombre,
+      imagen
+    };
+  }
 
   get chunkedProducts(): any[][] {
     const chunks = [];
-    for (let i = 0; i < this.products.length; i += 4) {
-      chunks.push(this.products.slice(i, i + 4));
+    for (let i = 0; i < this.productos.length; i += 4) {
+      chunks.push(this.productos.slice(i, i + 4));
     }
     return chunks;
   }

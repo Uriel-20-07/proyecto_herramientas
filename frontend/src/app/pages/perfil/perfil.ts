@@ -46,6 +46,7 @@ export class PerfilComponent implements OnInit {
 
     if (!user) {
       this.authModal.open('login');
+      this.router.navigate(['/login']);
       return;
     }
 
