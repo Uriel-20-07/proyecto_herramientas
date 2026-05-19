@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { ProductoApi } from './catalogo.service';
+import { AuthService } from './auth.service';
+import { AuthModalService } from './auth-modal.service';
 
 export interface CartItem {
+  idDetalleCarrito?: number;
   producto: ProductoApi;
   cantidad: number;
 }
@@ -11,52 +15,131 @@ export interface CartItem {
   providedIn: 'root'
 })
 export class CartService {
+  private readonly apiUrl = 'http://localhost:8080/api/carrito';
   private readonly storageKey = 'carrito';
-  private readonly itemsSubject = new BehaviorSubject<CartItem[]>(this.loadItems());
+  private readonly itemsSubject = new BehaviorSubject<CartItem[]>([]);
 
   readonly items$ = this.itemsSubject.asObservable();
 
-  add(producto: ProductoApi): void {
-    const items = [...this.itemsSubject.value];
-    const existing = items.find((item) => item.producto.idProducto === producto.idProducto);
+  constructor(
+    private readonly http: HttpClient,
+    private readonly authService: AuthService,
+    private readonly authModalService: AuthModalService
+  ) {
+    // Escuchar cambios de autenticación para cargar o limpiar el carrito
+    this.authService.token$.subscribe((token) => {
+      if (token) {
+        this.cargarCarritoServidor();
+      } else {
+        this.clearLocalState();
+      }
+    });
+  }
 
-    if (existing) {
-      existing.cantidad += 1;
-    } else {
-      items.push({ producto, cantidad: 1 });
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
+  private cargarCarritoServidor(): void {
+    this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).subscribe({
+      next: (carrito) => {
+        if (carrito && carrito.detalles) {
+          this.itemsSubject.next(carrito.detalles);
+          this.saveItemsToStorage(carrito.detalles);
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar el carrito del servidor:', err);
+        this.itemsSubject.next(this.loadItemsFromStorage());
+      }
+    });
+  }
+
+  add(producto: ProductoApi): void {
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('login');
+      return;
     }
 
-    this.saveItems(items);
-    this.itemsSubject.next(items);
+    const url = `${this.apiUrl}/agregar?idProducto=${producto.idProducto}&cantidad=1`;
+    this.http.post<any>(url, {}, { headers: this.getHeaders() }).subscribe({
+      next: (carrito) => {
+        if (carrito && carrito.detalles) {
+          this.itemsSubject.next(carrito.detalles);
+          this.saveItemsToStorage(carrito.detalles);
+        }
+      },
+      error: (err) => {
+        console.error('Error al agregar producto al carrito:', err);
+      }
+    });
   }
 
   decrease(productoId: number): void {
-    const items = [...this.itemsSubject.value];
-    const existing = items.find((item) => item.producto.idProducto === productoId);
-
-    if (!existing) {
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('login');
       return;
     }
 
-    if (existing.cantidad > 1) {
-      existing.cantidad -= 1;
-    } else {
-      this.remove(productoId);
-      return;
-    }
-
-    this.saveItems(items);
-    this.itemsSubject.next(items);
+    const url = `${this.apiUrl}/disminuir?idProducto=${productoId}`;
+    this.http.post<any>(url, {}, { headers: this.getHeaders() }).subscribe({
+      next: (carrito) => {
+        if (carrito && carrito.detalles) {
+          this.itemsSubject.next(carrito.detalles);
+          this.saveItemsToStorage(carrito.detalles);
+        }
+      },
+      error: (err) => {
+        console.error('Error al disminuir producto del carrito:', err);
+      }
+    });
   }
 
   remove(productoId: number): void {
-    const items = this.itemsSubject.value.filter((item) => item.producto.idProducto !== productoId);
-    this.saveItems(items);
-    this.itemsSubject.next(items);
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('login');
+      return;
+    }
+
+    const url = `${this.apiUrl}/eliminar?idProducto=${productoId}`;
+    this.http.delete<any>(url, { headers: this.getHeaders() }).subscribe({
+      next: (carrito) => {
+        if (carrito && carrito.detalles) {
+          this.itemsSubject.next(carrito.detalles);
+          this.saveItemsToStorage(carrito.detalles);
+        }
+      },
+      error: (err) => {
+        console.error('Error al eliminar producto del carrito:', err);
+      }
+    });
   }
 
   clear(): void {
-    this.saveItems([]);
+    if (!this.authService.isAuthenticated()) {
+      this.clearLocalState();
+      return;
+    }
+
+    const url = `${this.apiUrl}/vaciar`;
+    this.http.delete<any>(url, { headers: this.getHeaders() }).subscribe({
+      next: (carrito) => {
+        if (carrito && carrito.detalles) {
+          this.itemsSubject.next(carrito.detalles);
+          this.saveItemsToStorage(carrito.detalles);
+        }
+      },
+      error: (err) => {
+        console.error('Error al vaciar el carrito:', err);
+      }
+    });
+  }
+
+  private clearLocalState(): void {
+    this.saveItemsToStorage([]);
     this.itemsSubject.next([]);
   }
 
@@ -75,13 +158,9 @@ export class CartService {
     return [...this.itemsSubject.value];
   }
 
-  private loadItems(): CartItem[] {
+  private loadItemsFromStorage(): CartItem[] {
     const stored = localStorage.getItem(this.storageKey);
-
-    if (!stored) {
-      return [];
-    }
-
+    if (!stored) return [];
     try {
       return JSON.parse(stored) as CartItem[];
     } catch {
@@ -89,7 +168,7 @@ export class CartService {
     }
   }
 
-  private saveItems(items: CartItem[]): void {
+  private saveItemsToStorage(items: CartItem[]): void {
     localStorage.setItem(this.storageKey, JSON.stringify(items));
   }
 }

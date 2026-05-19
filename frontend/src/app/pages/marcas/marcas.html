@@ -23,6 +23,11 @@
 
         </div>
 
+        <div class="hero-image">
+            <img src="https://i.pinimg.com/736x/a4/20/61/a42061c3baa123b559ae0d69571de350.jpg"
+                alt="Farmacia">
+        </div>
+
     </section>
 
     <!-- FILTERS -->
@@ -44,8 +49,7 @@
 
         <div class="brand-card" *ngFor="let marca of marcas">
 
-            <img [src]="marca.imgUrl || 'assets/placeholder-image.png'"
-                [alt]="marca.nombre">
+            <img [src]="marca.imgUrl || 'assets/placeholder-image.png'" [alt]="marca.nombre">
 
             <h3>{{ marca.nombre }}</h3>
 

@@ -3,11 +3,12 @@ import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar';
 import { FooterComponent } from './components/footer/footer';
 import { AuthModalComponent } from './components/auth-modal/auth-modal.component';
+import { ChatbotComponent } from './components/chatbot/chatbot';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavbarComponent, FooterComponent, AuthModalComponent],
+  imports: [RouterOutlet, NavbarComponent, FooterComponent, AuthModalComponent, ChatbotComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

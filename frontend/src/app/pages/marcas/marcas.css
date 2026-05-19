@@ -9,11 +9,15 @@
 .brands-hero{
     max-width: 1400px;
     margin: auto;
-    padding: 80px 40px 40px;
+    padding: 60px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
 }
 
 .hero-content{
-    max-width: 750px;
+    /* max-width removido para expandir con el grid */
 }
 
 .hero-badge{
@@ -43,6 +47,14 @@
     color: #64748b;
 }
 
+.hero-image img{
+    width: 100%;
+    border-radius: 30px;
+    object-fit: cover;
+    height: 500px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.12);
+}
+
 /* FILTERS */
 
 .brands-filters{
@@ -64,11 +76,16 @@
     font-weight: 600;
 }
 
-.filter:hover,
-.filter.active{
-    background: #0f172a;
+.filter:hover{
+    background: #101a2e;
     color: white;
-    border-color: #0f172a;
+    border-color: #101a2e;
+}
+
+.filter.active{
+    background: #1a2a4a;
+    color: white;
+    border-color: #1a2a4a;
 }
 
 /* GRID */
@@ -119,7 +136,7 @@
 
 .brand-card button{
     border: none;
-    background: #0f172a;
+    background: #0056b3;
     color: white;
     padding: 14px 24px;
     border-radius: 14px;
@@ -129,12 +146,16 @@
 }
 
 .brand-card button:hover{
-    background: #ff6b00;
+    background: #004085;
 }
 
 /* RESPONSIVE */
 
 @media(max-width: 992px){
+
+    .brands-hero{
+        grid-template-columns: 1fr;
+    }
 
     .hero-content h1{
         font-size: 3rem;
@@ -145,7 +166,7 @@
 @media(max-width: 768px){
 
     .brands-hero{
-        padding: 50px 20px 30px;
+        padding: 40px 20px;
     }
 
     .brands-filters{
@@ -158,6 +179,10 @@
 
     .hero-content h1{
         font-size: 2.3rem;
+    }
+
+    .hero-image img{
+        height: 350px;
     }
 
 }
