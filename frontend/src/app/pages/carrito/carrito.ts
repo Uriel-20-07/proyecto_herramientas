@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 
 @Component({
@@ -21,53 +21,33 @@ export class CarritoComponent {
     'equipos médicos': 'assets/img/producto2.png'
   };
 
-  constructor(private readonly cartService: CartService) {}
+  constructor(
+    private readonly cartService: CartService,
+    private readonly router: Router
+  ) {}
 
-  getItems() {
-    return this.cartService.getItems();
-  }
+  getItems() { return this.cartService.getItems(); }
 
   getProductImage(producto: any): string {
-    if (producto.imgUrl) {
-      return producto.imgUrl;
-    }
+    if (producto.imgUrl) return producto.imgUrl;
     const cat = producto.categoria?.nombre?.toLowerCase() || 'general';
     return this.imagenPorCategoria[cat] || 'assets/img/placeholder-pill.png';
   }
 
-  getSubtotal(): number {
-    return this.cartService.getTotal();
-  }
-
-  getCount(): number {
-    return this.cartService.getCount();
-  }
+  getSubtotal(): number { return this.cartService.getTotal(); }
+  getCount(): number { return this.cartService.getCount(); }
 
   increase(productoId: number): void {
     const item = this.getItems().find((entry) => entry.producto.idProducto === productoId);
-    if (item) {
-      this.cartService.add(item.producto);
-    }
+    if (item) this.cartService.add(item.producto);
   }
 
-  decrease(productoId: number): void {
-    this.cartService.decrease(productoId);
-  }
-
-  remove(productoId: number): void {
-    this.cartService.remove(productoId);
-  }
-
-  clear(): void {
-    this.cartService.clear();
-  }
+  decrease(productoId: number): void { this.cartService.decrease(productoId); }
+  remove(productoId: number): void { this.cartService.remove(productoId); }
+  clear(): void { this.cartService.clear(); }
 
   pagar(): void {
-    if (this.getCount() === 0) {
-      return;
-    }
-
-    alert(`Pago simulado realizado por S/ ${this.getSubtotal().toFixed(2)}`);
-    this.clear();
+    if (this.getCount() === 0) return;
+    this.router.navigate(['/pago']);
   }
 }

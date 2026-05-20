@@ -1,0 +1,252 @@
+<!-- ══════════════════ PANTALLA DE ÉXITO ══════════════════ -->
+<div class="exito-overlay" *ngIf="pagoExitoso">
+  <div class="exito-card">
+    <div class="exito-check-wrap">
+      <svg class="exito-check-svg" viewBox="0 0 52 52">
+        <circle class="check-circle" cx="26" cy="26" r="25" fill="none"/>
+        <path class="check-mark" fill="none" d="M14 27 l8 8 l16-16"/>
+      </svg>
+    </div>
+    <h2 class="exito-titulo">¡Pago finalizado correctamente!</h2>
+    <p class="exito-folio">Folio de compra: <strong>{{ folioGenerado }}</strong></p>
+    <div class="exito-detalle">
+      <div class="exito-fila">
+        <span>Total pagado</span>
+        <span class="exito-valor">S/ {{ total | number:'1.2-2' }}</span>
+      </div>
+      <div class="exito-fila">
+        <span>Envío a</span>
+        <span class="exito-valor">{{ direccionFinal }}</span>
+      </div>
+    </div>
+    <p class="exito-sub">Te enviaremos la confirmación a tu correo. Redirigiendo al catálogo...</p>
+    <div class="exito-barra-wrap">
+      <div class="exito-barra"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ FORMULARIO PAGO ══════════════════ -->
+<div class="pago-container" *ngIf="!pagoExitoso">
+  <header class="pago-header">
+    <div class="header-left">
+      <span class="secure-badge">Conexión Segura (TLS)</span>
+      <h1>Procesar Pedido</h1>
+    </div>
+    <a routerLink="/carrito" class="btn-regresar">← Volver al carrito</a>
+  </header>
+
+  <div class="pago-grid">
+    <!-- ════ FORMULARIOS ════ -->
+    <main class="panel-formularios">
+
+      <!-- PASO 1: ENTREGA -->
+      <section class="pago-seccion">
+        <div class="seccion-header">
+          <span class="paso-num">1</span>
+          <h2>Información de Entrega</h2>
+        </div>
+
+        <div class="aviso-lima">
+          <span></span>
+          <strong>Envíos solo dentro de Lima Metropolitana</strong>
+        </div>
+
+        <div class="form-row-doble">
+          <div class="form-group">
+            <label>Distrito <span class="req">*</span></label>
+            <select [(ngModel)]="formPago.distrito" class="form-input form-select">
+              <option value="" disabled>Selecciona tu distrito</option>
+              <option *ngFor="let d of distritosLima" [value]="d">{{ d }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Provincia / Departamento</label>
+            <input type="text" value="Lima / Lima" class="form-input" readonly />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dirección detallada <span class="req">*</span></label>
+          <input type="text" [(ngModel)]="formPago.direccionDetalle"
+            placeholder="Ej: Av. Arequipa 1234, Dpto 501" class="form-input" />
+          <span class="field-hint">Calle, número, piso / departamento</span>
+        </div>
+
+        <div class="form-group">
+          <label>Referencia <span class="label-opt">(opcional)</span></label>
+          <input type="text" [(ngModel)]="formPago.referencia"
+            placeholder="Ej: Edificio azul, frente al parque" class="form-input" />
+        </div>
+
+        <div class="direccion-preview" *ngIf="formPago.distrito && formPago.direccionDetalle">
+          <span></span>
+          <span>{{ formPago.direccionDetalle }}<span *ngIf="formPago.referencia"> — {{ formPago.referencia }}</span>, <strong>{{ formPago.distrito }}</strong>, Lima</span>
+        </div>
+      </section>
+
+      <!-- PASO 2: MÉTODO DE PAGO -->
+      <section class="pago-seccion">
+        <div class="seccion-header">
+          <span class="paso-num">2</span>
+          <h2>Método de Pago</h2>
+        </div>
+
+        <div class="metodos-tabs">
+          <button class="tab-btn" [class.active]="metodoSeleccionado === 'TARJETA'" (click)="seleccionarMetodo('TARJETA')">
+            Tarjeta Crédito/Débito
+          </button>
+          <button class="tab-btn" [class.active]="metodoSeleccionado === 'YAPE'" (click)="seleccionarMetodo('YAPE')">
+            Yape
+          </button>
+        </div>
+
+        <!-- TARJETA -->
+        <div *ngIf="metodoSeleccionado === 'TARJETA'" class="form-dinamico anim-fade">
+          <div class="tarjeta-indicador" *ngIf="tipoTarjeta">
+            <span class="tipo-badge">{{ tipoTarjeta }}</span>
+          </div>
+          <div class="form-group">
+            <label>Número de tarjeta</label>
+            <input type="text" [(ngModel)]="formPago.numeroTarjeta" (ngModelChange)="detectarTarjeta()"
+              maxlength="19" placeholder="0000 0000 0000 0000" class="form-input font-mono" />
+          </div>
+          <div class="form-group">
+            <label>Nombre del titular</label>
+            <input type="text" [(ngModel)]="formPago.nombreTarjeta"
+              placeholder="Como aparece en la tarjeta" class="form-input uppercase" />
+          </div>
+          <div class="form-row-doble">
+            <div class="form-group">
+              <label>Vencimiento (MM/AA)</label>
+              <input type="text" [(ngModel)]="formPago.expiracion" placeholder="MM/AA" maxlength="5" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>CVV / CVC</label>
+              <input type="password" [(ngModel)]="formPago.cvv" maxlength="4" placeholder="•••" class="form-input" />
+            </div>
+          </div>
+        </div>
+
+        <!-- YAPE -->
+        <div *ngIf="metodoSeleccionado === 'YAPE'" class="form-dinamico anim-fade yape-panel">
+
+          <!-- Paso 1 -->
+          <div *ngIf="yapePaso === 1">
+            <div class="yape-header-info">
+              <div class="yape-badge-logo">Yape</div>
+              <p>Te enviaremos un código de 6 dígitos a tu correo para confirmar el pago.</p>
+            </div>
+            <div class="form-group">
+              <label>Número de celular Yape <span class="req">*</span></label>
+              <div class="input-prefix-wrap">
+                <span class="input-prefix">+51</span>
+                <input type="text" [(ngModel)]="formPago.numeroCelular" maxlength="9"
+                  placeholder="9XX XXX XXX" class="form-input with-prefix font-mono" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Correo donde recibirás el código <span class="req">*</span></label>
+              <input type="email" [(ngModel)]="formPago.correoYape"
+                placeholder="tucorreo@gmail.com" class="form-input" />
+              <span class="field-hint">Revisa también tu carpeta de spam</span>
+            </div>
+            <button class="btn-enviar-codigo" (click)="enviarCodigoYape()" [disabled]="enviandoCodigo">
+              <span *ngIf="!enviandoCodigo">Enviar código de verificación</span>
+              <span *ngIf="enviandoCodigo">Enviando...</span>
+            </button>
+            <div *ngIf="mensajeExito" class="feedback-exito">{{ mensajeExito }}</div>
+          </div>
+
+          <!-- Paso 2 -->
+          <div *ngIf="yapePaso === 2">
+            <div class="cuenta-verificada">
+              <span class="badge-ok">✓ Código enviado a {{ correoDestino }}</span>
+              <button class="btn-link" (click)="yapePaso = 1">Cambiar</button>
+            </div>
+            <div class="sms-card">
+              <div class="sms-card-header">
+                <span class="sms-card-icon"></span>
+                <div>
+                  <strong>Yape BCP</strong>
+                  <p>Revisa tu correo con el asunto: <em>"Tu código de aprobación Yape"</em></p>
+                </div>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 20px;">
+              <label>Ingresa el código de 6 dígitos</label>
+              <input type="text" [(ngModel)]="formPago.tokenYape" maxlength="6"
+                placeholder="000000" class="form-input font-mono token-input" />
+              <span class="field-hint">El código es válido por 10 minutos</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="mensajeError" class="feedback-error">⚠ {{ mensajeError }}</div>
+      </section>
+    </main>
+
+    <!-- ════ BOLETA ════ -->
+    <aside class="panel-boleta">
+      <div class="boleta-header">
+        <h3>FarmaCode</h3>
+        <p class="fecha-boleta">Resumen de pedido</p>
+      </div>
+
+      <!-- PRODUCTOS -->
+      <div class="boleta-productos">
+        <p class="productos-titulo">Productos</p>
+        <div class="producto-item" *ngFor="let item of productosCarrito">
+          <div class="producto-info">
+            <span class="producto-nombre">{{ item.producto.nombre }}</span>
+            <span class="producto-cantidad">× {{ item.cantidad }}</span>
+          </div>
+          <span class="producto-precio">
+            S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}
+          </span>
+        </div>
+        <div *ngIf="productosCarrito.length === 0" class="sin-productos">
+          No se pudieron cargar los productos.
+        </div>
+      </div>
+
+      <!-- TOTALES -->
+      <div class="boleta-body">
+        <div class="resumen-linea">
+          <span>Subtotal</span>
+          <span>S/ {{ subtotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="resumen-linea">
+          <span>Envío</span>
+          <span class="envio-gratis">Gratis</span>
+        </div>
+
+        <div class="cupon-area">
+          <label>Código Promocional</label>
+          <div class="cupon-input-box">
+            <input type="text" [(ngModel)]="codigoCupon" placeholder="BIENVENIDA-XXXXX"
+              [disabled]="cuponAplicado" class="form-input cupon-input" />
+            <button (click)="aplicarCupon()" [disabled]="cuponAplicado" class="btn-aplicar">Canjear</button>
+          </div>
+          <p class="cupon-exito-msg" *ngIf="cuponAplicado"> Cupón {{ codigoAplicado }} aplicado (−30%)</p>
+        </div>
+
+        <div class="resumen-linea descuento" *ngIf="descuento > 0">
+          <span>Descuento</span>
+          <span>− S/ {{ descuento | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="boleta-footer">
+        <div class="total-linea">
+          <span>Total a pagar</span>
+          <span class="precio-final">S/ {{ total | number:'1.2-2' }}</span>
+        </div>
+        <button class="btn-pagar-checkout" (click)="ejecutarPago()">
+          Procesar Pago Seguro
+        </button>
+        <p class="legal-text">Transacción cifrada bajo estándar PCI-DSS.</p>
+      </div>
+    </aside>
+  </div>
+</div>
