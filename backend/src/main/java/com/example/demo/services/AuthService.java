@@ -1,7 +1,9 @@
 package com.example.demo.services;
 
+import com.example.demo.models.Cupon;
 import com.example.demo.models.PasswordResetToken;
 import com.example.demo.models.User;
+import com.example.demo.repositories.CuponRepository;
 import com.example.demo.repositories.PasswordResetTokenRepository;
 import com.example.demo.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
