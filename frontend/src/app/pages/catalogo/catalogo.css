@@ -94,7 +94,10 @@
 .hero-carousel {
     position: relative;
     height: 350px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+    background-image: url('/cuidate.png');
+    background-position: center right;
+    background-repeat: no-repeat;
+    background-size: cover;
     border-radius: 20px;
     overflow: hidden;
     margin-bottom: 50px;
@@ -120,14 +123,23 @@
 }
 
 .btn-banner {
-    background: var(--primary-orange);
+    background: #0056B3;
     color: white;
     border: none;
     padding: 12px 30px;
     border-radius: 30px;
     font-weight: bold;
     cursor: pointer;
-    transition: 0.3s;
+    transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+    margin-top: 150px;
+}
+
+.btn-banner:hover,
+.btn-banner:focus {
+    background: #004494;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,86,179,0.25);
+    outline: none;
 }
 
 /* --- Sección de Productos --- */
@@ -301,6 +313,17 @@
     .hero-carousel {
         padding: 0 24px;
         height: 300px;
+    }
+
+    /* Disable background image on small screens for readability */
+    .hero-carousel {
+        background-image: url('/cuidate.png');
+        background-position: center;
+        background-size: cover;
+    }
+
+    .carousel-text {
+        max-width: 100%;
     }
 
     .carousel-text h1 {

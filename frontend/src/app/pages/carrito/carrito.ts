@@ -64,9 +64,7 @@ export class CarritoComponent {
    * @returns URL de la imagen a mostrar.
    */
   getProductImage(producto: any): string {
-    if (producto.imgUrl) {
-      return producto.imgUrl;
-    }
+    if (producto.imgUrl) return producto.imgUrl;
     const cat = producto.categoria?.nombre?.toLowerCase() || 'general';
     return this.imagenPorCategoria[cat] || 'assets/img/placeholder-pill.png';
   }

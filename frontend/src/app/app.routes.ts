@@ -1,17 +1,11 @@
 import { Routes } from '@angular/router';
-
-import { BlogComponent } from './pages/blog/blog.component';
 import { InicioComponent } from './pages/inicio';
-
+import { BlogComponent } from './pages/blog/blog.component';
 import { CatalogoComponent } from './pages/catalogo/catalogo';
 import { CarritoComponent } from './pages/carrito/carrito';
-
-import { RecuperarContraseñaComponent } from './components/recuperar-contrasena/recuperar-contrasena.component';
-
 import { OfertasComponent } from './pages/ofertas/ofertas';
 import { MarcasComponent } from './pages/marcas/marcas';
 import { NosotrosComponent } from './pages/nosotros/nosotros';
-
 import { PerfilComponent } from './pages/perfil/perfil';
 import { PagoComponent } from './pages/pago/pago';
 import { AdminDashboardComponent } from './pages/dashboard/admin/admin.component';

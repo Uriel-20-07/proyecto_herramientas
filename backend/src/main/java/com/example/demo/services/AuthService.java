@@ -160,7 +160,7 @@ public class AuthService {
      */
     public String login(String email, String password) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-        
+
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
@@ -199,7 +199,7 @@ public class AuthService {
      */
     public void solicitarRecuperacionContraseña(String email) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-        
+
         if (usuarioOpt.isEmpty()) {
             // No revelamos si el email existe o no (seguridad)
             return;
@@ -236,7 +236,7 @@ public class AuthService {
      */
     public boolean validarTokenRecuperacion(String token) {
         Optional<PasswordResetToken> resetTokenOpt = passwordResetTokenRepository.findByToken(token);
-        
+
         if (resetTokenOpt.isEmpty()) {
             return false;
         }
@@ -260,7 +260,7 @@ public class AuthService {
      */
     public void cambiarContraseña(String token, String nuevaContraseña) {
         Optional<PasswordResetToken> resetTokenOpt = passwordResetTokenRepository.findByToken(token);
-        
+
         if (resetTokenOpt.isEmpty()) {
             throw new RuntimeException("Token inválido");
         }
@@ -300,7 +300,7 @@ public class AuthService {
      */
     public void cambiarContraseñaAutenticado(String email, String contraseñaActual, String nuevaContraseña) {
         Optional<User> usuarioOpt = userRepository.findByEmail(email);
-        
+
         if (usuarioOpt.isEmpty()) {
             throw new RuntimeException("Usuario no encontrado");
         }
