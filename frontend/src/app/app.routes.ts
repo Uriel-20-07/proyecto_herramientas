@@ -13,7 +13,6 @@ import { MarcasComponent } from './pages/marcas/marcas';
 import { NosotrosComponent } from './pages/nosotros/nosotros';
 
 import { PerfilComponent } from './pages/perfil/perfil';
-import { RecuperarContraseñaComponent } from './components/recuperar-contrasena/recuperar-contrasena.component';
 import { PagoComponent } from './pages/pago/pago';
 import { AdminDashboardComponent } from './pages/dashboard/admin/admin.component';
 import { VendedorDashboardComponent } from './pages/dashboard/vendedor/vendedor.component';
