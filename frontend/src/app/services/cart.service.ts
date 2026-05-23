@@ -5,22 +5,52 @@ import { ProductoApi } from './catalogo.service';
 import { AuthService } from './auth.service';
 import { AuthModalService } from './auth-modal.service';
 
+/**
+ * Interfaz que representa un ítem (línea) dentro del carrito de compras.
+ * Refleja la estructura de DetalleCarrito del backend.
+ */
 export interface CartItem {
-  idDetalleCarrito?: number;
-  producto: ProductoApi;
-  cantidad: number;
+  idDetalleCarrito?: number;  // ID del detalle en BD (opcional: no existe antes de guardar)
+  producto: ProductoApi;       // Datos completos del producto
+  cantidad: number;            // Unidades del producto en el carrito
 }
 
+/**
+ * Servicio del carrito de compras. Singleton compartido en toda la app.
+ * 
+ * Funcionalidades:
+ * - Sincroniza el carrito con el backend (cuando el usuario está autenticado).
+ * - Mantiene el estado reactivo del carrito con BehaviorSubject.
+ * - Persiste el carrito en localStorage como caché local.
+ * - Escucha cambios de autenticación para cargar/limpiar el carrito.
+ * - Si el usuario no está autenticado al intentar agregar, abre el modal de login.
+ * 
+ * Estrategia de sincronización:
+ * - Autenticado → las operaciones van al backend (fuente de verdad).
+ * - No autenticado → el carrito se limpia (no hay carrito local sin login).
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
+  /** URL base de la API del carrito en el backend. */
   private readonly apiUrl = 'http://localhost:8080/api/carrito';
+
+  /** Clave usada para persistir el carrito en localStorage. */
   private readonly storageKey = 'carrito';
+
+  /** BehaviorSubject con la lista actual de ítems del carrito. */
   private readonly itemsSubject = new BehaviorSubject<CartItem[]>([]);
 
+  /** Observable público al que los componentes se suscriben para mostrar el carrito. */
   readonly items$ = this.itemsSubject.asObservable();
 
+  /**
+   * Constructor: escucha cambios en el token de autenticación para sincronizar el carrito.
+   * 
+   * Cuando el usuario inicia sesión (token existe): carga el carrito desde el backend.
+   * Cuando el usuario cierra sesión (token null): limpia el estado local del carrito.
+   */
   constructor(
     private readonly http: HttpClient,
     private readonly authService: AuthService,
@@ -29,13 +59,19 @@ export class CartService {
     // Escuchar cambios de autenticación para cargar o limpiar el carrito
     this.authService.token$.subscribe((token) => {
       if (token) {
-        this.cargarCarritoServidor();
+        this.cargarCarritoServidor(); // Usuario logueado: sincronizar con backend
       } else {
-        this.clearLocalState();
+        this.clearLocalState();       // Usuario deslogueado: limpiar carrito local
       }
     });
   }
 
+  /**
+   * Construye los headers HTTP con el token JWT de autorización.
+   * Se incluye en todas las peticiones al endpoint /api/carrito (requiere autenticación).
+   *
+   * @returns HttpHeaders con el header "Authorization: Bearer <token>".
+   */
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({
@@ -43,24 +79,40 @@ export class CartService {
     });
   }
 
+  /**
+   * Carga el carrito desde el servidor y actualiza el estado local.
+   * Se llama automáticamente al iniciar sesión.
+   * En caso de error (backend no disponible), usa el carrito almacenado en localStorage.
+   */
   private cargarCarritoServidor(): void {
     this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).subscribe({
       next: (carrito) => {
         if (carrito && carrito.detalles) {
-          this.itemsSubject.next(carrito.detalles);
-          this.saveItemsToStorage(carrito.detalles);
+          this.itemsSubject.next(carrito.detalles);          // Actualizar estado reactivo
+          this.saveItemsToStorage(carrito.detalles);          // Guardar caché local
         }
       },
       error: (err) => {
         console.error('Error al cargar el carrito del servidor:', err);
+        // Fallback: usar los datos del localStorage si el servidor no responde
         this.itemsSubject.next(this.loadItemsFromStorage());
       }
     });
   }
 
+  /**
+   * Agrega un producto al carrito del usuario autenticado.
+   * 
+   * Si el usuario NO está autenticado: abre el modal de login en lugar de agregar.
+   * Si el producto ya está en el carrito: el backend incrementa la cantidad en 1.
+   * Si es nuevo: el backend crea una nueva línea de detalle.
+   *
+   * @param producto datos del producto a agregar al carrito.
+   */
   add(producto: ProductoApi): void {
+    // Verificar autenticación antes de operar
     if (!this.authService.isAuthenticated()) {
-      this.authModalService.open('login');
+      this.authModalService.open('login'); // Abrir modal de login
       return;
     }
 
@@ -78,6 +130,12 @@ export class CartService {
     });
   }
 
+  /**
+   * Disminuye en 1 la cantidad de un producto en el carrito.
+   * Si la cantidad llega a 0, el backend elimina la línea del carrito.
+   *
+   * @param productoId ID del producto a disminuir.
+   */
   decrease(productoId: number): void {
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open('login');
@@ -98,6 +156,11 @@ export class CartService {
     });
   }
 
+  /**
+   * Elimina completamente un producto del carrito (sin importar la cantidad).
+   *
+   * @param productoId ID del producto a eliminar.
+   */
   remove(productoId: number): void {
     if (!this.authService.isAuthenticated()) {
       this.authModalService.open('login');
@@ -118,9 +181,14 @@ export class CartService {
     });
   }
 
+  /**
+   * Vacía completamente el carrito del usuario.
+   * Si no está autenticado, simplemente limpia el estado local.
+   * Se llama automáticamente después de un pago exitoso.
+   */
   clear(): void {
     if (!this.authService.isAuthenticated()) {
-      this.clearLocalState();
+      this.clearLocalState(); // Sin sesión: solo limpiar localmente
       return;
     }
 
@@ -138,15 +206,30 @@ export class CartService {
     });
   }
 
+  /**
+   * Limpia el estado local del carrito (localStorage y BehaviorSubject).
+   * Se usa al cerrar sesión para que el carrito no persista entre usuarios.
+   */
   private clearLocalState(): void {
     this.saveItemsToStorage([]);
     this.itemsSubject.next([]);
   }
 
+  /**
+   * Retorna el total de unidades en el carrito (suma de cantidades de todos los ítems).
+   * Se muestra en el ícono del carrito en la navbar.
+   *
+   * @returns número total de unidades en el carrito.
+   */
   getCount(): number {
     return this.itemsSubject.value.reduce((total, item) => total + item.cantidad, 0);
   }
 
+  /**
+   * Calcula el subtotal del carrito (precio × cantidad de cada ítem).
+   *
+   * @returns suma total del carrito como número.
+   */
   getTotal(): number {
     return this.itemsSubject.value.reduce(
       (total, item) => total + Number(item.producto.precioVenta) * item.cantidad,
@@ -154,20 +237,37 @@ export class CartService {
     );
   }
 
+  /**
+   * Retorna una copia del array de ítems del carrito.
+   * Se usa en componentes que necesitan iterar los ítems sin suscribirse.
+   *
+   * @returns copia del array de CartItem.
+   */
   getItems(): CartItem[] {
-    return [...this.itemsSubject.value];
+    return [...this.itemsSubject.value]; // Spread para retornar copia (inmutabilidad)
   }
 
+  /**
+   * Carga los ítems del carrito desde localStorage.
+   * Usado como fallback cuando el backend no está disponible.
+   *
+   * @returns array de CartItem del localStorage, o [] si está vacío o inválido.
+   */
   private loadItemsFromStorage(): CartItem[] {
     const stored = localStorage.getItem(this.storageKey);
     if (!stored) return [];
     try {
       return JSON.parse(stored) as CartItem[];
     } catch {
-      return [];
+      return []; // Si el JSON está corrupto, retornar carrito vacío
     }
   }
 
+  /**
+   * Guarda los ítems del carrito en localStorage como JSON.
+   *
+   * @param items array de CartItem a persistir.
+   */
   private saveItemsToStorage(items: CartItem[]): void {
     localStorage.setItem(this.storageKey, JSON.stringify(items));
   }

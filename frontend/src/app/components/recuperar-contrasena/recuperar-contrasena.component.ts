@@ -40,7 +40,7 @@ export class RecuperarContraseñaComponent {
   initRequestForm(): void {
     this.step = 1;
     this.form = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9_.-]+\.[a-zA-Z]{2,}$/)]]
     });
   }
 
