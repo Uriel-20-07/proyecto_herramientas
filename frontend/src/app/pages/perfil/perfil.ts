@@ -50,7 +50,7 @@ export class PerfilComponent implements OnInit {
     this.infoForm = this.fb.group({
       nombre:         [user.nombre   || '', Validators.required],
       apellido:       [user.apellido || ''],
-      email:          [user.email    || '', [Validators.required, Validators.email]],
+      email:          [user.email    || '', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9_.-]+\.[a-zA-Z]{2,}$/)]],
       direccion_envio:[user.direccion_envio || '']
     });
 

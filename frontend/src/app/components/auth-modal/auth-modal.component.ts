@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { AdminService } from '../../services/admin.service';
 import { AuthModalMode, AuthModalService } from '../../services/auth-modal.service';
 
 @Component({
@@ -32,24 +34,28 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly authService: AuthService,
-    private readonly authModalService: AuthModalService
+    private readonly authModalService: AuthModalService,
+    private readonly adminService: AdminService,
+    private readonly router: Router
   ) {
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9_.-]+\.[a-zA-Z]{2,}$/;
+
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.pattern(emailPattern)]],
       password: ['', [Validators.required, Validators.minLength(6)]]
     });
 
     this.registroForm = this.formBuilder.group({
       nombre: ['', [Validators.required]],
       apellido: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.pattern(emailPattern)]],
       telefono: [''],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
     this.recoveryForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.pattern(emailPattern)]],
       token: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
@@ -166,8 +172,36 @@ export class AuthModalComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const email = this.loginControls['email'].value;
+    const password = this.loginControls['password'].value;
     this.loading = true;
-    this.authService.login(this.loginControls['email'].value, this.loginControls['password'].value).subscribe({
+
+    // Detectar si es un correo corporativo
+    if (email.endsWith('@correo_corp.com')) {
+      this.adminService.login(email, password).subscribe({
+        next: () => {
+          this.success = 'Sesión corporativa iniciada. Redirigiendo...';
+          this.loading = false;
+          const user = this.adminService.getCurrentUser();
+          setTimeout(() => {
+            this.close();
+            if (user && user.rol === 'admin') {
+              this.router.navigate(['/dashboard/admin']);
+            } else if (user && user.rol === 'vendedor') {
+              this.router.navigate(['/dashboard/vendedor']);
+            }
+          }, 800);
+        },
+        error: (err) => {
+          this.error = err.error?.error || 'Credenciales corporativas incorrectas';
+          this.loading = false;
+        }
+      });
+      return;
+    }
+
+    // Flujo de login para clientes normales
+    this.authService.login(email, password).subscribe({
       next: () => {
         this.success = 'Sesión iniciada correctamente.';
         this.loading = false;

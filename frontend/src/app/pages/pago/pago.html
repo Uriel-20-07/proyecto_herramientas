@@ -114,12 +114,12 @@
           <div class="form-group">
             <label>Nombre del titular</label>
             <input type="text" [(ngModel)]="formPago.nombreTarjeta"
-              placeholder="Como aparece en la tarjeta" class="form-input uppercase" />
+              placeholder="Nombre del titular" class="form-input uppercase" />
           </div>
           <div class="form-row-doble">
             <div class="form-group">
               <label>Vencimiento (MM/AA)</label>
-              <input type="text" [(ngModel)]="formPago.expiracion" placeholder="MM/AA" maxlength="5" class="form-input" />
+              <input type="text" [(ngModel)]="formPago.expiracion" (input)="formatearVencimiento($event)" placeholder="MM/AA" maxlength="5" class="form-input" />
             </div>
             <div class="form-group">
               <label>CVV / CVC</label>
@@ -218,7 +218,9 @@
         </div>
         <div class="resumen-linea">
           <span>Envío</span>
-          <span class="envio-gratis">Gratis</span>
+          <span [class.envio-gratis]="costoEnvio === 0">
+            {{ costoEnvio === 0 ? 'Gratis' : 'S/ ' + (costoEnvio | number:'1.2-2') }}
+          </span>
         </div>
 
         <div class="cupon-area">
@@ -228,8 +230,8 @@
               [disabled]="cuponAplicado" class="form-input cupon-input" />
             <button (click)="aplicarCupon()" [disabled]="cuponAplicado" class="btn-aplicar">Canjear</button>
           </div>
-          <p class="cupon-exito-msg" *ngIf="cuponAplicado"> Cupón {{ codigoAplicado }} aplicado (−30%)</p>
         </div>
+        <p class="cupon-exito-msg" *ngIf="cuponAplicado"> Cupón {{ codigoAplicado }} aplicado (−30%)</p>
 
         <div class="resumen-linea descuento" *ngIf="descuento > 0">
           <span>Descuento</span>

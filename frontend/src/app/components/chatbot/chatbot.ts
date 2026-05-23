@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 @Component({
@@ -7,8 +7,21 @@ import { isPlatformBrowser } from '@angular/common';
   template: '',
   styles: []
 })
-export class ChatbotComponent implements OnInit {
+export class ChatbotComponent implements OnInit, OnDestroy {
   constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
+
+  ngOnDestroy() {
+    if (isPlatformBrowser(this.platformId)) {
+      const chatElement = document.querySelector('n8n-chat') || document.querySelector('.n8n-chat');
+      if (chatElement) {
+        chatElement.remove();
+      }
+      const script = document.getElementById('n8n-chat-script');
+      if (script) {
+        script.remove();
+      }
+    }
+  }
 
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
