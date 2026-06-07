@@ -40,6 +40,10 @@ public class PagoService {
     /** Repositorio de detalles de pedido (ítems de la orden). */
     @Autowired private DetallePedidoRepository detallePedidoRepository;
 
+    /** Repositorio de productos del catálogo. */
+    @Autowired private ProductoRepository productoRepository;
+
+
     /** Servicio de correo electrónico para notificaciones. */
     @Autowired private EmailService emailService;
 
@@ -98,13 +102,23 @@ public class PagoService {
         // 5. Crear los detalles del pedido (una línea por cada producto del carrito)
         List<DetallePedido> detallesGuardados = new ArrayList<>();
         for (DetalleCarrito detCart : carrito.getDetalles()) {
+            Producto producto = detCart.getProducto();
+            int cantidadComprada = detCart.getCantidad();
+
+            // Disminuir el stock del producto
+            if (producto.getStock() < cantidadComprada) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
+            }
+            producto.setStock(producto.getStock() - cantidadComprada);
+            productoRepository.save(producto);
+
             DetallePedido detPed = new DetallePedido();
             detPed.setPedido(pedido);
-            detPed.setProducto(detCart.getProducto());
-            detPed.setCantidad(detCart.getCantidad());
+            detPed.setProducto(producto);
+            detPed.setCantidad(cantidadComprada);
             // Guardar el precio al momento de la compra (precio histórico)
             // Importante: el precio podría cambiar en el futuro, este snapshot lo preserva
-            detPed.setPrecioHistorico(detCart.getProducto().getPrecioVenta());
+            detPed.setPrecioHistorico(producto.getPrecioVenta());
             detPed = detallePedidoRepository.save(detPed);
             detallesGuardados.add(detPed);
         }

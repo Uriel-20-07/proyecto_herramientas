@@ -93,7 +93,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
         script.text = `
           import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
           createChat({
-            webhookUrl: 'https://fanoboi.app.n8n.cloud/webhook/6861956f-322d-4200-8c20-5b2a6d0b846f/chat',
+            webhookUrl: 'https://fanitoboi.app.n8n.cloud/webhook/6861956f-322d-4200-8c20-5b2a6d0b846f/chat',
             showWelcomeScreen: true,
             defaultLanguage: 'es',
             initialMessages: [

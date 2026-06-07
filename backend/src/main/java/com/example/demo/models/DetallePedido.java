@@ -14,15 +14,15 @@ import java.math.BigDecimal;
 public class DetallePedido {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_detalle_pedido")
+    @Column(name = "id")
     private Integer idDetallePedido;
 
     @ManyToOne
-    @JoinColumn(name = "id_pedido", referencedColumnName = "id_pedido")
+    @JoinColumn(name = "pedido_id", referencedColumnName = "id_pedido")
     private Pedido pedido;
 
     @ManyToOne
-    @JoinColumn(name = "id_producto")
+    @JoinColumn(name = "producto_id")
     private Producto producto;
 
     private Integer cantidad;

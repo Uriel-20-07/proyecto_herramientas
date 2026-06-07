@@ -57,6 +57,6 @@ public class Producto {
      * Stock mínimo = 0 (no puede ser negativo).
      * Valor por defecto: 0 (sin stock al crear el producto).
      */
-    @Column(name = "stock", nullable = false)
+    @Column(name = "stock", nullable = false, columnDefinition = "integer default 0")
     private Integer stock = 0;
 }

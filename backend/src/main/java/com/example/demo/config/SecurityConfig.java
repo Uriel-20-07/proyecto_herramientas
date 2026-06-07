@@ -34,11 +34,11 @@ public class SecurityConfig {
      * - CORS habilitado con la configuración definida en {@link WebConfig}.
      * - Política de sesión STATELESS: no se crea ni usa HttpSession.
      * - Reglas de autorización por endpoint:
-     *     * /api/auth/**          → público (registro, login, recuperación de contraseña).
-     *     * /api/admin/auth/**    → público (login de administradores).
-     *     * /api/admin/**         → requiere autenticación (JWT válido).
-     *     * /api/carrito/**       → requiere autenticación (JWT válido).
-     *     * Cualquier otra ruta   → pública.
+     * * /api/auth/** → público (registro, login, recuperación de contraseña).
+     * * /api/admin/auth/** → público (login de administradores).
+     * * /api/admin/** → requiere autenticación (JWT válido).
+     * * /api/carrito/** → requiere autenticación (JWT válido).
+     * * Cualquier otra ruta → pública.
      * - El filtro JWT se ejecuta ANTES del filtro de usuario/contraseña estándar.
      *
      * @param http objeto configurador de seguridad HTTP.
@@ -56,11 +56,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Define qué endpoints requieren autenticación
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()          // Rutas públicas de usuario
-                        .requestMatchers("/api/admin/auth/**").permitAll()    // Login de administrador (público)
-                        .requestMatchers("/api/admin/**").authenticated()     // Panel admin (requiere JWT)
-                        .requestMatchers("/api/carrito/**").authenticated()   // Protegemos el carrito
-                        .anyRequest().permitAll()                             // Resto de rutas: públicas
+                        .requestMatchers("/api/auth/**").permitAll() // Rutas públicas de usuario
+                        .requestMatchers("/api/admin/auth/**").permitAll() // Login de administrador (público)
+                        .requestMatchers("/api/admin/**").authenticated() // Panel admin (requiere JWT)
+                        .requestMatchers("/api/carrito/**").authenticated() // Protegemos el carrito
+                        .requestMatchers("/api/pedidos/**").authenticated() // Protegemos el historial de pedidos
+                        .anyRequest().permitAll() // Resto de rutas: públicas
                 )
                 // Agrega el filtro JWT antes del filtro estándar de usuario/contraseña
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

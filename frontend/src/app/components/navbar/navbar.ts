@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthModalService } from '../../services/auth-modal.service';
@@ -16,6 +16,7 @@ import { CartService } from '../../services/cart.service';
 export class NavbarComponent {
   readonly currentUser$;
   readonly cartCount$;
+  dropdownAbierto = false;
   categorias = [
     'Todo',
     'MEDICAMENTOS',
@@ -66,6 +67,27 @@ export class NavbarComponent {
     }
 
     this.router.navigate(['/catalogo'], { queryParams });
+  }
+
+  seleccionarCategoria(cat: string): void {
+    const queryParams: Record<string, string> = {};
+
+    if (cat !== 'Todo') {
+      queryParams['categoria'] = cat;
+    }
+
+    this.router.navigate(['/catalogo'], { queryParams });
+    this.dropdownAbierto = false;
+  }
+
+  toggleDropdown(event: Event): void {
+    event.stopPropagation();
+    this.dropdownAbierto = !this.dropdownAbierto;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    this.dropdownAbierto = false;
   }
 
   logout(): void {

@@ -3,13 +3,16 @@ import { InicioComponent } from './pages/inicio';
 import { BlogComponent } from './pages/blog/blog.component';
 import { CatalogoComponent } from './pages/catalogo/catalogo';
 import { CarritoComponent } from './pages/carrito/carrito';
-import { OfertasComponent } from './pages/ofertas/ofertas';
 import { MarcasComponent } from './pages/marcas/marcas';
 import { NosotrosComponent } from './pages/nosotros/nosotros';
 import { PerfilComponent } from './pages/perfil/perfil';
 import { PagoComponent } from './pages/pago/pago';
 import { AdminDashboardComponent } from './pages/dashboard/admin/admin.component';
 import { VendedorDashboardComponent } from './pages/dashboard/vendedor/vendedor.component';
+import { RecuperarContraseñaComponent } from './components/recuperar-contrasena/recuperar-contrasena.component';
+import { PedidosComponent } from './pages/pedidos/pedidos';
+
+
 
 /**
  * Configuración de rutas de la aplicación Angular.
@@ -52,7 +55,6 @@ export const routes: Routes = [
   { path: 'pago', component: PagoComponent }, // Proceso de checkout
 
   // Páginas informativas
-  { path: 'ofertas', component: OfertasComponent },
   { path: 'marcas', component: MarcasComponent },
   { path: 'nosotros', component: NosotrosComponent },
 
@@ -67,7 +69,7 @@ export const routes: Routes = [
   { path: 'login', redirectTo: '', pathMatch: 'full' },     // Login es un modal, no página
   { path: 'registro', redirectTo: '', pathMatch: 'full' },  // Registro es un modal, no página
   { path: 'favoritos', redirectTo: '', pathMatch: 'full' }, // TODO: implementar favoritos
-  { path: 'pedidos', redirectTo: '', pathMatch: 'full' },   // TODO: implementar historial de pedidos
+  { path: 'pedidos', component: PedidosComponent },
 
   // Wildcard: cualquier ruta no definida → redirige a inicio
   { path: '**', redirectTo: '', pathMatch: 'full' },

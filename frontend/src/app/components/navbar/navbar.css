@@ -434,6 +434,56 @@
     }
 }
 
+/* ── DROPDOWN CATEGORIAS ──────────────── */
+.cats-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+    align-self: stretch;
+}
+
+.cats-dropdown-wrapper .cats-btn {
+    height: 100%;
+}
+
+.cats-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1001;
+    min-width: 220px;
+    background: #1a2a4a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.cats-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 11.5px 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+    text-transform: capitalize;
+}
+
+.cats-dropdown-item:first-letter {
+    text-transform: uppercase;
+}
+
+.cats-dropdown-item:hover {
+    background: #ea580c;
+    color: #ffffff;
+}
+
 .bn-links {
     display: flex;
     align-items: stretch;
@@ -476,34 +526,6 @@
     }
 }
 
-.bn-promo {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-left: auto;
-    background: rgba(234, 88, 12, 0.12);
-    border: 1px solid rgba(234, 88, 12, 0.28);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.8);
-    white-space: nowrap;
-    align-self: center;
-    font-family: inherit;
-
-    .promo-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #ea580c;
-        flex-shrink: 0;
-    }
-
-    strong {
-        color: #fdba74;
-        font-weight: 700;
-    }
-}
 
 /* ── RESPONSIVE ───────────────────────── */
 @media (max-width: 1024px) {
@@ -515,9 +537,6 @@
         display: none;
     }
 
-    .bn-promo {
-        display: none;
-    }
 }
 
 @media (max-width: 768px) {
