@@ -7,56 +7,104 @@
         </div>
     </section>
 
+    <!-- ── FILTROS AVANZADOS ──────────────────────────────────────────────── -->
     <section class="filtros-section">
-        <div class="categorias-bar">
-            <button
-                type="button"
-                class="categoria-chip"
-                [class.active]="categoriaSeleccionadaId === null"
-                (click)="seleccionarCategoria(null)"
-            >
-                Todas
-            </button>
+        <div class="filtros-row">
+            <!-- Categorías -->
+            <div class="categorias-bar">
+                <button type="button" class="categoria-chip"
+                    [class.active]="categoriaSeleccionadaId === null"
+                    (click)="seleccionarCategoria(null)">
+                    Todas
+                </button>
+                <button type="button" class="categoria-chip"
+                    *ngFor="let categoria of categorias"
+                    [class.active]="categoriaSeleccionadaId === categoria.idCategoria"
+                    (click)="seleccionarCategoria(categoria.idCategoria)">
+                    {{ categoria.nombre }}
+                </button>
+            </div>
 
-            <button
-                type="button"
-                class="categoria-chip"
-                *ngFor="let categoria of categorias"
-                [class.active]="categoriaSeleccionadaId === categoria.idCategoria"
-                (click)="seleccionarCategoria(categoria.idCategoria)"
-            >
-                {{ categoria.nombre }}
-            </button>
+            <!-- Controles de ordenamiento y precio -->
+            <div class="filtros-controles">
+                <div class="filtro-group">
+                    <label class="filtro-label">Ordenar por</label>
+                    <select class="filtro-select" [(ngModel)]="ordenamiento" (change)="aplicarOrdenamiento()">
+                        <option value="relevancia">Relevancia</option>
+                        <option value="precio_asc">Precio: menor a mayor</option>
+                        <option value="precio_desc">Precio: mayor a menor</option>
+                        <option value="nombre_asc">Nombre A-Z</option>
+                    </select>
+                </div>
+
+                <div class="filtro-group">
+                    <label class="filtro-label">Precio máx: S/ {{ precioMaximo }}</label>
+                    <input type="range" class="filtro-range"
+                        min="0" [max]="precioMaximoTotal"
+                        [(ngModel)]="precioMaximo"
+                        (input)="aplicarFiltros()" />
+                </div>
+
+                @if (hayFiltrosActivos()) {
+                    <button class="btn-limpiar-filtros" (click)="limpiarFiltros()">
+                        ✕ Limpiar filtros
+                    </button>
+                }
+            </div>
         </div>
     </section>
 
+    <!-- Mensaje de estado -->
     @if (mensaje) {
-        <section class="mensaje-panel">
-            {{ mensaje }}
-        </section>
+        <section class="mensaje-panel">{{ mensaje }}</section>
     }
 
+    <!-- ── RESULTADOS ──────────────────────────────────────────────────────── -->
     <section class="productos-section">
         <div class="section-header">
             <div class="header-title">
-                <h2>Elegidos para ti</h2>
+                <h2>
+                    @if (busqueda) {
+                        Resultados para "{{ busqueda }}"
+                        <span class="resultados-count">({{ productosFiltrados.length }})</span>
+                    } @else {
+                        Elegidos para ti
+                    }
+                </h2>
                 <div class="header-line"></div>
             </div>
-            <button type="button" class="ver-mas ver-mas-btn" (click)="limpiarFiltros()">Ver todo el catálogo →</button>
+            <button type="button" class="ver-mas ver-mas-btn" (click)="limpiarFiltros()">Ver todo →</button>
         </div>
+
         @if (cargando) {
-            <div class="estado-vacio">Cargando productos...</div>
+            <div class="estado-vacio">
+                <div class="spinner"></div>
+                Buscando productos...
+            </div>
         } @else if (productosFiltrados.length === 0) {
-            <div class="estado-vacio">No encontramos productos para esos filtros.</div>
+            <div class="estado-vacio no-resultados">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none"
+                    stroke="#ccc" stroke-width="1.5" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <p>No encontramos productos para <strong>"{{ busqueda }}"</strong>.</p>
+                <button class="btn-limpiar-filtros" (click)="limpiarFiltros()">Ver todos los productos</button>
+            </div>
         } @else {
             <div class="productos-grid">
                 <div class="producto-card" *ngFor="let producto of productosFiltrados; trackBy: trackByProductoId">
                     <div class="producto-imagen-container">
                         <img [src]="producto.imagen" [alt]="producto.nombre" class="producto-img">
+                        @if (producto.etiquetaPromo) {
+                            <span class="promo-badge" [class.bg-red]="producto.colorPromo === 'red'"
+                                [class.bg-orange]="producto.colorPromo === 'orange'">
+                                {{ producto.etiquetaPromo }}
+                            </span>
+                        }
                     </div>
                     <div class="producto-info">
                         <span class="producto-marca">FARMACODE</span>
-                        <h3 class="producto-nombre">{{ producto.nombre }}</h3>
+                        <h3 class="producto-nombre" [innerHTML]="resaltarTexto(producto.nombre)"></h3>
                         <p class="producto-unidad">{{ producto.descripcion }}</p>
                         <div class="tag-interesar">
                             <span class="star-icon">★</span> {{ producto.categoriaNombre }}
@@ -70,8 +118,8 @@
                     </div>
                     <button type="button" class="btn-agregar" (click)="agregarProducto(producto)">
                         <span>Agregar</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor"
-                            stroke-width="2" viewBox="0 0 24 24">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none"
+                            stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M12 5v14M5 12h14" />
                         </svg>
                     </button>

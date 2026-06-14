@@ -157,6 +157,7 @@
 /* ── SEARCH ───────────────────────────── */
 .fc-search-wrapper {
     flex: 1;
+    position: relative;
 }
 
 .fc-search {
@@ -527,8 +528,125 @@
 }
 
 
-/* ── RESPONSIVE ───────────────────────── */
-@media (max-width: 1024px) {
+/* ── AUTOCOMPLETE (Algolia) ───────────────────────────────────────────── */
+.navbar-autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    z-index: 1100;
+    overflow: hidden;
+    animation: navbarDropdownFade 0.15s ease;
+}
+
+@keyframes navbarDropdownFade {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.navbar-autocomplete-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.navbar-autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.navbar-autocomplete-item:hover {
+    background: #f5f7ff;
+}
+
+.navbar-sug-thumb {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f0f3fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.navbar-sug-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.navbar-sug-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.navbar-sug-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3436;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.navbar-sug-categoria {
+    font-size: 11px;
+    color: #999;
+}
+
+.navbar-sug-precio {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2b78e4;
+    white-space: nowrap;
+}
+
+.navbar-sug-add-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: #e8edff;
+    color: #2b78e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.navbar-sug-add-btn:hover {
+    background: #2b78e4;
+    color: #ffffff;
+}
+
+.navbar-sug-add-btn:active {
+    transform: scale(0.92);
+}
+
+@media (max-width: 768px) {
+    .navbar-autocomplete-dropdown {
+        position: fixed;
+        top: 110px;
+        left: 14px;
+        right: 14px;
+    }
+}
+
+
     .search-cat {
         display: none;
     }
@@ -537,7 +655,7 @@
         display: none;
     }
 
-}
+
 
 @media (max-width: 768px) {
     .fc-topbar {

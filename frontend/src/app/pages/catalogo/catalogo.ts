@@ -1,78 +1,65 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { CatalogoService, CategoriaApi, ProductoApi } from '../../services/catalogo.service';
+import { AlgoliaService, AlgoliaProducto } from '../../services/algolia.service';
+import { Subject, takeUntil } from 'rxjs';
 
 /**
  * Interfaz interna para representar un producto adaptado a la vista del catálogo.
- * Transforma los datos de la API (ProductoApi) al formato que necesita el template HTML.
  */
 interface ProductoVista {
   id: number;
   nombre: string;
   descripcion: string;
   precio: number;
-  categoriaNombre: string;       // Nombre de la categoría del producto
-  imagen: string;                // URL de la imagen (API o imagen local por categoría)
-  etiquetaPromo?: string;        // Etiqueta de promoción: "Oferta especial", "Más vendido", etc.
-  colorPromo?: 'orange' | 'red'; // Color de la etiqueta de promoción
+  categoriaNombre: string;
+  imagen: string;
+  etiquetaPromo?: string;
+  colorPromo?: 'orange' | 'red';
 }
 
 /**
- * Componente de la página del catálogo de productos.
- * 
- * Funcionalidades:
- * - Carga productos y categorías desde el backend al inicializar.
- * - Permite filtrar por categoría (sidebar de filtros).
- * - Permite buscar por nombre/descripción/categoría.
- * - Soporta filtros desde URL query params (?q=paracetamol&categoria=Analgésicos).
- * - Agrega productos al carrito (con modal de login si no está autenticado).
- * - Asigna imágenes locales si el producto no tiene imagen en la API.
- * - Asigna etiquetas de promoción según la categoría del producto.
- * 
- * Standalone component: no necesita NgModule, importa CommonModule directamente.
+ * Componente del catálogo.
+ *
+ * La barra de búsqueda con autocomplete de Algolia vive ahora en el navbar
+ * (ver NavbarComponent). Este componente:
+ * - Recibe el término de búsqueda vía query param `?q=` y lo consulta en
+ *   Algolia para mostrar los resultados correspondientes.
+ * - Mantiene los filtros propios del catálogo: categoría, precio máximo
+ *   y ordenamiento (relevancia, precio asc/desc, nombre A-Z).
+ * - Resalta el término buscado en los nombres de los resultados.
  */
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './catalogo.html',
   styleUrls: ['./catalogo.css']
 })
-export class CatalogoComponent implements OnInit {
-  /** Lista de todas las categorías disponibles (para el filtro de sidebar). */
+export class CatalogoComponent implements OnInit, OnDestroy {
+
+  // ─── Estado principal ─────────────────────────────────────────────────────
   categorias: CategoriaApi[] = [];
-
-  /** Lista completa de productos transformados al formato de vista. */
   productos: ProductoVista[] = [];
-
-  /** Lista de productos que se muestran actualmente (tras aplicar filtros). */
   productosFiltrados: ProductoVista[] = [];
-
-  /** ID de la categoría seleccionada en el filtro. null = "Todas las categorías". */
   categoriaSeleccionadaId: number | null = null;
-
-  /** Término de búsqueda ingresado por el usuario en el campo de búsqueda. */
   busqueda = '';
-
-  /** Indica si los datos están siendo cargados desde el servidor. */
   cargando = true;
-
-  /** Mensaje de estado para el usuario (producto agregado, errores, etc.). */
   mensaje = '';
 
-  /** Query param de búsqueda proveniente de la URL (?q=...). */
+  // ─── Filtros avanzados ────────────────────────────────────────────────────
+  ordenamiento: 'relevancia' | 'precio_asc' | 'precio_desc' | 'nombre_asc' = 'relevancia';
+  precioMaximo = 500;
+  precioMaximoTotal = 500;
+
+  // ─── Internos ─────────────────────────────────────────────────────────────
   private queryBusqueda = '';
-
-  /** Query param de categoría proveniente de la URL (?categoria=...). */
   private queryCategoria = '';
+  private destroy$ = new Subject<void>();
 
-  /**
-   * Mapa de imagen local por nombre de categoría.
-   * Se usa cuando el producto no tiene URL de imagen en la API.
-   * Las claves son los nombres de categoría en minúsculas.
-   */
   private readonly imagenPorCategoria: Record<string, string> = {
     medicamentos: 'assets/img/producto1.png',
     'cuidado personal': 'assets/img/producto2.png',
@@ -83,47 +70,41 @@ export class CatalogoComponent implements OnInit {
     'equipos médicos': 'assets/img/producto2.png'
   };
 
-  /**
-   * @param catalogoService servicio para cargar productos y categorías del backend.
-   * @param cartService     servicio del carrito para agregar productos.
-   * @param route           servicio para leer los query params de la URL.
-   */
   constructor(
     private readonly catalogoService: CatalogoService,
     private readonly cartService: CartService,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly algoliaService: AlgoliaService
   ) {}
 
-  /**
-   * Inicialización del componente.
-   * Suscribe a los query params de la URL para cargar datos con filtros previos
-   * cuando el usuario navega desde la navbar o la página de inicio con búsqueda/categoría.
-   */
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe((params) => {
-      this.queryBusqueda = params.get('q') ?? '';           // Parámetro de búsqueda
-      this.queryCategoria = params.get('categoria') ?? '';  // Parámetro de categoría
-
-      this.cargarDatos(); // Recargar datos cuando cambien los query params
+    // Suscripción a query params (búsqueda y categoría llegan desde el navbar)
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
+      this.queryBusqueda = params.get('q') ?? '';
+      this.queryCategoria = params.get('categoria') ?? '';
+      this.cargarDatos();
     });
   }
 
-  /**
-   * Carga categorías y productos desde el backend de forma encadenada.
-   * Primero carga las categorías (para poder mapear productos), luego los productos.
-   * Al finalizar, aplica los filtros provenientes de la URL.
-   */
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ─── Carga de datos desde el backend ─────────────────────────────────────
+
   cargarDatos(): void {
     this.cargando = true;
     this.catalogoService.getCategorias().subscribe({
       next: (categorias) => {
         this.categorias = categorias;
-        // Cargar productos después de tener las categorías (dependencia de datos)
         this.catalogoService.getProductos().subscribe({
           next: (productos) => {
-            // Transformar cada ProductoApi al formato interno ProductoVista
-            this.productos = productos.map((producto) => this.mapProducto(producto));
-            this.aplicarFiltrosDesdeUrl(); // Aplicar filtros de la URL si existen
+            this.productos = productos.map((p) => this.mapProducto(p));
+            // Calcular el precio máximo del catálogo para el slider
+            this.precioMaximoTotal = Math.ceil(Math.max(...this.productos.map(p => p.precio), 500));
+            this.precioMaximo = this.precioMaximoTotal;
+            this.aplicarFiltrosDesdeUrl();
             this.cargando = false;
           },
           error: () => {
@@ -139,59 +120,148 @@ export class CatalogoComponent implements OnInit {
     });
   }
 
+  // ─── Búsqueda con Algolia (vía ?q= desde el navbar) ───────────────────────
+
   /**
-   * Ejecuta la búsqueda con el texto actual del campo de búsqueda.
-   * Llamado por el botón "Buscar" o al presionar Enter en el template.
+   * Ejecuta la búsqueda completa con Algolia para el término actual.
+   * Reemplaza la lista de productos visibles con los resultados de Algolia,
+   * filtrados por precio y ordenados según el criterio seleccionado.
    */
   buscar(): void {
-    this.aplicarFiltros();
+    if (!this.busqueda.trim()) {
+      // Sin texto: mostrar todos los productos locales
+      this.productosFiltrados = [...this.productos];
+      this.aplicarFiltros();
+      return;
+    }
+
+    this.cargando = true;
+    this.algoliaService.buscar(this.busqueda, {
+      hitsPerPage: 100,
+      categoriaId: this.categoriaSeleccionadaId ?? undefined
+    }).subscribe({
+      next: (resultados) => {
+        // Convertir AlgoliaProducto → ProductoVista
+        const productosAlgolia = resultados.map((hit) => this.mapAlgoliaHit(hit));
+        this.productosFiltrados = this.filtrarPorPrecio(productosAlgolia);
+        this.ordenarProductos();
+        this.cargando = false;
+      },
+      error: () => {
+        // Fallback: búsqueda local si Algolia falla
+        this.aplicarFiltros();
+        this.cargando = false;
+      }
+    });
   }
 
-  /**
-   * Selecciona o deselecciona una categoría para filtrar los productos.
-   *
-   * @param idCategoria ID de la categoría a seleccionar, o null para "Todas".
-   */
+  // ─── Filtros avanzados ────────────────────────────────────────────────────
+
   seleccionarCategoria(idCategoria: number | null): void {
     this.categoriaSeleccionadaId = idCategoria;
-    this.aplicarFiltros();
+    // Si hay texto buscado, relanzar búsqueda con filtro de categoría
+    if (this.busqueda.trim()) {
+      this.buscar();
+    } else {
+      this.aplicarFiltros();
+    }
   }
 
-  /**
-   * Limpia todos los filtros activos y vuelve a mostrar todos los productos.
-   */
+  aplicarOrdenamiento(): void {
+    this.ordenarProductos();
+  }
+
   limpiarFiltros(): void {
     this.busqueda = '';
     this.categoriaSeleccionadaId = null;
     this.queryBusqueda = '';
     this.queryCategoria = '';
-    this.productosFiltrados = [...this.productos]; // Mostrar todos los productos
+    this.ordenamiento = 'relevancia';
+    this.precioMaximo = this.precioMaximoTotal;
+    this.productosFiltrados = [...this.productos];
+  }
+
+  hayFiltrosActivos(): boolean {
+    return !!(
+      this.busqueda ||
+      this.categoriaSeleccionadaId !== null ||
+      this.precioMaximo < this.precioMaximoTotal ||
+      this.ordenamiento !== 'relevancia'
+    );
   }
 
   /**
-   * Agrega un producto al carrito del usuario.
-   * 
-   * Convierte el ProductoVista de vuelta a ProductoApi para el CartService.
-   * Si el usuario no está autenticado, el CartService abrirá el modal de login.
-   * Muestra un mensaje de confirmación que desaparece tras 2.5 segundos.
-   *
-   * @param producto el producto de la vista a agregar al carrito.
+   * Aplica filtros locales (categoría + precio) sobre la lista de productos.
+   * Se usa cuando no hay texto de búsqueda (Algolia no es necesario).
    */
+  aplicarFiltros(): void {
+    const termino = this.busqueda.trim().toLowerCase();
+
+    let filtrados = this.productos.filter((p) => {
+      const coincideCategoria =
+        this.categoriaSeleccionadaId === null ||
+        this.categorias.find((c) => c.idCategoria === this.categoriaSeleccionadaId)?.nombre === p.categoriaNombre;
+
+      const coincideBusqueda =
+        !termino ||
+        p.nombre.toLowerCase().includes(termino) ||
+        p.descripcion.toLowerCase().includes(termino) ||
+        p.categoriaNombre.toLowerCase().includes(termino);
+
+      return coincideCategoria && coincideBusqueda;
+    });
+
+    filtrados = this.filtrarPorPrecio(filtrados);
+    this.productosFiltrados = filtrados;
+    this.ordenarProductos();
+  }
+
+  private filtrarPorPrecio(lista: ProductoVista[]): ProductoVista[] {
+    return lista.filter((p) => p.precio <= this.precioMaximo);
+  }
+
+  private ordenarProductos(): void {
+    switch (this.ordenamiento) {
+      case 'precio_asc':
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => a.precio - b.precio);
+        break;
+      case 'precio_desc':
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => b.precio - a.precio);
+        break;
+      case 'nombre_asc':
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        break;
+      default:
+        // 'relevancia': el orden lo da Algolia, no se modifica
+        break;
+    }
+  }
+
+  // ─── Resaltado de texto buscado ───────────────────────────────────────────
+
+  /**
+   * Envuelve el término buscado en <mark> para resaltarlo en el nombre del producto.
+   */
+  resaltarTexto(texto: string): string {
+    if (!this.busqueda.trim()) return texto;
+    const termino = this.busqueda.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return texto.replace(new RegExp(`(${termino})`, 'gi'), '<mark>$1</mark>');
+  }
+
+  // ─── Carrito ──────────────────────────────────────────────────────────────
+
   agregarProducto(producto: ProductoVista): void {
-    // Convertir ProductoVista → ProductoApi para el CartService
     const productoApi: ProductoApi = {
       idProducto: producto.id,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precioVenta: producto.precio,
-      // Buscar la categoría por nombre para mantener el objeto completo
-      categoria: this.categorias.find((categoria) => categoria.nombre === producto.categoriaNombre) ?? null
+      categoria: this.categorias.find((c) => c.nombre === producto.categoriaNombre) ?? null
     };
 
     this.cartService.add(productoApi);
     this.mensaje = `${producto.nombre} agregado al carrito.`;
 
-    // Limpiar el mensaje después de 2.5 segundos
     window.setTimeout(() => {
       if (this.mensaje.includes(producto.nombre)) {
         this.mensaje = '';
@@ -199,77 +269,16 @@ export class CatalogoComponent implements OnInit {
     }, 2500);
   }
 
-  /**
-   * Función de trackBy para el *ngFor de productos.
-   * Optimiza el rendimiento de Angular evitando re-renderizar ítems que no cambiaron.
-   *
-   * @param _       índice del item (no se usa).
-   * @param producto el producto de la lista.
-   * @returns ID único del producto para identificarlo en el DOM.
-   */
   trackByProductoId(_: number, producto: ProductoVista): number {
     return producto.id;
   }
 
-  /**
-   * Filtra la lista de productos según la categoría seleccionada y el término de búsqueda.
-   * Aplica ambos filtros en conjunto (AND lógico).
-   */
-  private aplicarFiltros(): void {
-    const termino = this.busqueda.trim().toLowerCase();
+  // ─── Mappers ──────────────────────────────────────────────────────────────
 
-    this.productosFiltrados = this.productos.filter((producto) => {
-      // Verificar si el producto pertenece a la categoría seleccionada
-      const coincideCategoria = this.categoriaSeleccionadaId === null ||
-        this.categorias.find((categoria) => categoria.idCategoria === this.categoriaSeleccionadaId)?.nombre === producto.categoriaNombre;
-
-      // Verificar si el término de búsqueda aparece en nombre, descripción o categoría
-      const coincideBusqueda = !termino ||
-        producto.nombre.toLowerCase().includes(termino) ||
-        producto.descripcion.toLowerCase().includes(termino) ||
-        producto.categoriaNombre.toLowerCase().includes(termino);
-
-      return coincideCategoria && coincideBusqueda; // Ambos filtros deben cumplirse
-    });
-  }
-
-  /**
-   * Aplica los filtros provenientes de los query params de la URL.
-   * Se llama después de cargar los datos para respetar filtros pre-navegación
-   * (ej: usuario busca desde la navbar y llega al catálogo con ?q=paracetamol).
-   */
-  private aplicarFiltrosDesdeUrl(): void {
-    this.busqueda = this.queryBusqueda; // Restaurar término de búsqueda de la URL
-
-    if (this.queryCategoria) {
-      // Buscar la categoría por nombre (case-insensitive)
-      const categoriaNormalizada = this.queryCategoria.toLowerCase();
-      const categoriaEncontrada = this.categorias.find(
-        (item) => item.nombre.toLowerCase() === categoriaNormalizada
-      );
-      this.categoriaSeleccionadaId = categoriaEncontrada?.idCategoria ?? null;
-    } else {
-      this.categoriaSeleccionadaId = null;
-    }
-
-    this.aplicarFiltros(); // Aplicar los filtros restaurados
-  }
-
-  /**
-   * Transforma un ProductoApi (datos de la API) a ProductoVista (datos para el template).
-   * 
-   * - Determina la imagen: usa imgUrl de la API o busca una imagen local por categoría.
-   * - Determina la etiqueta de promoción según la categoría del producto.
-   *
-   * @param producto datos del producto de la API.
-   * @returns objeto ProductoVista listo para renderizar en el template.
-   */
   private mapProducto(producto: ProductoApi): ProductoVista {
     const categoriaNombre = producto.categoria?.nombre ?? 'General';
     const categoriaKey = categoriaNombre.toLowerCase();
-    // Prioridad de imagen: 1) URL de la API, 2) imagen local por categoría, 3) placeholder
     const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
-
     return {
       id: producto.idProducto,
       nombre: producto.nombre,
@@ -282,30 +291,50 @@ export class CatalogoComponent implements OnInit {
     };
   }
 
-  /**
-   * Determina la etiqueta de promoción de un producto según su categoría o nombre.
-   * 
-   * Lógica:
-   * - Categoría de medicamentos → "Oferta especial" (etiqueta roja).
-   * - Marcas Huggies o Pampers → "Más vendido".
-   * - Categoría de belleza → "Nuevo".
-   * - Otros → sin etiqueta (undefined).
-   *
-   * @param nombre         nombre del producto.
-   * @param categoriaNombre nombre de la categoría del producto.
-   * @returns texto de la etiqueta de promoción, o undefined si no aplica.
-   */
+  private mapAlgoliaHit(hit: AlgoliaProducto): ProductoVista {
+    const categoriaKey = (hit.categoriaNombre ?? 'general').toLowerCase();
+    const imagen = hit.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
+    return {
+      id: hit.idProducto,
+      nombre: hit.nombre,
+      descripcion: hit.descripcion ?? 'Producto del catálogo FarmaCode',
+      precio: hit.precioVenta,
+      categoriaNombre: hit.categoriaNombre ?? 'General',
+      imagen,
+      etiquetaPromo: this.obtenerPromo(hit.nombre, hit.categoriaNombre ?? ''),
+      colorPromo: (hit.categoriaNombre ?? '').toUpperCase() === 'MEDICAMENTOS' ? 'red' : 'orange'
+    };
+  }
+
   private obtenerPromo(nombre: string, categoriaNombre: string): string | undefined {
     const etiqueta = categoriaNombre.toLowerCase();
-    if (etiqueta.includes('medic')) {
-      return 'Oferta especial';
-    }
-    if (nombre.toLowerCase().includes('huggies') || nombre.toLowerCase().includes('pampers')) {
-      return 'Más vendido';
-    }
-    if (etiqueta.includes('belleza')) {
-      return 'Nuevo';
-    }
+    if (etiqueta.includes('medic')) return 'Oferta especial';
+    if (nombre.toLowerCase().includes('huggies') || nombre.toLowerCase().includes('pampers')) return 'Más vendido';
+    if (etiqueta.includes('belleza')) return 'Nuevo';
     return undefined;
+  }
+
+  /**
+   * Lee `?q=` y `?categoria=` de la URL (provistos por el navbar) y
+   * dispara la búsqueda en Algolia o el filtrado local según corresponda.
+   */
+  private aplicarFiltrosDesdeUrl(): void {
+    this.busqueda = this.queryBusqueda;
+
+    if (this.queryCategoria) {
+      const categoriaNormalizada = this.queryCategoria.toLowerCase();
+      const encontrada = this.categorias.find((c) => c.nombre.toLowerCase() === categoriaNormalizada);
+      this.categoriaSeleccionadaId = encontrada?.idCategoria ?? null;
+    } else {
+      this.categoriaSeleccionadaId = null;
+    }
+
+    if (this.busqueda.trim()) {
+      // Hay término de búsqueda: usar Algolia
+      this.buscar();
+    } else {
+      // Sin término: filtrado local por categoría/precio
+      this.aplicarFiltros();
+    }
   }
 }
