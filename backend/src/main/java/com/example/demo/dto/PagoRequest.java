@@ -4,13 +4,16 @@ import lombok.Data;
 
 @Data
 public class PagoRequest {
-    private String metodoPago;
+    // Datos generales del pedido
+    private String metodoPago; 
     private String direccionEnvio;
-    private String numeroTarjeta;
-    private String nombreTarjeta;
-    private String expiracion;
-    private String cvv;
+    private String codigoCupon;
+
     private String numeroCelular;
     private String tokenYape;
-    private String codigoCupon;
+
+    // --- CAMPOS EXCLUSIVOS PARA STRIPE ---
+    // El monto debe ir en la unidad mínima (centavos). Ejemplo: 50.00 soles = 5000
+    private Long monto; 
+    private String moneda = "pen"; 
 }
