@@ -1,10 +1,9 @@
-<!-- ══════════════════ PANTALLA DE ÉXITO ══════════════════ -->
 <div class="exito-overlay" *ngIf="pagoExitoso">
   <div class="exito-card">
     <div class="exito-check-wrap">
       <svg class="exito-check-svg" viewBox="0 0 52 52">
-        <circle class="check-circle" cx="26" cy="26" r="25" fill="none"/>
-        <path class="check-mark" fill="none" d="M14 27 l8 8 l16-16"/>
+        <circle class="check-circle" cx="26" cy="26" r="25" fill="none" />
+        <path class="check-mark" fill="none" d="M14 27 l8 8 l16-16" />
       </svg>
     </div>
     <h2 class="exito-titulo">¡Pago finalizado correctamente!</h2>
@@ -26,7 +25,6 @@
   </div>
 </div>
 
-<!-- ══════════════════ FORMULARIO PAGO ══════════════════ -->
 <div class="pago-container" *ngIf="!pagoExitoso">
   <header class="pago-header">
     <div class="header-left">
@@ -37,10 +35,8 @@
   </header>
 
   <div class="pago-grid">
-    <!-- ════ FORMULARIOS ════ -->
     <main class="panel-formularios">
 
-      <!-- PASO 1: ENTREGA -->
       <section class="pago-seccion">
         <div class="seccion-header">
           <span class="paso-num">1</span>
@@ -68,24 +64,24 @@
 
         <div class="form-group">
           <label>Dirección detallada <span class="req">*</span></label>
-          <input type="text" [(ngModel)]="formPago.direccionDetalle"
-            placeholder="Ej: Av. Arequipa 1234, Dpto 501" class="form-input" />
+          <input type="text" [(ngModel)]="formPago.direccionDetalle" placeholder="Ej: Av. Arequipa 1234, Dpto 501"
+            class="form-input" />
           <span class="field-hint">Calle, número, piso / departamento</span>
         </div>
 
         <div class="form-group">
           <label>Referencia <span class="label-opt">(opcional)</span></label>
-          <input type="text" [(ngModel)]="formPago.referencia"
-            placeholder="Ej: Edificio azul, frente al parque" class="form-input" />
+          <input type="text" [(ngModel)]="formPago.referencia" placeholder="Ej: Edificio azul, frente al parque"
+            class="form-input" />
         </div>
 
         <div class="direccion-preview" *ngIf="formPago.distrito && formPago.direccionDetalle">
           <span></span>
-          <span>{{ formPago.direccionDetalle }}<span *ngIf="formPago.referencia"> — {{ formPago.referencia }}</span>, <strong>{{ formPago.distrito }}</strong>, Lima</span>
+          <span>{{ formPago.direccionDetalle }}<span *ngIf="formPago.referencia"> — {{ formPago.referencia }}</span>,
+            <strong>{{ formPago.distrito }}</strong>, Lima</span>
         </div>
       </section>
 
-      <!-- PASO 2: MÉTODO DE PAGO -->
       <section class="pago-seccion">
         <div class="seccion-header">
           <span class="paso-num">2</span>
@@ -93,7 +89,8 @@
         </div>
 
         <div class="metodos-tabs">
-          <button class="tab-btn" [class.active]="metodoSeleccionado === 'TARJETA'" (click)="seleccionarMetodo('TARJETA')">
+          <button class="tab-btn" [class.active]="metodoSeleccionado === 'TARJETA'"
+            (click)="seleccionarMetodo('TARJETA')">
             Tarjeta Crédito/Débito
           </button>
           <button class="tab-btn" [class.active]="metodoSeleccionado === 'YAPE'" (click)="seleccionarMetodo('YAPE')">
@@ -101,37 +98,42 @@
           </button>
         </div>
 
-        <!-- TARJETA -->
         <div *ngIf="metodoSeleccionado === 'TARJETA'" class="form-dinamico anim-fade">
-          <div class="tarjeta-indicador" *ngIf="tipoTarjeta">
-            <span class="tipo-badge">{{ tipoTarjeta }}</span>
+          <div class="tarjeta-indicador">
+            <span class="tipo-badge" style="background: #6366f1;">Pago Seguro por Stripe</span>
           </div>
+
           <div class="form-group">
-            <label>Número de tarjeta</label>
-            <input type="text" [(ngModel)]="formPago.numeroTarjeta" (ngModelChange)="detectarTarjeta()"
-              maxlength="19" placeholder="0000 0000 0000 0000" class="form-input font-mono" />
+            <label>Nombre del titular <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="formPago.nombreTarjeta" placeholder="Ej: JUNIOR CASTILLA"
+              class="form-input uppercase" />
           </div>
+
           <div class="form-group">
-            <label>Nombre del titular</label>
-            <input type="text" [(ngModel)]="formPago.nombreTarjeta"
-              placeholder="Nombre del titular" class="form-input uppercase" />
+            <label>Número de Tarjeta <span class="req">*</span></label>
+            <div id="stripe-card-number" class="form-input" style="padding: 12px; background: white; min-height: 44px;">
+            </div>
           </div>
+
           <div class="form-row-doble">
             <div class="form-group">
-              <label>Vencimiento (MM/AA)</label>
-              <input type="text" [(ngModel)]="formPago.expiracion" (input)="formatearVencimiento($event)" placeholder="MM/AA" maxlength="5" class="form-input" />
+              <label>Vencimiento <span class="req">*</span></label>
+              <div id="stripe-card-expiry" class="form-input"
+                style="padding: 12px; background: white; min-height: 44px;"></div>
             </div>
             <div class="form-group">
-              <label>CVV / CVC</label>
-              <input type="password" [(ngModel)]="formPago.cvv" maxlength="4" placeholder="•••" class="form-input" />
+              <label>CVV / CVC <span class="req">*</span></label>
+              <div id="stripe-card-cvc" class="form-input" style="padding: 12px; background: white; min-height: 44px;">
+              </div>
             </div>
           </div>
+
+          <div id="card-errors" role="alert"
+            style="color: #e11d48; font-size: 13px; margin-top: 8px; font-weight: 500;"></div>
         </div>
 
-        <!-- YAPE -->
         <div *ngIf="metodoSeleccionado === 'YAPE'" class="form-dinamico anim-fade yape-panel">
 
-          <!-- Paso 1 -->
           <div *ngIf="yapePaso === 1">
             <div class="yape-header-info">
               <div class="yape-badge-logo">Yape</div>
@@ -141,14 +143,14 @@
               <label>Número de celular Yape <span class="req">*</span></label>
               <div class="input-prefix-wrap">
                 <span class="input-prefix">+51</span>
-                <input type="text" [(ngModel)]="formPago.numeroCelular" maxlength="9"
-                  placeholder="9XX XXX XXX" class="form-input with-prefix font-mono" />
+                <input type="text" [(ngModel)]="formPago.numeroCelular" maxlength="9" placeholder="9XX XXX XXX"
+                  class="form-input with-prefix font-mono" />
               </div>
             </div>
             <div class="form-group">
               <label>Correo donde recibirás el código <span class="req">*</span></label>
-              <input type="email" [(ngModel)]="formPago.correoYape"
-                placeholder="tucorreo@gmail.com" class="form-input" />
+              <input type="email" [(ngModel)]="formPago.correoYape" placeholder="tucorreo@gmail.com"
+                class="form-input" />
               <span class="field-hint">Revisa también tu carpeta de spam</span>
             </div>
             <button class="btn-enviar-codigo" (click)="enviarCodigoYape()" [disabled]="enviandoCodigo">
@@ -158,7 +160,6 @@
             <div *ngIf="mensajeExito" class="feedback-exito">{{ mensajeExito }}</div>
           </div>
 
-          <!-- Paso 2 -->
           <div *ngIf="yapePaso === 2">
             <div class="cuenta-verificada">
               <span class="badge-ok">✓ Código enviado a {{ correoDestino }}</span>
@@ -166,7 +167,7 @@
             </div>
             <div class="sms-card">
               <div class="sms-card-header">
-                <span class="sms-card-icon"></span>
+                <span class="sms-card-icon">📱</span>
                 <div>
                   <strong>Yape BCP</strong>
                   <p>Revisa tu correo con el asunto: <em>"Tu código de aprobación Yape"</em></p>
@@ -175,8 +176,8 @@
             </div>
             <div class="form-group" style="margin-top: 20px;">
               <label>Ingresa el código de 6 dígitos</label>
-              <input type="text" [(ngModel)]="formPago.tokenYape" maxlength="6"
-                placeholder="000000" class="form-input font-mono token-input" />
+              <input type="text" [(ngModel)]="formPago.tokenYape" maxlength="6" placeholder="000000"
+                class="form-input font-mono token-input" />
               <span class="field-hint">El código es válido por 10 minutos</span>
             </div>
           </div>
@@ -186,14 +187,12 @@
       </section>
     </main>
 
-    <!-- ════ BOLETA ════ -->
     <aside class="panel-boleta">
       <div class="boleta-header">
         <h3>FarmaCode</h3>
         <p class="fecha-boleta">Resumen de pedido</p>
       </div>
 
-      <!-- PRODUCTOS -->
       <div class="boleta-productos">
         <p class="productos-titulo">Productos</p>
         <div class="producto-item" *ngFor="let item of productosCarrito">
@@ -210,7 +209,6 @@
         </div>
       </div>
 
-      <!-- TOTALES -->
       <div class="boleta-body">
         <div class="resumen-linea">
           <span>Subtotal</span>
@@ -226,8 +224,8 @@
         <div class="cupon-area">
           <label>Código Promocional</label>
           <div class="cupon-input-box">
-            <input type="text" [(ngModel)]="codigoCupon" placeholder="BIENVENIDA-XXXXX"
-              [disabled]="cuponAplicado" class="form-input cupon-input" />
+            <input type="text" [(ngModel)]="codigoCupon" placeholder="BIENVENIDA-XXXXX" [disabled]="cuponAplicado"
+              class="form-input cupon-input" />
             <button (click)="aplicarCupon()" [disabled]="cuponAplicado" class="btn-aplicar">Canjear</button>
           </div>
         </div>
@@ -244,8 +242,10 @@
           <span>Total a pagar</span>
           <span class="precio-final">S/ {{ total | number:'1.2-2' }}</span>
         </div>
-        <button class="btn-pagar-checkout" (click)="ejecutarPago()">
-          Procesar Pago Seguro
+        <button class="btn-pagar-checkout" (click)="ejecutarPago()" [disabled]="procesandoPago"
+          [style.opacity]="procesandoPago ? '0.7' : '1'">
+          <span *ngIf="!procesandoPago">Procesar Pago Seguro</span>
+          <span *ngIf="procesandoPago">Procesando...</span>
         </button>
         <p class="legal-text">Transacción cifrada bajo estándar PCI-DSS.</p>
       </div>
