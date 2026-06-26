@@ -59,4 +59,17 @@ public class Producto {
      */
     @Column(name = "stock", nullable = false, columnDefinition = "integer default 0")
     private Integer stock = 0;
+
+    // Añade esto si no lo tienes en Producto.java
+    @Column(name = "fecha_caducidad")
+    private java.time.LocalDate fechaCaducidad;
+
+    // Y asegúrate de tener sus respectivos Getters y Setters
+    public java.time.LocalDate getFechaCaducidad() {
+        return fechaCaducidad;
+    }
+
+    public void setFechaCaducidad(java.time.LocalDate fechaCaducidad) {
+        this.fechaCaducidad = fechaCaducidad;
+    }
 }

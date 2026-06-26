@@ -3,34 +3,14 @@ import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 
-/**
- * Componente de la página del Carrito de Compras.
- * 
- * Muestra los productos que el usuario ha agregado al carrito y permite:
- * - Ver el resumen de cada producto (imagen, nombre, precio, cantidad).
- * - Aumentar la cantidad de un producto.
- * - Disminuir la cantidad (si llega a 0 se elimina automáticamente en el backend).
- * - Eliminar completamente un producto del carrito.
- * - Vaciar todo el carrito.
- * - Proceder al checkout (botón "Pagar" → navega a /pago).
- * 
- * No tiene lógica de estado propia: delega todo al CartService que
- * mantiene el estado reactivo sincronizado con el backend.
- * 
- * Standalone component.
- */
 @Component({
   selector: 'app-carrito',
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './carrito.html',
-  styleUrl: './carrito.css'
+  styleUrl: './carrito.css',
 })
 export class CarritoComponent {
-  /**
-   * Mapa de imagen local por nombre de categoría.
-   * Se usa cuando el producto en el carrito no tiene URL de imagen propia.
-   */
   private readonly imagenPorCategoria: Record<string, string> = {
     medicamentos: 'assets/img/producto1.png',
     'cuidado personal': 'assets/img/producto2.png',
@@ -38,31 +18,49 @@ export class CarritoComponent {
     bebé: 'assets/img/producto4.png',
     'vitaminas / suplementos': 'assets/img/producto1.png',
     'equipo médicos': 'assets/img/producto2.png',
-    'equipos médicos': 'assets/img/producto2.png'
+    'equipos médicos': 'assets/img/producto2.png',
   };
 
-  /**
-   * @param cartService servicio del carrito para leer/modificar el estado del carrito.
-   * @param router      servicio de navegación para redirigir al checkout.
-   */
+  // Variable de seguridad para bloquear el checkout si hay productos expirados
+  hasExpiredProducts = false;
+
   constructor(
     private readonly cartService: CartService,
-    private readonly router: Router
-  ) { }
+    private readonly router: Router,
+  ) {}
 
   /**
-   * Retorna la lista actual de ítems del carrito.
-   * Obtiene una copia del array para evitar mutaciones directas.
+   * MÉTODO AUXILIAR: Captura la fecha sin importar si Spring Boot
+   * la envía como fechaCaducidad (camelCase) o fecha_caducidad (snake_case).
    */
-  getItems() { return this.cartService.getItems(); }
+/**
+   * MÉTODO AUXILIAR ROBUSTO: Captura la fecha y la formatea correctamente
+   * sin importar cómo la envíe Spring Boot.
+   */
+  getFecha(producto: any): string {
+    const fecha = producto.fechaCaducidad || producto.fecha_caducidad;
+    if (!fecha) return '';
 
-  /**
-   * Determina la imagen a mostrar para un producto del carrito.
-   * Prioridad: 1) URL de la API (imgUrl), 2) imagen local por categoría, 3) placeholder.
-   *
-   * @param producto objeto del producto (puede tener imgUrl y categoria).
-   * @returns URL de la imagen a mostrar.
-   */
+    // Si Spring Boot lo envía como arreglo [Año, Mes, Día]
+    if (Array.isArray(fecha)) {
+      const mes = fecha[1] < 10 ? '0' + fecha[1] : fecha[1];
+      const dia = fecha[2] < 10 ? '0' + fecha[2] : fecha[2];
+      return `${fecha[0]}-${mes}-${dia}`;
+    }
+    
+    // Si ya es un texto normal '2026-07-10' o similar
+    return fecha;
+  }
+
+  getItems() {
+    const items = this.cartService.getItems();
+    // Verificamos en tiempo real si hay productos vencidos en la lista
+    this.hasExpiredProducts = items.some(
+      (item) => this.getDiscountInfo(this.getFecha(item.producto)).isExpired,
+    );
+    return items;
+  }
+
   getProductImage(producto: any): string {
     if (producto.imgUrl) return producto.imgUrl;
     const cat = producto.categoria?.nombre?.toLowerCase() || 'general';
@@ -70,56 +68,80 @@ export class CarritoComponent {
   }
 
   /**
-   * Retorna el subtotal del carrito (precio × cantidad de todos los ítems).
-   * No incluye descuentos por cupón (esos se aplican en la página de pago).
+   * LÓGICA DE NEGOCIO: Calcula el descuento basado en la fecha de caducidad.
    */
-  getSubtotal(): number { return this.cartService.getTotal(); }
+  getDiscountInfo(fechaCaducidad: string): {
+    percentage: number;
+    message: string;
+    isExpired: boolean;
+  } {
+    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
 
-  /**
-   * Retorna el número total de unidades en el carrito (suma de cantidades).
-   * Se muestra en el badge del ícono del carrito.
-   */
-  getCount(): number { return this.cartService.getCount(); }
+    const expDate = new Date(fechaCaducidad);
+    const today = new Date();
 
-  /**
-   * Incrementa en 1 la cantidad de un producto en el carrito.
-   * Busca el producto en el carrito por ID y llama a cartService.add().
-   *
-   * @param productoId ID del producto a incrementar.
-   */
-  increase(productoId: number): void {
-    const item = this.getItems().find((entry) => entry.producto.idProducto === productoId);
-    if (item) {
-      this.cartService.add(item.producto);
+    // Calculamos la diferencia en meses
+    const monthsLeft =
+      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
+
+    // Si ya pasó la fecha
+    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
+      return { percentage: 0, message: 'PRODUCTO VENCIDO - VENTA BLOQUEADA', isExpired: true };
     }
+
+    // Escala de descuentos automáticos
+    if (monthsLeft <= 6)
+      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
+    if (monthsLeft <= 12)
+      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
+    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
+
+    return { percentage: 0, message: '', isExpired: false };
   }
 
   /**
-   * Disminuye en 1 la cantidad de un producto en el carrito.
-   * Si la cantidad llega a 0, el backend elimina el item automáticamente.
-   *
-   * @param productoId ID del producto a disminuir.
+   * Calcula el precio unitario aplicando el descuento de vencimiento.
    */
-  decrease(productoId: number): void { this.cartService.decrease(productoId); }
+  getFinalPrice(producto: any): number {
+    const discountInfo = this.getDiscountInfo(this.getFecha(producto));
+    const discountAmount = producto.precioVenta * discountInfo.percentage;
+    return producto.precioVenta - discountAmount;
+  }
 
   /**
-   * Elimina completamente un producto del carrito, sin importar la cantidad.
-   *
-   * @param productoId ID del producto a eliminar.
+   * Recalcula el subtotal del carrito (ignora el precio de productos vencidos).
    */
-  remove(productoId: number): void { this.cartService.remove(productoId); }
+  getSubtotal(): number {
+    return this.getItems().reduce((acc, item) => {
+      if (this.getDiscountInfo(this.getFecha(item.producto)).isExpired) return acc;
+      return acc + this.getFinalPrice(item.producto) * item.cantidad;
+    }, 0);
+  }
 
-  /**
-   * Vacía completamente el carrito (elimina todos los productos).
-   */
-  clear(): void { this.cartService.clear(); }
+  getCount(): number {
+    return this.cartService.getCount();
+  }
 
-  /**
-   * Navega a la página de pago si hay productos en el carrito.
-   * Si el carrito está vacío, no hace nada (botón deshabilitado en el template).
-   */
+  increase(productoId: number): void {
+    const item = this.getItems().find((entry) => entry.producto.idProducto === productoId);
+    if (item) this.cartService.add(item.producto);
+  }
+
+  decrease(productoId: number): void {
+    this.cartService.decrease(productoId);
+  }
+
+  remove(productoId: number): void {
+    this.cartService.remove(productoId);
+  }
+
+  clear(): void {
+    this.cartService.clear();
+  }
+
   pagar(): void {
-    if (this.getCount() === 0) return; // Guardia: no navegar si el carrito está vacío
+    // Regla estricta: No avanza a pago si hay items caducados o si está vacío
+    if (this.getCount() === 0 || this.hasExpiredProducts) return;
     this.router.navigate(['/pago']);
   }
 }

@@ -829,3 +829,8 @@
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* Clases para el semáforo de vencimiento */
+.status-vencido { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.status-alerta { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.status-seguro { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
