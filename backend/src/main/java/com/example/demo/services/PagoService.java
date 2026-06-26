@@ -21,14 +21,22 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class PagoService {
 
-    @Autowired private CarritoService carritoService;
-    @Autowired private CuponRepository cuponRepository;
-    @Autowired private PedidoRepository pedidoRepository;
-    @Autowired private DetallePedidoRepository detallePedidoRepository;
-    @Autowired private ProductoRepository productoRepository;
-    @Autowired private EmailService emailService;
+    @Autowired
+    private CarritoService carritoService;
+    @Autowired
+    private CuponRepository cuponRepository;
+    @Autowired
+    private PedidoRepository pedidoRepository;
+    @Autowired
+    private DetallePedidoRepository detallePedidoRepository;
+    @Autowired
+    private ProductoRepository productoRepository;
+    @Autowired
+    private EmailService emailService;
+    // INYECTAMOS EL REPOSITORIO DE LOTES
+    @Autowired
+    private InventarioLoteRepository loteRepository;
 
-    // Inyección de la clave de Stripe desde application.properties
     @Value("${stripe.api.key}")
     private String stripeApiKey;
 
@@ -38,21 +46,45 @@ public class PagoService {
     }
 
     /**
-     * NUEVO MÉTODO PARA STRIPE:
-     * Calcula el total real desde la BD y le pide a Stripe que genere un PaymentIntent.
+     * LÓGICA FEFO: Descuenta el stock de los lotes que vencen primero.
      */
+    private void descontarStockLotesFefo(Integer idProducto, int cantidadComprada) {
+        List<InventarioLote> lotes = loteRepository.findByProductoIdProductoOrderByFechaVencimientoAsc(idProducto);
+        int cantidadRestante = cantidadComprada;
+
+        for (InventarioLote lote : lotes) {
+            if (cantidadRestante <= 0)
+                break;
+            if (lote.getCantidadActual() <= 0)
+                continue;
+
+            if (lote.getCantidadActual() >= cantidadRestante) {
+                lote.setCantidadActual(lote.getCantidadActual() - cantidadRestante);
+                loteRepository.save(lote);
+                cantidadRestante = 0;
+            } else {
+                cantidadRestante -= lote.getCantidadActual();
+                lote.setCantidadActual(0);
+                loteRepository.save(lote);
+            }
+        }
+
+        if (cantidadRestante > 0) {
+            throw new RuntimeException("Stock insuficiente en lotes físicos para el producto ID: " + idProducto);
+        }
+    }
+
     public PaymentIntent crearPaymentIntent(Integer idUsuario, PagoRequest request) throws Exception {
         Carrito carrito = carritoService.obtenerOCrearCarrito(idUsuario);
-        if (carrito.getDetalles().isEmpty()) throw new RuntimeException("Carrito vacío.");
+        if (carrito.getDetalles().isEmpty())
+            throw new RuntimeException("Carrito vacío.");
 
         double subtotal = carrito.getDetalles().stream()
                 .mapToDouble(d -> d.getProducto().getPrecioVenta().doubleValue() * d.getCantidad()).sum();
 
-        // Verificación de cupón idéntica a la transacción final para asegurar el mismo monto
         if (request.getCodigoCupon() != null && !request.getCodigoCupon().trim().isEmpty()) {
             Cupon cupon = cuponRepository.findByCodigo(request.getCodigoCupon().trim().toUpperCase())
                     .orElseThrow(() -> new RuntimeException("Cupón inválido."));
-            
             if (cupon.getActivo() && !cupon.getUsado() && cupon.getFechaExpiracion().isAfter(LocalDateTime.now())) {
                 double descuento = subtotal * (cupon.getValorDescuento().doubleValue() / 100.0);
                 subtotal -= descuento;
@@ -60,27 +92,20 @@ public class PagoService {
         }
 
         double costoEnvio = (subtotal > 50.0) ? 0.0 : 5.0;
-        double totalFinal = subtotal + costoEnvio;
-
-        // Stripe procesa pagos en la unidad mínima (centavos). S/ 50.50 -> 5050
-        long amountInCents = Math.round(totalFinal * 100);
+        long amountInCents = Math.round((subtotal + costoEnvio) * 100);
         String moneda = (request.getMoneda() != null) ? request.getMoneda() : "pen";
 
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+        return PaymentIntent.create(PaymentIntentCreateParams.builder()
                 .setAmount(amountInCents)
                 .setCurrency(moneda)
-                .build();
-
-        return PaymentIntent.create(params);
+                .build());
     }
 
-    /**
-     * Método original intacto.
-     */
     @Transactional
     public void procesarTransaccion(Integer idUsuario, PagoRequest request) {
         Carrito carrito = carritoService.obtenerOCrearCarrito(idUsuario);
-        if (carrito.getDetalles().isEmpty()) throw new RuntimeException("Carrito vacío.");
+        if (carrito.getDetalles().isEmpty())
+            throw new RuntimeException("Carrito vacío.");
 
         double subtotal = carrito.getDetalles().stream()
                 .mapToDouble(d -> d.getProducto().getPrecioVenta().doubleValue() * d.getCantidad()).sum();
@@ -89,39 +114,35 @@ public class PagoService {
         if (request.getCodigoCupon() != null && !request.getCodigoCupon().trim().isEmpty()) {
             Cupon cupon = cuponRepository.findByCodigo(request.getCodigoCupon().trim().toUpperCase())
                     .orElseThrow(() -> new RuntimeException("Cupón inválido."));
-
             if (!cupon.getActivo() || cupon.getUsado() || cupon.getFechaExpiracion().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException("Cupón expirado o usado.");
             }
-
             double descuento = subtotal * (cupon.getValorDescuento().doubleValue() / 100.0);
             totalFinal = BigDecimal.valueOf(subtotal - descuento);
-
             cupon.setUsado(true);
             cupon.setFechaUso(LocalDateTime.now());
             cuponRepository.save(cupon);
         }
 
-        double costoEnvio = (subtotal > 50.0) ? 0.0 : 5.0;
-        totalFinal = totalFinal.add(BigDecimal.valueOf(costoEnvio));
+        totalFinal = totalFinal.add(BigDecimal.valueOf((subtotal > 50.0) ? 0.0 : 5.0));
 
         Pedido pedido = new Pedido();
         pedido.setUsuario(carrito.getUsuario());
         pedido.setFecha(LocalDateTime.now());
         pedido.setEstado("PAGADO");
         pedido.setTotal(totalFinal);
-        pedido = pedidoRepository.save(pedido);
+        pedidoRepository.save(pedido); // Guarda el objeto
+        // Como el objeto 'pedido' ya existe en memoria, ya tiene el ID asignado
+        // y puedes seguir usándolo sin necesidad de re-asignarlo.
 
         List<DetallePedido> detallesGuardados = new ArrayList<>();
         for (DetalleCarrito detCart : carrito.getDetalles()) {
             Producto producto = detCart.getProducto();
             int cantidadComprada = detCart.getCantidad();
 
-            if (producto.getStock() < cantidadComprada) {
-                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
-            }
-            producto.setStock(producto.getStock() - cantidadComprada);
-            productoRepository.save(producto);
+            // EJECUTAMOS LA LÓGICA FEFO (Esto actualiza los lotes y el trigger actualizará
+            // el stock general)
+            descontarStockLotesFefo(producto.getIdProducto(), cantidadComprada);
 
             DetallePedido detPed = new DetallePedido();
             detPed.setPedido(pedido);
@@ -134,24 +155,15 @@ public class PagoService {
 
         carritoService.vaciarCarrito(idUsuario);
 
+        // Envío de correo... (se mantiene igual)
         User usuario = carrito.getUsuario();
-        String emailDestinatario = usuario.getEmail();
-        String nombreUsuario = usuario.getNombre() + " " + usuario.getApellido();
-        Pedido pedidoFinal = pedido;
-        List<DetallePedido> detallesFinales = detallesGuardados;
-        String codigoCupon = request.getCodigoCupon();
-
         CompletableFuture.runAsync(() -> {
             try {
-                emailService.sendOrderConfirmationEmail(
-                        emailDestinatario,
-                        nombreUsuario,
-                        pedidoFinal,
-                        detallesFinales,
-                        codigoCupon
-                );
+                emailService.sendOrderConfirmationEmail(usuario.getEmail(),
+                        usuario.getNombre() + " " + usuario.getApellido(), pedido, detallesGuardados,
+                        request.getCodigoCupon());
             } catch (Exception e) {
-                System.out.println("Error al enviar el correo de confirmación de compra (asíncrono): " + e.getMessage());
+                System.out.println("Error en correo: " + e.getMessage());
             }
         });
     }
