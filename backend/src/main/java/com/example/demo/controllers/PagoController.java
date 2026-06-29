@@ -56,4 +56,19 @@ public class PagoController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * Endpoint para validar un cupón de descuento.
+     */
+    @GetMapping("/validar-cupon/{codigo}")
+    public ResponseEntity<?> validarCupon(@PathVariable String codigo, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "Usuario no autenticado"));
+        try {
+            User usuario = authService.obtenerUsuarioPorEmail(principal.getName());
+            Map<String, Object> resultado = pagoService.validarCupon(usuario.getId(), codigo);
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

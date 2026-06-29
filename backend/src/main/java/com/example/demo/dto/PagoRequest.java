@@ -8,6 +8,7 @@ public class PagoRequest {
     private String metodoPago; 
     private String direccionEnvio;
     private String codigoCupon;
+    private boolean esUrgente;
 
     private String numeroCelular;
     private String tokenYape;

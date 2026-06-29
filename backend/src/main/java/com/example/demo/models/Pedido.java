@@ -53,4 +53,12 @@ public class Pedido {
      * Se usa BigDecimal para evitar errores de precisión con montos monetarios.
      */
     private BigDecimal total;
+
+    /** Dirección o establecimiento de recojo del pedido. */
+    @Column(name = "direccion_envio", nullable = true)
+    private String direccionEnvio;
+
+    /** Indica si el pedido es urgente (envío a domicilio por S/ 10). */
+    @Column(name = "es_urgente", nullable = false, columnDefinition = "boolean default false")
+    private boolean esUrgente = false;
 }

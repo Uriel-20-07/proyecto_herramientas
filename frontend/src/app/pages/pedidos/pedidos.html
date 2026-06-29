@@ -78,10 +78,7 @@
                   <span class="total-amount">S/ {{ pedido.total.toFixed(2) }}</span>
                 </div>
                 
-                <span class="status-badge" [class]="pedido.estado.toLowerCase()">
-                  <span class="status-dot"></span>
-                  {{ pedido.estado }}
-                </span>
+
 
                 <div class="header-actions" (click)="$event.stopPropagation()">
                   <button type="button" class="btn-pdf-header" (click)="descargarPDF(pedido, idx)" title="Descargar comprobante en PDF">

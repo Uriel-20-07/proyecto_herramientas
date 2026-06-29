@@ -61,4 +61,14 @@ export class PagoService {
   procesarPago(datosPago: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/procesar`, datosPago, { headers: this.getHeaders() });
   }
+
+  /**
+   * Valida un cupón de descuento en el backend.
+   * 
+   * @param codigo Código del cupón.
+   * @returns Observable con los datos del cupón si es válido, o error.
+   */
+  validarCupon(codigo: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/validar-cupon/${codigo}`, { headers: this.getHeaders() });
+  }
 }

@@ -1,118 +1,160 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ViewChild, ElementRef } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { CartService } from '../../services/cart.service';
+import { AuthService } from '../../services/auth.service';
+import { AuthModalService } from '../../services/auth-modal.service';
+
+interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+  functionCall?: any;
+}
 
 @Component({
   selector: 'app-chatbot',
   standalone: true,
-  template: '',
-  styles: []
+  imports: [CommonModule, FormsModule],
+  templateUrl: './chatbot.html',
+  styleUrls: ['./chatbot.css']
 })
 export class ChatbotComponent implements OnInit, OnDestroy {
-  constructor(@Inject(PLATFORM_ID) private platformId: Object) { }
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
-  ngOnDestroy() {
-    if (isPlatformBrowser(this.platformId)) {
-      const chatElement = document.querySelector('n8n-chat') || document.querySelector('.n8n-chat');
-      if (chatElement) {
-        chatElement.remove();
-      }
-      const script = document.getElementById('n8n-chat-script');
-      if (script) {
-        script.remove();
-      }
-    }
-  }
+  isOpen = false;
+  isLoading = false;
+  userInput = '';
+  messages: ChatMessage[] = [];
+
+  private readonly chatApiUrl = 'http://localhost:8080/api/chatbot/consultar';
+
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private readonly http: HttpClient,
+    private readonly router: Router,
+    private readonly cartService: CartService,
+    private readonly authService: AuthService,
+    private readonly authModalService: AuthModalService
+  ) { }
 
   ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
-      // 1. Cargar el CSS de n8n en el head
-      const cssId = 'n8n-chat-style';
-      if (!document.getElementById(cssId)) {
-        const link = document.createElement('link');
-        link.id = cssId;
-        link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css';
-        document.head.appendChild(link);
-      }
-
-      // 2. Inyectar estilos personalizados para que combinen con la página
-      const customStyleId = 'n8n-chat-custom-style';
-      if (!document.getElementById(customStyleId)) {
-        const style = document.createElement('style');
-        style.id = customStyleId;
-        style.textContent = `
-          :root {
-            /* Colores de FarmaCode */
-            --chat--color--primary: #ff6b00; /* Naranja corporativo */
-            --chat--color--primary-shade-50: #e05e00;
-            --chat--color--primary--shade-100: #c75300;
-            --chat--color--secondary: #0056b3; /* Azul corporativo */
-            --chat--color-secondary-shade-50: #004085;
-            --chat--color-white: #ffffff;
-            --chat--color-light: #f8fafc;
-            --chat--color-light-shade-50: #eef2f7;
-            --chat--color-light-shade-100: #cbd5e1;
-            --chat--color-medium: #94a3b8;
-            --chat--color-dark: #0f172a;
-            --chat--color-disabled: #cbd5e1;
-            --chat--color-typing: #475569;
-
-            /* Bordes redondeados modernos */
-            --chat--border-radius: 16px;
-            --chat--font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-
-            /* Ventana de chat */
-            --chat--window--border-radius: 20px;
-            --chat--window--z-index: 10000;
-            --chat--window--box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
-
-            /* Botón de apertura (Toggle) */
-            --chat--toggle--background: #ff6b00;
-            --chat--toggle--hover--background: #e05e00;
-            --chat--toggle--active--background: #c75300;
-            --chat--toggle--size: 60px;
-
-            /* Burbujas de mensajes */
-            --chat--message--border-radius: 16px;
-            --chat--message--bot--background: #ffffff;
-            --chat--message--bot--color: #0f172a;
-            --chat--message--bot--border: 1px solid #eef2f7;
-            --chat--message--user--background: #0056b3;
-            --chat--message--user--color: #ffffff;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
-      // 3. Cargar e inicializar el chat con textos en español
-      const scriptId = 'n8n-chat-script';
-      if (!document.getElementById(scriptId)) {
-        const script = document.createElement('script');
-        script.id = scriptId;
-        script.type = 'module';
-        script.text = `
-          import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
-          createChat({
-            webhookUrl: 'https://fanitoboi.app.n8n.cloud/webhook/6861956f-322d-4200-8c20-5b2a6d0b846f/chat',
-            showWelcomeScreen: true,
-            defaultLanguage: 'es',
-            initialMessages: [
-              '¡Hola! 👋',
-              'Bienvenido a FarmaCode. ¿En qué te puedo asesorar hoy?'
-            ],
-            i18n: {
-              es: {
-                title: '¡Hola! 👋',
-                subtitle: 'Conversa con nuestro asistente de salud 24/7.',
-                footer: '',
-                getStarted: 'Nueva conversación',
-                inputPlaceholder: 'Escribe tu consulta aquí...',
-              }
-            }
-          });
-        `;
-        document.body.appendChild(script);
-      }
+      // Inicializar el chat con el mensaje de bienvenida
+      this.messages.push({
+        role: 'model',
+        content: '¡Hola! 👋 Bienvenido a FarmaCode. ¿En qué te puedo asesorar hoy? Puedo buscar medicamentos en el catálogo, agregar productos al carrito y guiarte por la página.'
+      });
     }
+  }
+
+  ngOnDestroy() {
+    // Limpieza si es necesario
+  }
+
+  toggleChat() {
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('registro'); // Abre el modal de registro
+      return;
+    }
+    this.isOpen = !this.isOpen;
+    if (this.isOpen) {
+      this.scrollToBottom();
+    }
+  }
+
+  sendMessage(event: Event) {
+    event.preventDefault();
+    if (!this.userInput.trim() || this.isLoading) return;
+
+    const userText = this.userInput.trim();
+    this.userInput = '';
+
+    // Añadir mensaje del usuario al historial local
+    this.messages.push({
+      role: 'user',
+      content: userText
+    });
+
+    this.scrollToBottom();
+    this.isLoading = true;
+
+    // Llamar al endpoint del backend
+    this.http.post<any>(this.chatApiUrl, { messages: this.messages }).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+
+        if (response) {
+          // 1. Verificar si hay un comando de llamada a función
+          if (response.functionCall) {
+            const funcCall = response.functionCall;
+            const name = funcCall.name;
+            const args = funcCall.args;
+
+            if (name === 'agregarAlCarrito') {
+              const idProducto = args.idProducto;
+              const cantidad = args.cantidad || 1;
+              this.cartService.addWithQty(idProducto, cantidad);
+
+              this.messages.push({
+                role: 'model',
+                content: '¡Listo! He agregado el producto al carrito de compras.'
+              });
+            } else if (name === 'redirigir') {
+              const ruta = args.ruta;
+              this.router.navigate([ruta]);
+              this.messages.push({
+                role: 'model',
+                content: 'Entendido. Te estoy redirigiendo...'
+              });
+              this.isOpen = false; // Cerrar chat al redirigir
+            }
+          } else {
+            // 2. Respuesta de texto convencional
+            this.messages.push({
+              role: 'model',
+              content: this.formatContent(response.content)
+            });
+          }
+        } else {
+          this.messages.push({
+            role: 'model',
+            content: 'Lo siento, no he recibido una respuesta válida. Por favor, vuelve a intentarlo.'
+          });
+        }
+        this.scrollToBottom();
+      },
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Error al consultar chatbot:', err);
+        this.messages.push({
+          role: 'model',
+          content: 'Ocurrió un problema de conexión al intentar comunicarme con el asistente. Asegúrate de tener el backend corriendo y configurado.'
+        });
+        this.scrollToBottom();
+      }
+    });
+  }
+
+  private formatContent(text: string): string {
+    if (!text) return '';
+    // Reemplazar saltos de línea por <br>
+    let formatted = text.replace(/\n/g, '<br>');
+    // Reemplazar **negrita** por <strong>negrita</strong>
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return formatted;
+  }
+
+  private scrollToBottom() {
+    setTimeout(() => {
+      try {
+        if (this.scrollContainer) {
+          this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+        }
+      } catch (err) {
+        // Ignorar errores menores de scroll
+      }
+    }, 100);
   }
 }

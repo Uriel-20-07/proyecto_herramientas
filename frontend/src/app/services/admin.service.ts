@@ -119,4 +119,8 @@ export class AdminService {
   getTopProductos(rango: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/ventas/top-productos?rango=${rango}`, { headers: this.getHeaders() });
   }
+
+  getReportes(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/reportes`, { headers: this.getHeaders() });
+  }
 }
