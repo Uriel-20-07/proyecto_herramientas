@@ -114,6 +114,7 @@ export class PedidosComponent implements OnInit {
    * Determina el costo de envío (S/ 5.00 si el subtotal <= S/ 50.00, gratis si > S/ 50.00).
    */
   calcularEnvio(pedido: any): number {
+    if (pedido.esUrgente) return 10;
     const subtotal = this.calcularSubtotal(pedido);
     return subtotal > 50 ? 0 : 5;
   }
@@ -231,11 +232,6 @@ export class PedidosComponent implements OnInit {
     doc.setTextColor(colorTextOscuro[0], colorTextOscuro[1], colorTextOscuro[2]);
     doc.text(this.formatearFechaPDF(pedido.fecha), 114, 51);
 
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(13, 148, 136); // Teal #0D9488
-    doc.text(pedido.estado.toUpperCase(), 114, 57);
-
     // --- Tabla de Productos ---
     const headers = [['PRODUCTO', 'CANT.', 'PRECIO UNIT.', 'SUBTOTAL']];
     const body = pedido.detalles.map((det: any) => {
@@ -248,8 +244,24 @@ export class PedidosComponent implements OnInit {
       ];
     });
 
+    // --- Panel de Establecimiento de Recojo / Envío a Domicilio ---
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, 66, 180, 13, 'F');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(colorSlateGray[0], colorSlateGray[1], colorSlateGray[2]);
+    const panelTitle = pedido.esUrgente ? 'DIRECCIÓN DE ENVÍO URGENTE A DOMICILIO' : 'LUGAR DE RECOJO SELECCIONADO';
+    doc.text(panelTitle, 19, 70.5);
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(colorTextOscuro[0], colorTextOscuro[1], colorTextOscuro[2]);
+    const puntoRecojo = pedido.direccionEnvio || (pedido.esUrgente ? 'Domicilio predeterminado en Arequipa' : 'Establecimiento predeterminado en Arequipa');
+    doc.text(puntoRecojo, 19, 76);
+
     autoTable(doc, {
-      startY: 68,
+      startY: 82,
       head: headers,
       body: body,
       theme: 'striped',
@@ -282,39 +294,70 @@ export class PedidosComponent implements OnInit {
     });
 
     // --- Sección de Totales ---
-    const finalY = (doc as any).lastAutoTable.finalY + 6;
+    let currentY = (doc as any).lastAutoTable.finalY + 6;
 
     const total = pedido.total;
-    const subtotalBase = total / 1.18;
-    const igv = total - subtotalBase;
+    const subtotalProductos = this.calcularSubtotal(pedido);
+    const costoEnvio = this.calcularEnvio(pedido);
+    const descuento = this.calcularDescuento(pedido);
 
+    const subtotalProductosNeto = subtotalProductos - descuento;
+    const subtotalBase = subtotalProductosNeto / 1.18;
+    const igv = subtotalProductosNeto - subtotalBase;
+
+    // 1. Subtotal de los productos (Base Imponible)
     doc.setFont('Helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(100, 116, 139); // Gray slate
-    doc.text('Subtotal:', 160, finalY, { align: 'right' });
+    doc.text('Subtotal (Base Imponible):', 160, currentY, { align: 'right' });
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text(this.formatMonto(subtotalBase), 195, finalY, { align: 'right' });
+    doc.text(this.formatMonto(subtotalBase), 195, currentY, { align: 'right' });
+    currentY += 5;
 
+    // 2. IGV (18%)
     doc.setFont('Helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
-    doc.text('IGV (18%):', 160, finalY + 5, { align: 'right' });
+    doc.text('IGV (18%):', 160, currentY, { align: 'right' });
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text(this.formatMonto(igv), 195, finalY + 5, { align: 'right' });
+    doc.text(this.formatMonto(igv), 195, currentY, { align: 'right' });
+    currentY += 5;
+
+    // 3. Descuento por cupón (si aplica)
+    if (descuento > 0) {
+      doc.setFont('Helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text('Descuento:', 160, currentY, { align: 'right' });
+      doc.setFont('Helvetica', 'bold');
+      doc.setTextColor(185, 28, 28); // Rojo
+      doc.text('- ' + this.formatMonto(descuento), 195, currentY, { align: 'right' });
+      currentY += 5;
+    }
+
+    // 4. Costo de envío (si aplica / si es menor de 50)
+    if (costoEnvio > 0) {
+      doc.setFont('Helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text('Costo de envío:', 160, currentY, { align: 'right' });
+      doc.setFont('Helvetica', 'bold');
+      doc.setTextColor(15, 23, 42);
+      doc.text(this.formatMonto(costoEnvio), 195, currentY, { align: 'right' });
+      currentY += 5;
+    }
 
     // Barra TOTAL A PAGAR
     doc.setFillColor(15, 23, 42);
-    doc.rect(120, finalY + 8, 75, 9, 'F');
+    doc.rect(120, currentY + 3, 75, 9, 'F');
 
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(9.5);
     doc.setTextColor(255, 255, 255);
-    doc.text('TOTAL A PAGAR:', 123, finalY + 14);
+    doc.text('TOTAL A PAGAR:', 123, currentY + 9);
 
     doc.setFontSize(10.5);
     doc.setTextColor(colorOrange[0], colorOrange[1], colorOrange[2]);
-    doc.text(this.formatMonto(total), 192, finalY + 14, { align: 'right' });
+    doc.text(this.formatMonto(total), 192, currentY + 9, { align: 'right' });
 
     // --- Pie de Página Fijo ---
     const pageHeight = doc.internal.pageSize.height;
@@ -328,7 +371,7 @@ export class PedidosComponent implements OnInit {
     doc.setFontSize(8);
     doc.setTextColor(203, 213, 225); // Slate claro
     doc.text('Gracias por su compra en FarmaCode. Este documento es su comprobante de pago.', 105, pageHeight - 10, { align: 'center' });
-    doc.text('www.farmacode.pe | atencion@farmacode.pe | Lima, Peru', 105, pageHeight - 5, { align: 'center' });
+    doc.text('www.farmacode.pe | atencion@farmacode.pe | Arequipa, Peru', 105, pageHeight - 5, { align: 'center' });
 
     // Descargar el archivo PDF en el navegador
     doc.save(`FarmaCode_Boleta_Pedido_${nroBoleta}.pdf`);

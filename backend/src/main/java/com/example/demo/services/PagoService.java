@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
 @Service
 public class PagoService {
@@ -124,13 +125,16 @@ public class PagoService {
             cuponRepository.save(cupon);
         }
 
-        totalFinal = totalFinal.add(BigDecimal.valueOf((subtotal > 50.0) ? 0.0 : 5.0));
+        double costoEnvio = request.isEsUrgente() ? 10.0 : ((subtotal > 50.0) ? 0.0 : 5.0);
+        totalFinal = totalFinal.add(BigDecimal.valueOf(costoEnvio));
 
         Pedido pedido = new Pedido();
         pedido.setUsuario(carrito.getUsuario());
         pedido.setFecha(LocalDateTime.now());
         pedido.setEstado("PAGADO");
         pedido.setTotal(totalFinal);
+        pedido.setDireccionEnvio(request.getDireccionEnvio());
+        pedido.setEsUrgente(request.isEsUrgente());
         pedidoRepository.save(pedido); // Guarda el objeto
         // Como el objeto 'pedido' ya existe en memoria, ya tiene el ID asignado
         // y puedes seguir usándolo sin necesidad de re-asignarlo.
@@ -155,16 +159,51 @@ public class PagoService {
 
         carritoService.vaciarCarrito(idUsuario);
 
-        // Envío de correo... (se mantiene igual)
+        // Envío de correo...
         User usuario = carrito.getUsuario();
+        long nroPedidoCliente = pedidoRepository.countByUsuario(usuario);
+        String nroBoleta = String.format("%06d", nroPedidoCliente);
+
         CompletableFuture.runAsync(() -> {
             try {
                 emailService.sendOrderConfirmationEmail(usuario.getEmail(),
                         usuario.getNombre() + " " + usuario.getApellido(), pedido, detallesGuardados,
-                        request.getCodigoCupon());
+                        request.getCodigoCupon(), nroBoleta);
             } catch (Exception e) {
                 System.out.println("Error en correo: " + e.getMessage());
             }
         });
+    }
+
+    public Map<String, Object> validarCupon(Integer idUsuario, String codigo) {
+        if (codigo == null || codigo.trim().isEmpty()) {
+            throw new RuntimeException("Código de cupón vacío.");
+        }
+        
+        Cupon cupon = cuponRepository.findByCodigo(codigo.trim().toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Cupón inválido o inexistente."));
+                
+        if (!cupon.getUsuario().getId().equals(idUsuario)) {
+            throw new RuntimeException("Este cupón no pertenece a tu cuenta.");
+        }
+        
+        if (!cupon.getActivo()) {
+            throw new RuntimeException("El cupón no está activo.");
+        }
+        
+        if (cupon.getUsado()) {
+            throw new RuntimeException("El cupón ya fue usado.");
+        }
+        
+        if (cupon.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("El cupón ha expirado.");
+        }
+        
+        return Map.of(
+            "valido", true,
+            "valorDescuento", cupon.getValorDescuento(),
+            "tipoDescuento", cupon.getTipoDescuento(),
+            "descripcion", cupon.getDescripcion()
+        );
     }
 }

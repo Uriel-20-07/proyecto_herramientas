@@ -11,6 +11,8 @@ import { AdminDashboardComponent } from './pages/dashboard/admin/admin.component
 import { VendedorDashboardComponent } from './pages/dashboard/vendedor/vendedor.component';
 import { RecuperarContraseñaComponent } from './components/recuperar-contrasena/recuperar-contrasena.component';
 import { PedidosComponent } from './pages/pedidos/pedidos';
+import { ProductoDetalleComponent } from './pages/producto-detalle/producto-detalle';
+import { FavoritosComponent } from './pages/favoritos/favoritos';
 
 
 
@@ -42,7 +44,8 @@ import { PedidosComponent } from './pages/pedidos/pedidos';
  */
 export const routes: Routes = [
   // Dashboards de administración (rutas sin guard, el componente maneja el auth)
-  { path: 'dashboard/admin', component: AdminDashboardComponent },
+  { path: 'dashboard/admin', redirectTo: 'dashboard/admin/resumen', pathMatch: 'full' },
+  { path: 'dashboard/admin/:tab', component: AdminDashboardComponent },
   { path: 'dashboard/vendedor', component: VendedorDashboardComponent },
 
   // Página principal
@@ -51,6 +54,8 @@ export const routes: Routes = [
   // Páginas del catálogo y comercio
   { path: 'blog', component: BlogComponent },
   { path: 'catalogo', component: CatalogoComponent },
+  { path: 'catalogo/producto', component: ProductoDetalleComponent },
+  { path: 'catalogo/producto/:id', component: ProductoDetalleComponent },
   { path: 'carrito', component: CarritoComponent },
   { path: 'pago', component: PagoComponent }, // Proceso de checkout
 
@@ -68,7 +73,7 @@ export const routes: Routes = [
   // Rutas que redirigen a inicio (funcionalidades implementadas como modales o pendientes)
   { path: 'login', redirectTo: '', pathMatch: 'full' },     // Login es un modal, no página
   { path: 'registro', redirectTo: '', pathMatch: 'full' },  // Registro es un modal, no página
-  { path: 'favoritos', redirectTo: '', pathMatch: 'full' }, // TODO: implementar favoritos
+  { path: 'favoritos', component: FavoritosComponent },
   { path: 'pedidos', component: PedidosComponent },
 
   // Wildcard: cualquier ruta no definida → redirige a inicio

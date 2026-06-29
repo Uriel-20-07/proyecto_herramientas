@@ -95,7 +95,14 @@
                                     <span class="navbar-sug-nombre">{{ sug.nombre }}</span>
                                     <span class="navbar-sug-categoria">{{ sug.categoriaNombre }}</span>
                                 </div>
-                                <span class="navbar-sug-precio">S/ {{ sug.precioVenta | number:'1.2-2' }}</span>
+                                <div class="navbar-sug-precio-container" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 70px;">
+                                    @if (hasDiscount(sug)) {
+                                        <span class="navbar-sug-precio" style="color: #e63946; font-weight: 800;">S/ {{ getFinalPrice(sug) | number:'1.2-2' }}</span>
+                                        <span class="navbar-sug-original-precio" style="text-decoration: line-through; color: #94a3b8; font-size: 0.75rem; margin-top: 1px;">S/ {{ sug.precioVenta | number:'1.2-2' }}</span>
+                                    } @else {
+                                        <span class="navbar-sug-precio">S/ {{ sug.precioVenta | number:'1.2-2' }}</span>
+                                    }
+                                </div>
                                 <button type="button" class="navbar-sug-add-btn"
                                     title="Agregar al carrito"
                                     (click)="agregarDesdeSugerencia(sug, $event)">
@@ -138,7 +145,7 @@
                     </div>
                     <div class="cart-label">
                         <span class="cart-hint">Mi carrito</span>
-                        <span class="cart-price">S/ {{ getCartTotal(cartCount$ | async) }}</span>
+                        <span class="cart-price">S/ {{ getCartTotal() }}</span>
                     </div>
                 </button>
             </div>
@@ -209,6 +216,13 @@
                             <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
                         Nosotros
+                    </a>
+                    <a routerLink="/favoritos" class="bn-link" routerLinkActive="active">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        Favoritos
                     </a>
                 </nav>
 

@@ -1,10 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { CatalogoService, CategoriaApi, ProductoApi } from '../../services/catalogo.service';
 import { AlgoliaService, AlgoliaProducto } from '../../services/algolia.service';
+import { FavoritosService } from '../../services/favoritos.service';
+import { AuthService } from '../../services/auth.service';
+import { AuthModalService } from '../../services/auth-modal.service';
 import { Subject, takeUntil } from 'rxjs';
 
 /**
@@ -19,6 +22,12 @@ interface ProductoVista {
   imagen: string;
   etiquetaPromo?: string;
   colorPromo?: 'orange' | 'red';
+  fechaCaducidad?: string;
+  descuentoInfo?: {
+    percentage: number;
+    message: string;
+    isExpired: boolean;
+  };
 }
 
 /**
@@ -35,7 +44,7 @@ interface ProductoVista {
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './catalogo.html',
   styleUrls: ['./catalogo.css']
 })
@@ -74,7 +83,10 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     private readonly catalogoService: CatalogoService,
     private readonly cartService: CartService,
     private readonly route: ActivatedRoute,
-    private readonly algoliaService: AlgoliaService
+    private readonly algoliaService: AlgoliaService,
+    private readonly favoritosService: FavoritosService,
+    private readonly authService: AuthService,
+    private readonly authModalService: AuthModalService
   ) {}
 
   ngOnInit(): void {
@@ -217,16 +229,29 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   }
 
   private filtrarPorPrecio(lista: ProductoVista[]): ProductoVista[] {
-    return lista.filter((p) => p.precio <= this.precioMaximo);
+    return lista.filter((p) => {
+      const precioFinal = p.descuentoInfo && p.descuentoInfo.percentage > 0
+        ? p.precio * (1 - p.descuentoInfo.percentage)
+        : p.precio;
+      return precioFinal <= this.precioMaximo;
+    });
   }
 
   private ordenarProductos(): void {
     switch (this.ordenamiento) {
       case 'precio_asc':
-        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => a.precio - b.precio);
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => {
+          const precioA = a.descuentoInfo && a.descuentoInfo.percentage > 0 ? a.precio * (1 - a.descuentoInfo.percentage) : a.precio;
+          const precioB = b.descuentoInfo && b.descuentoInfo.percentage > 0 ? b.precio * (1 - b.descuentoInfo.percentage) : b.precio;
+          return precioA - precioB;
+        });
         break;
       case 'precio_desc':
-        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => b.precio - a.precio);
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => {
+          const precioA = a.descuentoInfo && a.descuentoInfo.percentage > 0 ? a.precio * (1 - a.descuentoInfo.percentage) : a.precio;
+          const precioB = b.descuentoInfo && b.descuentoInfo.percentage > 0 ? b.precio * (1 - b.descuentoInfo.percentage) : b.precio;
+          return precioB - precioA;
+        });
         break;
       case 'nombre_asc':
         this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -248,7 +273,40 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     return texto.replace(new RegExp(`(${termino})`, 'gi'), '<mark>$1</mark>');
   }
 
-  // ─── Carrito ──────────────────────────────────────────────────────────────
+  getFecha(producto: any): string {
+    const fecha = producto.fechaCaducidad || producto.fecha_caducidad;
+    if (!fecha) return '';
+    if (Array.isArray(fecha)) {
+      const mes = fecha[1] < 10 ? '0' + fecha[1] : fecha[1];
+      const dia = fecha[2] < 10 ? '0' + fecha[2] : fecha[2];
+      return `${fecha[0]}-${mes}-${dia}`;
+    }
+    return fecha;
+  }
+
+  getDiscountInfo(fechaCaducidad: string): {
+    percentage: number;
+    message: string;
+    isExpired: boolean;
+  } {
+    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
+    const expDate = new Date(fechaCaducidad);
+    const today = new Date();
+    const monthsLeft =
+      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
+
+    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
+      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
+    }
+
+    if (monthsLeft <= 6)
+      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
+    if (monthsLeft <= 12)
+      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
+    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
+
+    return { percentage: 0, message: '', isExpired: false };
+  }
 
   agregarProducto(producto: ProductoVista): void {
     const productoApi: ProductoApi = {
@@ -256,7 +314,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precioVenta: producto.precio,
-      categoria: this.categorias.find((c) => c.nombre === producto.categoriaNombre) ?? null
+      categoria: this.categorias.find((c) => c.nombre === producto.categoriaNombre) ?? null,
+      fechaCaducidad: producto.fechaCaducidad
     };
 
     this.cartService.add(productoApi);
@@ -279,6 +338,10 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     const categoriaNombre = producto.categoria?.nombre ?? 'General';
     const categoriaKey = categoriaNombre.toLowerCase();
     const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
+    
+    const fechaCad = this.getFecha(producto);
+    const descuento = this.getDiscountInfo(fechaCad);
+
     return {
       id: producto.idProducto,
       nombre: producto.nombre,
@@ -286,14 +349,20 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       precio: Number(producto.precioVenta),
       categoriaNombre,
       imagen,
-      etiquetaPromo: this.obtenerPromo(producto.nombre, categoriaNombre),
-      colorPromo: categoriaNombre === 'MEDICAMENTOS' ? 'red' : 'orange'
+      etiquetaPromo: descuento.message || this.obtenerPromo(producto.nombre, categoriaNombre),
+      colorPromo: descuento.message ? 'red' : (categoriaNombre === 'MEDICAMENTOS' ? 'red' : 'orange'),
+      fechaCaducidad: fechaCad,
+      descuentoInfo: descuento
     };
   }
 
   private mapAlgoliaHit(hit: AlgoliaProducto): ProductoVista {
     const categoriaKey = (hit.categoriaNombre ?? 'general').toLowerCase();
     const imagen = hit.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
+    
+    const fechaCad = this.getFecha(hit);
+    const descuento = this.getDiscountInfo(fechaCad);
+
     return {
       id: hit.idProducto,
       nombre: hit.nombre,
@@ -301,8 +370,10 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       precio: hit.precioVenta,
       categoriaNombre: hit.categoriaNombre ?? 'General',
       imagen,
-      etiquetaPromo: this.obtenerPromo(hit.nombre, hit.categoriaNombre ?? ''),
-      colorPromo: (hit.categoriaNombre ?? '').toUpperCase() === 'MEDICAMENTOS' ? 'red' : 'orange'
+      etiquetaPromo: descuento.message || this.obtenerPromo(hit.nombre, hit.categoriaNombre ?? ''),
+      colorPromo: descuento.message ? 'red' : ((hit.categoriaNombre ?? '').toUpperCase() === 'MEDICAMENTOS' ? 'red' : 'orange'),
+      fechaCaducidad: fechaCad,
+      descuentoInfo: descuento
     };
   }
 
@@ -313,6 +384,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     if (etiqueta.includes('belleza')) return 'Nuevo';
     return undefined;
   }
+
+
 
   /**
    * Lee `?q=` y `?categoria=` de la URL (provistos por el navbar) y
@@ -336,5 +409,19 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       // Sin término: filtrado local por categoría/precio
       this.aplicarFiltros();
     }
+  }
+
+  isFavorito(idProducto: number): boolean {
+    return this.favoritosService.isFavorito(idProducto);
+  }
+
+  toggleFavorito(idProducto: number, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('login');
+      return;
+    }
+    this.favoritosService.toggleFavorito(idProducto).subscribe();
   }
 }

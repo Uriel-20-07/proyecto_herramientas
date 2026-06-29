@@ -61,6 +61,7 @@ public class AlgoliaService {
         record.put("precioVenta", producto.getPrecioVenta() != null ? producto.getPrecioVenta().doubleValue() : 0.0);
         record.put("stock", producto.getStock() != null ? producto.getStock() : 0);
         record.put("imgUrl", producto.getImgUrl() != null ? producto.getImgUrl() : "");
+        record.put("fechaCaducidad", producto.getFechaCaducidad() != null ? producto.getFechaCaducidad().toString() : "");
 
         if (producto.getCategoria() != null) {
             record.put("categoriaId", producto.getCategoria().getIdCategoria());

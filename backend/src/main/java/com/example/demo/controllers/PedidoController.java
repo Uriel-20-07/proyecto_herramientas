@@ -61,6 +61,8 @@ public class PedidoController {
                 map.put("fecha", pedido.getFecha());
                 map.put("estado", pedido.getEstado());
                 map.put("total", pedido.getTotal());
+                map.put("direccionEnvio", pedido.getDireccionEnvio());
+                map.put("esUrgente", pedido.isEsUrgente());
 
                 // Obtener detalles del pedido desde la BD de forma eficiente
                 List<DetallePedido> detalles = detallePedidoRepository.findByPedido_IdPedido(pedido.getIdPedido());

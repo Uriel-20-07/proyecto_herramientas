@@ -1,4 +1,4 @@
-:root {
+:host {
     --primary-orange: #ff6b00;
     --primary-red: #e63946;
     --accent-blue: #00b4d8;
@@ -11,55 +11,180 @@
     max-width: 1300px;
     margin: 0 auto;
     padding: 30px 20px;
-    background-color: var(--bg-light);
+    background-color: #ffffff;
 }
 
-.filtros-section {
-    margin: -22px 0 32px;
-    background: rgba(255, 255, 255, 0.92);
+/* Layout de dos columnas para filtros y catálogo */
+.catalogo-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 40px;
+    margin-top: 30px;
+    align-items: start;
+}
+
+@media (max-width: 992px) {
+    .catalogo-layout {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}
+
+/* Sidebar de Filtros */
+.filtros-sidebar {
+    background: #ffffff;
     border: 1px solid rgba(26, 42, 74, 0.08);
     border-radius: 18px;
-    padding: 18px;
-    box-shadow: var(--shadow-soft);
-    backdrop-filter: blur(8px);
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    position: sticky;
+    top: 100px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+}
+
+.filtros-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.filtros-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.filtros-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(26, 42, 74, 0.1);
+    border-radius: 99px;
+}
+
+.filtros-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(26, 42, 74, 0.2);
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(26, 42, 74, 0.06);
+    padding-bottom: 12px;
+}
+
+.sidebar-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1a2a4a;
+}
+
+.btn-limpiar-sidebar {
+    background: none;
+    border: none;
+    color: #ff6b00;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.btn-limpiar-sidebar:hover {
+    color: #d05303;
+    text-decoration: underline;
+}
+
+/* Grupos de filtro */
+.filtro-grupo-sidebar {
+    margin-bottom: 24px;
+}
+
+.filtro-grupo-sidebar:last-child {
+    margin-bottom: 0;
+}
+
+.filtro-titulo-sidebar {
+    font-size: 0.9rem;
+    font-weight: 750;
+    color: #1a2a4a;
+    margin: 0 0 14px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Categorías en lista vertical */
+.categorias-vertical-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.categoria-item-sidebar {
+    background: none;
+    border: 1px solid rgba(26, 42, 74, 0.08);
+    color: #2d3436;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.categoria-item-sidebar:hover {
+    border-color: #ff6b00;
+    color: #ff6b00;
+    background-color: rgba(255, 107, 0, 0.02);
+}
+
+.categoria-item-sidebar.active {
+    background-color: #1a2a4a;
+    border-color: #1a2a4a;
+    color: #ffffff;
+}
+
+/* Selector de ordenar */
+.filtro-select-sidebar {
+    width: 100%;
+    border: 1px solid rgba(26, 42, 74, 0.14);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #2d3436;
+    background: #ffffff;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filtro-select-sidebar:focus {
+    border-color: #ff6b00;
+}
+
+/* Slider de precio */
+.precio-rango-info {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a2a4a;
+    margin-bottom: 8px;
+}
+
+.filtro-range-sidebar {
+    width: 100%;
+    accent-color: #ff6b00;
+    cursor: pointer;
 }
 
 .ver-mas-btn {
     border: none;
-    border-radius: 12px;
+    background: transparent;
+    padding: 0;
     font-weight: 700;
     cursor: pointer;
-    transition: transform 0.2s, background 0.2s, color 0.2s;
+    transition: transform 0.2s, color 0.2s;
 }
 .ver-mas-btn:hover {
     transform: translateY(-1px);
-}
-
-.categorias-bar {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-}
-
-.categoria-chip {
-    border: 1px solid rgba(26, 42, 74, 0.14);
-    background: #ffffff;
-    color: var(--text-dark);
-    border-radius: 999px;
-    padding: 10px 16px;
-    font-weight: 600;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.categoria-chip:hover,
-.categoria-chip.active {
-    background: #1a2a4a;
-    color: white;
-    border-color: #1a2a4a;
 }
 
 .mensaje-panel,
@@ -95,7 +220,7 @@
     position: relative;
     height: 350px;
     background-image: url('/cuidate.png');
-    background-position: center right;
+    background-position: right top;
     background-repeat: no-repeat;
     background-size: cover;
     border-radius: 20px;
@@ -159,16 +284,20 @@
 .header-line {
     width: 60px;
     height: 4px;
-    background: var(--accent-blue);
+    background: var(--primary-orange, #ff6b00);
     margin-top: 8px;
     border-radius: 2px;
 }
 
 .ver-mas {
-    color: var(--accent-blue);
+    color: #000000;
     font-weight: 600;
     text-decoration: none;
     transition: 0.3s;
+}
+
+.ver-mas:hover {
+    color: var(--primary-orange, #ff6b00);
 }
 
 /* --- Grid de Productos --- */
@@ -178,7 +307,6 @@
     gap: 25px;
 }
 
-/* --- Tarjeta de Producto (Premium) --- */
 .producto-card {
     background: white;
     border-radius: 16px;
@@ -186,7 +314,8 @@
     display: flex;
     flex-direction: column;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
     position: relative;
 }
 
@@ -228,11 +357,11 @@
 }
 
 .bg-orange {
-    background: var(--primary-orange);
+    background-color: #ff6b00 !important;
 }
 
 .bg-red {
-    background: var(--primary-red);
+    background-color: #e63946 !important;
 }
 
 /* Tipografía */
@@ -662,4 +791,36 @@ mark {
     .autocomplete-dropdown {
         border-radius: 0 0 14px 14px;
     }
+}
+
+/* Floating Card Favorite Button */
+.btn-card-fav {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #94a3b8;
+    z-index: 15;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+}
+
+.btn-card-fav:hover {
+    transform: scale(1.1);
+    color: var(--primary-orange, #e85d04);
+    background: #ffffff;
+}
+
+.btn-card-fav.active {
+    color: var(--primary-orange, #e85d04);
+    border-color: rgba(232, 93, 4, 0.1);
+    background: #fff3e6;
 }

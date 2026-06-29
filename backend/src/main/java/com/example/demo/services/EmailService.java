@@ -170,21 +170,30 @@ public class EmailService {
      * @param detalles     lista de detalles del pedido.
      * @param codigoCupon  código de cupón usado (opcional).
      */
-    public void sendOrderConfirmationEmail(String destinatario, String nombre, Pedido pedido, List<DetallePedido> detalles, String codigoCupon) {
+    public void sendOrderConfirmationEmail(String destinatario, String nombre, Pedido pedido, List<DetallePedido> detalles, String codigoCupon, String nroBoleta) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("noreply@mifarmacode.com");
             message.setTo(destinatario);
-            message.setSubject("Confirmación de tu compra #" + pedido.getIdPedido() + " - MiFarmaCode");
+            message.setSubject("Confirmación de tu compra #" + nroBoleta + " - MiFarmaCode");
 
             StringBuilder contenido = new StringBuilder();
             contenido.append("Hola ").append(nombre).append(",\n\n")
                     .append("¡Muchas gracias por tu compra! Tu pago ha sido procesado con éxito.\n\n")
                     .append("Detalles de tu pedido:\n")
                     .append("--------------------------------------------------\n")
-                    .append("Código de pedido: #").append(pedido.getIdPedido()).append("\n")
-                    .append("Fecha de compra: ").append(pedido.getFecha().toString()).append("\n\n")
-                    .append("Productos:\n");
+                    .append("Código de pedido: #").append(nroBoleta).append("\n")
+                    .append("Fecha de compra: ").append(pedido.getFecha().toString()).append("\n");
+
+            if (pedido.getDireccionEnvio() != null && !pedido.getDireccionEnvio().trim().isEmpty()) {
+                if (pedido.isEsUrgente()) {
+                    contenido.append("Dirección de envío a domicilio: ").append(pedido.getDireccionEnvio()).append("\n");
+                } else {
+                    contenido.append("Establecimiento de recojo: ").append(pedido.getDireccionEnvio()).append("\n");
+                }
+            }
+
+            contenido.append("\nProductos:\n");
 
             double subtotalProductos = 0.0;
             for (DetallePedido det : detalles) {
@@ -199,17 +208,27 @@ public class EmailService {
                         .append("\n");
             }
 
-            double costoEnvio = (subtotalProductos > 50.0) ? 0.0 : 5.0;
+            double costoEnvio = pedido.isEsUrgente() ? 10.0 : ((subtotalProductos > 50.0) ? 0.0 : 5.0);
 
             contenido.append("\n");
-            contenido.append("Costo de envío: ").append(costoEnvio == 0.0 ? "Gratis" : "S/ 5.00").append("\n");
+            contenido.append("Costo de envío: ").append(costoEnvio == 10.0 ? "S/ 10.00 (Urgente)" : (costoEnvio == 0.0 ? "Gratis" : "S/ 5.00")).append("\n");
             if (codigoCupon != null && !codigoCupon.trim().isEmpty()) {
                 contenido.append("Cupón aplicado: ").append(codigoCupon.toUpperCase()).append("\n");
             }
             contenido.append("Total pagado: S/ ").append(pedido.getTotal()).append("\n")
-                    .append("--------------------------------------------------\n\n")
-                    .append("Tu pedido ya está siendo preparado para su envío.\n\n")
-                    .append("Si tienes alguna duda o consulta, puedes responder a este correo o escribir a soporte@mifarmacode.com.\n\n")
+                    .append("--------------------------------------------------\n\n");
+
+            if (pedido.getDireccionEnvio() != null && !pedido.getDireccionEnvio().trim().isEmpty()) {
+                if (pedido.isEsUrgente()) {
+                    contenido.append("Tu pedido urgente está siendo enviado a tu domicilio.\n\n");
+                } else {
+                    contenido.append("Tu pedido está siendo enviado al punto de recojo seleccionado para que puedas retirarlo.\n\n");
+                }
+            } else {
+                contenido.append("Tu pedido ya está siendo preparado para su envío.\n\n");
+            }
+
+            contenido.append("Si tienes alguna duda o consulta, puedes responder a este correo o escribir a soporte@mifarmacode.com.\n\n")
                     .append("Saludos,\nEquipo MiFarmaCode");
 
             message.setText(contenido.toString());

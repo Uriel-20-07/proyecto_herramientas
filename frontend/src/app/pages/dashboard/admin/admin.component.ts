@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthModalService } from '../../../services/auth-modal.service';
 
@@ -13,7 +13,7 @@ import { AuthModalService } from '../../../services/auth-modal.service';
   styleUrl: './admin.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
-  activeTab: 'resumen' | 'ventas' | 'inventario' | 'predicciones' = 'resumen';
+  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' = 'resumen';
   adminUser: any = null;
 
   productos: any[] = [];
@@ -41,6 +41,14 @@ export class AdminDashboardComponent implements OnInit {
   topMes: any[] = [];
   maxTopSemana: number = 0;
   maxTopMes: number = 0;
+  sugerenciasCompra: any[] = [];
+  sugerenciasDescuento: any[] = [];
+  mostrarCompraCollapse: boolean = false;
+  mostrarDescuentoCollapse: boolean = false;
+
+  // Variables Reportes
+  reporteData: any = null;
+  cargandoReportes: boolean = false;
 
   chartPath = '';
   chartAreaPath = '';
@@ -50,8 +58,9 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private adminService: AdminService,
     private router: Router,
+    private route: ActivatedRoute,
     private authModalService: AuthModalService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (!this.adminService.isAuthenticated() || !this.adminService.isAdmin()) {
@@ -61,6 +70,20 @@ export class AdminDashboardComponent implements OnInit {
     }
     this.adminUser = this.adminService.getCurrentUser();
     this.cargarDatos();
+
+    // Sincronizar tab desde la URL al inicializar o al navegar
+    this.route.params.subscribe(params => {
+      const tab = params['tab'];
+      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones'].includes(tab)) {
+        this.activeTab = tab as 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones';
+        if (tab === 'reportes') {
+          this.cargarReportes();
+        }
+      } else {
+        // Redirigir por defecto a resumen si el parámetro es vacío o inválido
+        this.router.navigate(['/dashboard/admin/resumen']);
+      }
+    });
   }
 
   cargarDatos(): void {
@@ -68,6 +91,7 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any[]) => {
         this.productos = data;
         this.bajoStockCount = this.productos.filter((p) => p.stock < 60).length;
+        this.calcularPredicciones();
       },
       error: (err: any) => console.error(err),
     });
@@ -76,6 +100,7 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any[]) => {
         this.ventas = data;
         this.calcularMetricasVentas();
+        this.calcularPredicciones();
       },
       error: (err: any) => console.error(err),
     });
@@ -172,8 +197,151 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
-  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'predicciones'): void {
+  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones'): void {
     this.activeTab = tab;
+    this.router.navigate(['/dashboard/admin', tab]);
+    if (tab === 'reportes') {
+      this.cargarReportes();
+    }
+  }
+
+  cargarReportes(): void {
+    this.cargandoReportes = true;
+    this.adminService.getReportes().subscribe({
+      next: (data: any) => {
+        this.reporteData = data;
+        this.cargandoReportes = false;
+      },
+      error: (err: any) => {
+        console.error('Error al cargar reportes:', err);
+        this.cargandoReportes = false;
+      }
+    });
+  }
+
+  calcularPredicciones(): void {
+    if (!this.productos || this.productos.length === 0 || !this.ventas || this.ventas.length === 0) {
+      return;
+    }
+
+    // 1. Calcular las ventas de los últimos 30 días por producto
+    const ventasPorProducto = new Map<number, number>();
+    const hoy = new Date();
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hoy.getDate() - 30);
+
+    this.ventas.forEach(venta => {
+      const fechaVenta = new Date(venta.fecha);
+      if (fechaVenta >= hace30Dias) {
+        venta.detalles?.forEach((det: any) => {
+          const prodId = det.producto.idProducto;
+          const cant = det.cantidad || 0;
+          ventasPorProducto.set(prodId, (ventasPorProducto.get(prodId) || 0) + cant);
+        });
+      }
+    });
+
+    // 2. Generar sugerencias de compra y descuento
+    const tempCompra: any[] = [];
+    const tempDescuento: any[] = [];
+
+    this.productos.forEach(prod => {
+      const sales30d = ventasPorProducto.get(prod.idProducto) || 0;
+      const stock = prod.stock || 0;
+
+      // --- LÓGICA DE COMPRA ---
+      let prioridad: 'CRÍTICA' | 'ALTA' | 'MEDIA' = 'MEDIA';
+      let cantidadSugerida = 0;
+      let necesitaCompra = false;
+      let motivoCompra = '';
+
+      if (stock === 0) {
+        necesitaCompra = true;
+        prioridad = 'CRÍTICA';
+        cantidadSugerida = sales30d > 0 ? sales30d * 2 : 50;
+        motivoCompra = 'Sin stock disponible actualmente.';
+      } else if (stock < 15) {
+        necesitaCompra = true;
+        prioridad = 'ALTA';
+        cantidadSugerida = sales30d > 0 ? Math.max(sales30d * 1.5, 30) : 40;
+        motivoCompra = 'Stock muy bajo (menos de 15 unidades).';
+      } else if (sales30d > 0) {
+        const diasParaAgotar = stock / (sales30d / 30.0);
+        if (diasParaAgotar <= 10) {
+          necesitaCompra = true;
+          prioridad = 'CRÍTICA';
+          cantidadSugerida = Math.round(sales30d * 1.5);
+          motivoCompra = `Alta demanda. Stock se agotará en aprox. ${Math.round(diasParaAgotar)} días.`;
+        } else if (diasParaAgotar <= 25) {
+          necesitaCompra = true;
+          prioridad = 'ALTA';
+          cantidadSugerida = Math.round(sales30d * 1.2);
+          motivoCompra = `Stock de seguridad comprometido. Se agotará en ${Math.round(diasParaAgotar)} días.`;
+        } else if (diasParaAgotar <= 45 && stock < 60) {
+          necesitaCompra = true;
+          prioridad = 'MEDIA';
+          cantidadSugerida = Math.round(sales30d * 1.0);
+          motivoCompra = `Rotación constante. Abastecer para prevenir quiebres.`;
+        }
+      }
+
+      if (necesitaCompra) {
+        tempCompra.push({
+          idProducto: prod.idProducto,
+          nombre: prod.nombre,
+          imgUrl: prod.imgUrl,
+          stock: stock,
+          ventas30d: sales30d,
+          prioridad: prioridad,
+          cantidadSugerida: Math.max(cantidadSugerida, 10),
+          motivo: motivoCompra
+        });
+      }
+
+      // --- LÓGICA DE DESCUENTO ---
+      let necesitaDescuento = false;
+      let porcentajeDescuento = 0;
+      let motivoDescuento = '';
+
+      const fechaCad = prod.fechaCaducidad || prod.fecha_caducidad;
+      let mesesParaVencer = 999;
+      if (fechaCad) {
+        const expDate = new Date(fechaCad);
+        mesesParaVencer = (expDate.getFullYear() - hoy.getFullYear()) * 12 + (expDate.getMonth() - hoy.getMonth());
+      }
+
+      if (mesesParaVencer >= 0 && mesesParaVencer <= 6 && stock > 0) {
+        necesitaDescuento = true;
+        porcentajeDescuento = 30;
+        motivoDescuento = `Próximo a vencer en ${mesesParaVencer} meses (Lógica FEFO Liquidación).`;
+      } else if (mesesParaVencer > 6 && mesesParaVencer <= 12 && stock > 10) {
+        necesitaDescuento = true;
+        porcentajeDescuento = 15;
+        motivoDescuento = `Vence en ${mesesParaVencer} meses. Estimular salida de lote.`;
+      } else if (sales30d === 0 && stock >= 40) {
+        necesitaDescuento = true;
+        porcentajeDescuento = stock >= 80 ? 20 : 10;
+        motivoDescuento = `Baja rotación. Sin ventas en últimos 30 días con stock de ${stock} unidades.`;
+      }
+
+      if (necesitaDescuento) {
+        tempDescuento.push({
+          idProducto: prod.idProducto,
+          nombre: prod.nombre,
+          imgUrl: prod.imgUrl,
+          stock: stock,
+          ventas30d: sales30d,
+          porcentajeSugerido: porcentajeDescuento,
+          precioActual: prod.precioVenta,
+          precioSugerido: prod.precioVenta * (1 - porcentajeDescuento / 100),
+          motivo: motivoDescuento
+        });
+      }
+    });
+
+    const prioOrder = { 'CRÍTICA': 0, 'ALTA': 1, 'MEDIA': 2 };
+    this.sugerenciasCompra = tempCompra.sort((a, b) => prioOrder[a.prioridad as 'CRÍTICA' | 'ALTA' | 'MEDIA'] - prioOrder[b.prioridad as 'CRÍTICA' | 'ALTA' | 'MEDIA']);
+    this.sugerenciasDescuento = tempDescuento.sort((a, b) => b.porcentajeSugerido - a.porcentajeSugerido);
   }
   showVentaDetails(venta: any): void {
     this.selectedVenta = venta;
@@ -249,8 +417,278 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   // =========================================================================
+  // REPORTES: 4 PDFs individuales para cada reporte
+  // =========================================================================
+  private _imprimirPDF(nombreArchivo: string, html: string): void {
+    if (typeof window === 'undefined') return;
+    const tituloOrig = document.title;
+    document.title = nombreArchivo;
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+    doc.open(); doc.write(html); doc.close();
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      document.title = tituloOrig;
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 400);
+  }
+
+  /**
+   * Shell HTML para los 4 reportes administrativos.
+   * Paleta FarmaCode: #1a1c28 oscuro + #ea580c naranja + cajas gris claro.
+   */
+  private _pdfShell(tipoDoc: string, numeroDoc: string, operador: string, fecha: string, contenido: string): string {
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; color: #1a1c28; background: #ffffff;
+         -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pdf-header { background-color: #1a1c28; padding: 22px 32px 18px;
+    display: flex; justify-content: space-between; align-items: flex-start; }
+  .brand-name { font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
+  .brand-name span { color: #ea580c; }
+  .brand-tagline { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+  .doc-type-label { font-size: 11px; font-weight: 700; color: #ea580c;
+    text-transform: uppercase; letter-spacing: 1.5px; text-align: right; margin-bottom: 4px; }
+  .doc-number { font-size: 20px; font-weight: 800; color: #ffffff; text-align: right; }
+  .pdf-body { padding: 28px 32px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 24px; }
+  .info-cell { padding: 14px 18px; background: #f8fafc;
+    border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
+  .info-label { font-size: 9px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .info-value { font-size: 13px; font-weight: 700; color: #1a1c28; }
+  .info-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+  thead tr { background-color: #1a1c28; }
+  th { padding: 11px 14px; color: #ffffff; font-weight: 700; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.8px; text-align: left; }
+  td { padding: 11px 14px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+  tbody tr:nth-child(even) { background-color: #f8fafc; }
+  tbody tr:last-child td { border-bottom: none; }
+  .td-right { text-align: right; } .td-center { text-align: center; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-red { background: #fef2f2; color: #dc2626; }
+  .badge-yellow { background: #fffbeb; color: #d97706; }
+  .badge-green { background: #f0fdf4; color: #16a34a; }
+  .total-box { background: #1a1c28; border-radius: 4px; padding: 14px 22px;
+    display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .total-label { color: #ffffff; font-weight: 700; font-size: 13px; text-transform: uppercase; }
+  .total-value { color: #ea580c; font-weight: 800; font-size: 18px; }
+  .highlight-note { border-left: 4px solid #ea580c; background: #fff7ed;
+    padding: 10px 16px; font-size: 11px; color: #7c3a00; margin-bottom: 20px; border-radius: 0 4px 4px 0; }
+  .pdf-footer { border-top: 1px solid #e2e8f0; padding: 14px 32px;
+    text-align: center; font-size: 9px; color: #94a3b8; margin-top: 32px; }
+</style>
+</head><body>
+  <div class="pdf-header">
+    <div>
+      <div class="brand-name">Farma<span>Code</span></div>
+      <div class="brand-tagline">Expertos en salud digital | 0800-000-000 | www.farmacode.pe</div>
+    </div>
+    <div>
+      <div class="doc-type-label">${tipoDoc}</div>
+      <div class="doc-number">${numeroDoc}</div>
+    </div>
+  </div>
+  <div class="pdf-body">
+    <div class="info-grid">
+      <div class="info-cell">
+        <div class="info-label">Generado por</div>
+        <div class="info-value">${operador}</div>
+        <div class="info-sub">Administrador del sistema</div>
+      </div>
+      <div class="info-cell" style="border-right:none;">
+        <div class="info-label">Fecha de Emisión</div>
+        <div class="info-value">${fecha}</div>
+        <div class="info-sub">Datos en tiempo real</div>
+      </div>
+    </div>
+    ${contenido}
+  </div>
+  <div class="pdf-footer">
+    FarmaCode &ndash; Sistema de Gestión Farmacéutica &nbsp;|&nbsp; Documento interno confidencial &nbsp;|&nbsp; No válido como comprobante fiscal
+  </div>
+</body></html>`;
+  }
+
+  // ── PDF 1: Ventas por Período ─────────────────────────────────────────────
+  descargarReporteVentas(): void {
+    if (!this.reporteData) return;
+    const d = this.reporteData.ventasPeriodo;
+    const fmt = (v: any) => `S/ ${Number(v || 0).toFixed(2)}`;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const totalGeneral = Number(d?.anio?.total || 0);
+    const contenido = `
+      <div class="info-grid" style="margin-bottom:20px;">
+        <div class="info-cell">
+          <div class="info-label">Período Semana (7 días)</div>
+          <div class="info-value" style="color:#ea580c;font-size:18px;">${fmt(d?.semana?.total)}</div>
+          <div class="info-sub">${d?.semana?.numeroPedidos ?? 0} pedidos registrados</div>
+        </div>
+        <div class="info-cell" style="border-right:none;">
+          <div class="info-label">Período Mes (30 días)</div>
+          <div class="info-value" style="color:#ea580c;font-size:18px;">${fmt(d?.mes?.total)}</div>
+          <div class="info-sub">${d?.mes?.numeroPedidos ?? 0} pedidos registrados</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Período de Análisis</th>
+          <th class="td-center">N° de Pedidos</th>
+          <th class="td-right">Total Recaudado</th>
+          <th class="td-right">Ticket Promedio</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><strong>Últimos 7 días</strong></td><td class="td-center">${d?.semana?.numeroPedidos ?? 0}</td>
+            <td class="td-right" style="font-weight:700;">${fmt(d?.semana?.total)}</td>
+            <td class="td-right">${fmt(Number(d?.semana?.total || 0) / Math.max(d?.semana?.numeroPedidos || 1, 1))}</td></tr>
+          <tr><td><strong>Últimos 30 días</strong></td><td class="td-center">${d?.mes?.numeroPedidos ?? 0}</td>
+            <td class="td-right" style="font-weight:700;">${fmt(d?.mes?.total)}</td>
+            <td class="td-right">${fmt(Number(d?.mes?.total || 0) / Math.max(d?.mes?.numeroPedidos || 1, 1))}</td></tr>
+          <tr><td><strong>Últimos 12 meses</strong></td><td class="td-center">${d?.anio?.numeroPedidos ?? 0}</td>
+            <td class="td-right" style="font-weight:700;">${fmt(d?.anio?.total)}</td>
+            <td class="td-right">${fmt(Number(d?.anio?.total || 0) / Math.max(d?.anio?.numeroPedidos || 1, 1))}</td></tr>
+        </tbody>
+      </table>
+      <div class="total-box">
+        <span class="total-label">Total Acumulado (12 meses):</span>
+        <span class="total-value">${fmt(totalGeneral)}</span>
+      </div>`;
+    this._imprimirPDF('REPORTE_VENTAS_FARMACODE',
+      this._pdfShell('Reporte de Ventas por Período', 'R-VEN-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
+  }
+
+  // ── PDF 2: Top 10 Productos ───────────────────────────────────────────────
+  descargarReporteTopProductos(): void {
+    if (!this.reporteData) return;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const totalUnidades = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
+    const totalIngresos = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
+    const filas = (this.reporteData.topProductos || []).map((item: any, i: number) => `
+      <tr>
+        <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
+        <td><strong>${item.nombre}</strong></td>
+        <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
+        <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
+      </tr>`).join('');
+    const contenido = `
+      <div class="highlight-note">Período analizado: <strong>últimos 30 días</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
+      <table>
+        <thead><tr>
+          <th class="td-center" style="width:8%">Rank</th>
+          <th style="width:52%">Producto / Medicamento</th>
+          <th class="td-center" style="width:20%">Unidades Vendidas</th>
+          <th class="td-right" style="width:20%">Ingreso Generado</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="total-box">
+        <span class="total-label">Total general (30 días): ${totalUnidades} unidades</span>
+        <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
+      </div>`;
+    this._imprimirPDF('TOP_PRODUCTOS_FARMACODE',
+      this._pdfShell('Top 10 Productos Más Vendidos', 'R-PROD-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
+  }
+
+  // ── PDF 3: Lotes por Vencer ───────────────────────────────────────────────
+  descargarReporteLotes(): void {
+    if (!this.reporteData) return;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const lotes = this.reporteData.lotesProximosVencer || [];
+    const criticos = lotes.filter((l: any) => l.nivelAlerta === 'CRÍTICO').length;
+    const altos = lotes.filter((l: any) => l.nivelAlerta === 'ALTO').length;
+    const filas = lotes.map((l: any) => {
+      const bc = l.nivelAlerta === 'CRÍTICO' ? 'badge-red' : l.nivelAlerta === 'ALTO' ? 'badge-yellow' : 'badge-green';
+      const dc = l.diasRestantes <= 30 ? '#dc2626' : l.diasRestantes <= 90 ? '#d97706' : '#16a34a';
+      return `<tr>
+        <td style="font-family:monospace;font-size:10px;color:#64748b;">${l.codigoLote}</td>
+        <td><strong>${l.producto}</strong></td>
+        <td class="td-center" style="font-weight:700;">${l.stock}</td>
+        <td class="td-center">${l.fechaVencimiento}</td>
+        <td class="td-center" style="font-weight:800;color:${dc};">${l.diasRestantes} días</td>
+        <td class="td-center"><span class="badge ${bc}">${l.nivelAlerta}</span></td></tr>`;
+    }).join('');
+    const sinLotes = `<div style="padding:24px;text-align:center;color:#16a34a;font-weight:700;font-size:13px;background:#f0fdf4;border-radius:4px;border:1px solid #bbf7d0;">
+      ✓ No hay lotes con vencimiento próximo en los siguientes 6 meses.</div>`;
+    const contenido = `
+      <div class="info-grid" style="margin-bottom:20px;">
+        <div class="info-cell">
+          <div class="info-label">Alerta Crítica (≤ 30 días)</div>
+          <div class="info-value" style="color:#dc2626;font-size:22px;">${criticos}</div>
+          <div class="info-sub">lotes requieren acción inmediata</div>
+        </div>
+        <div class="info-cell" style="border-right:none;">
+          <div class="info-label">Alerta Alta (31–90 días)</div>
+          <div class="info-value" style="color:#d97706;font-size:22px;">${altos}</div>
+          <div class="info-sub">lotes en monitoreo activo</div>
+        </div>
+      </div>
+      ${lotes.length ? `<table>
+        <thead><tr>
+          <th style="width:16%">Código Lote</th><th style="width:32%">Producto</th>
+          <th class="td-center" style="width:10%">Stock</th>
+          <th class="td-center" style="width:16%">Vencimiento</th>
+          <th class="td-center" style="width:14%">Días Restantes</th>
+          <th class="td-center" style="width:12%">Nivel Alerta</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>` : sinLotes}`;
+    this._imprimirPDF('LOTES_VENCER_FARMACODE',
+      this._pdfShell('Lotes Próximos a Vencer', 'R-INV-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
+  }
+
+  // ── PDF 4: Top 5 Clientes ─────────────────────────────────────────────────
+  descargarReporteClientes(): void {
+    if (!this.reporteData) return;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const clientes = this.reporteData.clientesTop || [];
+    const medallas = ['🥇', '🥈', '🥉'];
+    const totalGlobal = clientes.reduce((s: number, c: any) => s + Number(c.totalGastado || 0), 0);
+    const filas = clientes.map((c: any, i: number) => `
+      <tr>
+        <td class="td-center" style="font-size:16px;">${medallas[i] || (i + 1)}</td>
+        <td><strong>${c.nombre}</strong></td>
+        <td style="font-size:10px;color:#64748b;">${c.email}</td>
+        <td class="td-center" style="font-weight:700;">${c.numeroPedidos}</td>
+        <td class="td-right" style="font-weight:800;color:#ea580c;font-size:13px;">S/ ${Number(c.totalGastado || 0).toFixed(2)}</td>
+        <td class="td-right" style="color:#64748b;">S/ ${Number((c.totalGastado || 0) / Math.max(c.numeroPedidos || 1, 1)).toFixed(2)}</td>
+      </tr>`).join('');
+    const contenido = `
+      <div class="highlight-note">Clasificación basada en el <strong>gasto histórico acumulado</strong> de todos los pedidos registrados en el sistema.</div>
+      <table>
+        <thead><tr>
+          <th class="td-center" style="width:8%">#</th>
+          <th style="width:26%">Cliente</th>
+          <th style="width:28%">Correo Electrónico</th>
+          <th class="td-center" style="width:12%">Pedidos</th>
+          <th class="td-right" style="width:14%">Gasto Total</th>
+          <th class="td-right" style="width:14%">Ticket Prom.</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="total-box">
+        <span class="total-label">Gasto combinado Top 5 clientes:</span>
+        <span class="total-value">S/ ${totalGlobal.toFixed(2)}</span>
+      </div>`;
+    this._imprimirPDF('CLIENTES_TOP_FARMACODE',
+      this._pdfShell('Top 5 Clientes por Gasto Total', 'R-CLI-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
+  }
+
+
+  // =========================================================================
   // REPORTE PDF PREMIUM COMPLETO (Nombre de Archivo Integrado con Chrome)
   // =========================================================================
+
+
   descargarReporte(tipo: 'semana' | 'mes'): void {
     if (typeof window === 'undefined') return;
 
@@ -319,9 +757,9 @@ export class AdminDashboardComponent implements OnInit {
               position: relative; background-color: #ffffff;
             }
             .top-border-bar { height: 6px; background-color: #1a1c28; width: 100%; margin-bottom: 25px; }
-            .header-pdf { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #00f2fe; padding-bottom: 15px; margin-bottom: 30px; }
-            .logo-brand { font-size: 24px; font-weight: 700; color: #1a1c28; margin: 0; }
-            .logo-brand span { color: #00f2fe; }
+            .header-pdf { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #ea580c; padding-bottom: 15px; margin-bottom: 30px; }
+            .logo-brand { font-size: 24px; font-weight: 800; color: #ffffff; margin: 0; }
+            .logo-brand span { color: #ea580c; }
             .meta-info { text-align: right; font-size: 11px; color: #64748b; line-height: 1.5; }
             h1 { font-size: 18px; color: #1a1c28; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 0.5px; }
             .sub-h1 { font-size: 12px; color: #64748b; margin-bottom: 25px; }
@@ -338,15 +776,17 @@ export class AdminDashboardComponent implements OnInit {
         </head>
         <body>
           <div class="page-container">
-            <div class="top-border-bar"></div>
-            <div class="header-pdf">
-              <div class="logo-brand">FarmaCode</div>
-              <div class="meta-info">
-                <div><strong>Operador:</strong> ${this.adminUser?.nombre || 'Admin'}</div>
-                <div><strong>Emisión:</strong> ${fechaActual}</div>
+            <div style="background:#1a1c28;margin:-20mm -20mm 25px;padding:22px 20mm 18px;display:flex;justify-content:space-between;align-items:flex-start;">
+              <div>
+                <div class="logo-brand">Farma<span>Code</span></div>
+                <div style="font-size:10px;color:#94a3b8;margin-top:4px;">Expertos en salud digital | 0800-000-000 | www.farmacode.pe</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px;font-weight:700;color:#ea580c;text-transform:uppercase;letter-spacing:1.5px;">${tituloReporte}</div>
+                <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Emisión: ${fechaActual} | Op: ${this.adminUser?.nombre || 'Admin'}</div>
               </div>
             </div>
-            <h1>${tituloReporte}</h1>
+            <h1 style="display:none;">${tituloReporte}</h1>
             <div class="sub-h1">${subtitulo}</div>
             <div class="summary-box">
               <strong>Análisis de Demanda Farmacéutica:</strong><br>

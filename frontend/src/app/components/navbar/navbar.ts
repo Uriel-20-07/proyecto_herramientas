@@ -158,7 +158,7 @@ export class NavbarComponent implements OnDestroy {
     this.terminoBusqueda = sugerencia.nombre;
     this.mostrarSugerencias = false;
     this.sugerencias = [];
-    this.buscarCatalogo();
+    this.router.navigate(['/catalogo/producto'], { queryParams: { producto: sugerencia.idProducto } });
   }
 
   /**
@@ -200,11 +200,16 @@ export class NavbarComponent implements OnDestroy {
     return counts?.reduce((total, item) => total + item.cantidad, 0) ?? 0;
   }
 
-  getCartTotal(items: Array<{ producto: any, cantidad: number }> | null): string {
-    const total = items?.reduce(
-      (acc, item) => acc + Number(item.producto.precioVenta) * item.cantidad,
-      0
-    ) ?? 0;
-    return total.toFixed(2);
+  getCartTotal(): string {
+    return this.cartService.getTotal().toFixed(2);
+  }
+
+  hasDiscount(sug: AlgoliaProducto): boolean {
+    const fecha = this.cartService.getFecha(sug);
+    return this.cartService.getDiscountInfo(fecha).percentage > 0;
+  }
+
+  getFinalPrice(sug: AlgoliaProducto): number {
+    return this.cartService.getFinalPrice(sug);
   }
 }

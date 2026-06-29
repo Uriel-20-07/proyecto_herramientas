@@ -14,7 +14,7 @@
         <span class="exito-valor">S/ {{ total | number:'1.2-2' }}</span>
       </div>
       <div class="exito-fila">
-        <span>Envío a</span>
+        <span>{{ formPago.esUrgente ? 'Dirección de envío' : 'Establecimiento de recojo' }}</span>
         <span class="exito-valor">{{ direccionFinal }}</span>
       </div>
     </div>
@@ -43,42 +43,97 @@
           <h2>Información de Entrega</h2>
         </div>
 
-        <div class="aviso-lima">
-          <span></span>
-          <strong>Envíos solo dentro de Lima Metropolitana</strong>
+        <!-- Selector de Tipo de Envío -->
+        <div class="envio-tipo-selector" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <label
+            style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 12px; border: 1px solid rgba(26, 42, 74, 0.12); border-radius: 12px; cursor: pointer; background: white;"
+            [style.borderColor]="!formPago.esUrgente ? '#1a2e4a' : 'rgba(26, 42, 74, 0.12)'"
+            [style.background]="!formPago.esUrgente ? '#f8fafc' : 'white'">
+            <input type="radio" name="tipoEnvio" [value]="false" [(ngModel)]="formPago.esUrgente"
+              (change)="onTipoEnvioChange()" style="accent-color: #1a2e4a;" />
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-weight: 700; font-size: 0.9rem; color: #1a2e4a;">Recojo en Tienda</span>
+              <span style="font-size: 0.75rem; color: #64748b;">S/ 5.00 o Gratis (> S/ 50.00)</span>
+            </div>
+          </label>
+          <label
+            style="flex: 1; display: flex; align-items: center; gap: 0.5rem; padding: 12px; border: 1px solid rgba(26, 42, 74, 0.12); border-radius: 12px; cursor: pointer; background: white;"
+            [style.borderColor]="formPago.esUrgente ? '#1a2e4a' : 'rgba(26, 42, 74, 0.12)'"
+            [style.background]="formPago.esUrgente ? '#f8fafc' : 'white'">
+            <input type="radio" name="tipoEnvio" [value]="true" [(ngModel)]="formPago.esUrgente"
+              (change)="onTipoEnvioChange()" style="accent-color: #e85d04;" />
+            <div style="display: flex; flex-direction: column;">
+              <span style="font-weight: 700; font-size: 0.9rem; color: #e85d04;"> Envío Urgente</span>
+              <span style="font-size: 0.75rem; color: #64748b;">Entrega a domicilio (S/ 10.00)</span>
+            </div>
+          </label>
         </div>
 
         <div class="form-row-doble">
           <div class="form-group">
             <label>Distrito <span class="req">*</span></label>
-            <select [(ngModel)]="formPago.distrito" class="form-input form-select">
+            <select [(ngModel)]="formPago.distrito" (change)="onDistritoChange()" class="form-input form-select">
               <option value="" disabled>Selecciona tu distrito</option>
-              <option *ngFor="let d of distritosLima" [value]="d">{{ d }}</option>
+              <option *ngFor="let d of distritosArequipa" [value]="d">{{ d }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Provincia / Departamento</label>
-            <input type="text" value="Lima / Lima" class="form-input" readonly />
+            <label>Departamento</label>
+            <input type="text" value="Arequipa" class="form-input" readonly />
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Dirección detallada <span class="req">*</span></label>
-          <input type="text" [(ngModel)]="formPago.direccionDetalle" placeholder="Ej: Av. Arequipa 1234, Dpto 501"
-            class="form-input" />
-          <span class="field-hint">Calle, número, piso / departamento</span>
+        <div *ngIf="!formPago.esUrgente">
+          <div class="form-group" *ngIf="formPago.distrito">
+            <label>Establecimiento de Recojo (Tienda / Bodega) <span class="req">*</span></label>
+            <select [(ngModel)]="formPago.puntoSeleccionado" (change)="onPuntoRecojoChange()"
+              class="form-input form-select">
+              <option value="" disabled selected>Selecciona una tienda o bodega de recojo</option>
+              <option *ngFor="let punto of puntosRecojoPorDistrito[formPago.distrito]" [value]="punto.nombre">
+                {{ punto.nombre }} ({{ punto.direccion }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="formPago.distrito && formPago.direccionDetalle">
+            <label>Dirección del Establecimiento</label>
+            <input type="text" [(ngModel)]="formPago.direccionDetalle" class="form-input" readonly />
+            <span class="field-hint">Dirección de la tienda o bodega donde se dejará el medicamento</span>
+          </div>
+
+          <div class="form-group" *ngIf="formPago.distrito && formPago.direccionDetalle">
+            <label>Referencia del Establecimiento</label>
+            <input type="text" [(ngModel)]="formPago.referencia" class="form-input" readonly />
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>Referencia <span class="label-opt">(opcional)</span></label>
-          <input type="text" [(ngModel)]="formPago.referencia" placeholder="Ej: Edificio azul, frente al parque"
-            class="form-input" />
+        <div *ngIf="formPago.esUrgente">
+          <div class="form-group" *ngIf="formPago.distrito">
+            <label>Dirección Domiciliaria Detallada <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="formPago.direccionDetalle" class="form-input"
+              placeholder="Ej: Calle Melgar 123, Dpto 202" />
+            <span class="field-hint">Ingresa la dirección exacta en Arequipa para el delivery a domicilio</span>
+          </div>
+
+          <div class="form-group" *ngIf="formPago.distrito && formPago.direccionDetalle">
+            <label>Referencia de Entrega <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="formPago.referencia" class="form-input"
+              placeholder="Ej: Frente al parque Melgar, portón marrón" />
+          </div>
         </div>
 
-        <div class="direccion-preview" *ngIf="formPago.distrito && formPago.direccionDetalle">
-          <span></span>
-          <span>{{ formPago.direccionDetalle }}<span *ngIf="formPago.referencia"> — {{ formPago.referencia }}</span>,
-            <strong>{{ formPago.distrito }}</strong>, Lima</span>
+        <div class="direccion-preview" *ngIf="formPago.distrito && formPago.direccionDetalle && !formPago.esUrgente">
+          <span><strong>Lugar de recojo:</strong> {{ formPago.direccionDetalle }}<span *ngIf="formPago.referencia"> — {{
+              formPago.referencia }}</span>,
+            <strong>{{ formPago.distrito }}</strong>, Arequipa</span>
+        </div>
+
+        <div class="direccion-preview urgent"
+          *ngIf="formPago.distrito && formPago.direccionDetalle && formPago.esUrgente"
+          style="border-left: 4px solid #e85d04; background: #fff8f5; padding: 12px; border-radius: 8px; margin-top: 15px;">
+          <span><strong style="color: #e85d04;"> Envío Urgente a Domicilio:</strong> {{ formPago.direccionDetalle
+            }}<span *ngIf="formPago.referencia"> — {{ formPago.referencia }}</span>,
+            <strong>{{ formPago.distrito }}</strong>, Arequipa</span>
         </div>
       </section>
 
@@ -210,10 +265,21 @@
       </div>
 
       <div class="boleta-body">
+
         <div class="resumen-linea">
-          <span>Subtotal</span>
-          <span>S/ {{ subtotal | number:'1.2-2' }}</span>
+          <span>Subtotal (Base Imponible)</span>
+          <span>S/ {{ subtotalBase | number:'1.2-2' }}</span>
         </div>
+        <div class="resumen-linea">
+          <span>IGV (18%)</span>
+          <span>S/ {{ igv | number:'1.2-2' }}</span>
+        </div>
+        
+        <div class="resumen-linea descuento" *ngIf="descuentoTotal > 0">
+          <span>Descuento</span>
+          <span style="color: #dc2626; font-weight: 700;">− S/ {{ descuentoTotal | number:'1.2-2' }}</span>
+        </div>
+
         <div class="resumen-linea">
           <span>Envío</span>
           <span [class.envio-gratis]="costoEnvio === 0">
@@ -229,12 +295,8 @@
             <button (click)="aplicarCupon()" [disabled]="cuponAplicado" class="btn-aplicar">Canjear</button>
           </div>
         </div>
-        <p class="cupon-exito-msg" *ngIf="cuponAplicado"> Cupón {{ codigoAplicado }} aplicado (−30%)</p>
-
-        <div class="resumen-linea descuento" *ngIf="descuento > 0">
-          <span>Descuento</span>
-          <span>− S/ {{ descuento | number:'1.2-2' }}</span>
-        </div>
+        <p class="cupon-exito-msg" *ngIf="cuponAplicado"> Cupón {{ codigoAplicado }} aplicado (−{{ (descuento /
+          subtotal) * 100 | number:'1.0-0' }}%)</p>
       </div>
 
       <div class="boleta-footer">

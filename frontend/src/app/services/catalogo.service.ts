@@ -32,6 +32,8 @@ export interface ProductoApi {
   precioVenta: number;
   categoria?: CategoriaApi | null; // Categoría del producto (null si no tiene)
   imgUrl?: string;           // URL de la imagen del producto (opcional)
+  fechaCaducidad?: any;
+  fecha_caducidad?: any;
 }
 
 /**

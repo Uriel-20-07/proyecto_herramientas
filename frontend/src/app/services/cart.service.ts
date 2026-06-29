@@ -131,6 +131,29 @@ export class CartService {
   }
 
   /**
+   * Agrega un producto al carrito especificando cantidad.
+   */
+  addWithQty(idProducto: number, cantidad: number): void {
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('login');
+      return;
+    }
+
+    const url = `${this.apiUrl}/agregar?idProducto=${idProducto}&cantidad=${cantidad}`;
+    this.http.post<any>(url, {}, { headers: this.getHeaders() }).subscribe({
+      next: (carrito) => {
+        if (carrito && carrito.detalles) {
+          this.itemsSubject.next(carrito.detalles);
+          this.saveItemsToStorage(carrito.detalles);
+        }
+      },
+      error: (err) => {
+        console.error('Error al agregar producto al carrito:', err);
+      }
+    });
+  }
+
+  /**
    * Disminuye en 1 la cantidad de un producto en el carrito.
    * Si la cantidad llega a 0, el backend elimina la línea del carrito.
    *
@@ -225,16 +248,60 @@ export class CartService {
     return this.itemsSubject.value.reduce((total, item) => total + item.cantidad, 0);
   }
 
+  getFecha(producto: any): string {
+    const fecha = producto.fechaCaducidad || producto.fecha_caducidad;
+    if (!fecha) return '';
+    if (Array.isArray(fecha)) {
+      const mes = fecha[1] < 10 ? '0' + fecha[1] : fecha[1];
+      const dia = fecha[2] < 10 ? '0' + fecha[2] : fecha[2];
+      return `${fecha[0]}-${mes}-${dia}`;
+    }
+    return fecha;
+  }
+
+  getDiscountInfo(fechaCaducidad: string): {
+    percentage: number;
+    message: string;
+    isExpired: boolean;
+  } {
+    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
+    const expDate = new Date(fechaCaducidad);
+    const today = new Date();
+    const monthsLeft =
+      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
+
+    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
+      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
+    }
+
+    if (monthsLeft <= 6)
+      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
+    if (monthsLeft <= 12)
+      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
+    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
+
+    return { percentage: 0, message: '', isExpired: false };
+  }
+
+  getFinalPrice(producto: any): number {
+    const discountInfo = this.getDiscountInfo(this.getFecha(producto));
+    if (discountInfo.isExpired) return 0;
+    const discountAmount = producto.precioVenta * discountInfo.percentage;
+    return producto.precioVenta - discountAmount;
+  }
+
   /**
    * Calcula el subtotal del carrito (precio × cantidad de cada ítem).
    *
    * @returns suma total del carrito como número.
    */
   getTotal(): number {
-    return this.itemsSubject.value.reduce(
-      (total, item) => total + Number(item.producto.precioVenta) * item.cantidad,
-      0
-    );
+    return this.itemsSubject.value.reduce((total, item) => {
+      const fecha = this.getFecha(item.producto);
+      const discountInfo = this.getDiscountInfo(fecha);
+      if (discountInfo.isExpired) return total;
+      return total + this.getFinalPrice(item.producto) * item.cantidad;
+    }, 0);
   }
 
   /**

@@ -108,14 +108,8 @@ export class CarritoComponent {
     return producto.precioVenta - discountAmount;
   }
 
-  /**
-   * Recalcula el subtotal del carrito (ignora el precio de productos vencidos).
-   */
   getSubtotal(): number {
-    return this.getItems().reduce((acc, item) => {
-      if (this.getDiscountInfo(this.getFecha(item.producto)).isExpired) return acc;
-      return acc + this.getFinalPrice(item.producto) * item.cantidad;
-    }, 0);
+    return this.cartService.getTotal();
   }
 
   getCount(): number {
