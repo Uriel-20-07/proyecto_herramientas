@@ -246,10 +246,15 @@ export class PagoComponent implements OnInit, AfterViewChecked {
     ],
     'Yanahuara': [
       { nombre: 'Bodega El Mirador Yanahuara', direccion: 'Calle Roma 102', referencia: 'A media cuadra del Mirador de Yanahuara' },
-      { nombre: 'Minimarket Yanahuara Centro', direccion: 'Av. Ejercito 315', referencia: 'Frente al centro comercial Plaza Vea' },
+      { nombre: 'Minimarket Yanahuara Centro', direccion: 'Av. Ejército 315', referencia: 'Frente al centro comercial Plaza Vea' },
       { nombre: 'Tienda San Vicente', direccion: 'Calle Misti 408', referencia: 'Al lado del templo de Yanahuara' },
       { nombre: 'Bodega Umacollo', direccion: 'Calle Melgar 212', referencia: 'Frente al parque de Umacollo' },
-      { nombre: 'Minimarket Chullo', direccion: 'Calle Chullo 504', referencia: 'Cerca a la clínica San Juan de Dios' }
+      { nombre: 'Minimarket Chullo', direccion: 'Calle Chullo 504', referencia: 'Cerca a la clínica San Juan de Dios' },
+      { nombre: 'Bodega Los Arces', direccion: 'Calle Los Arces 118', referencia: 'Frente al parque Los Arces, Umacollo' },
+      { nombre: 'Minimarket La Estación', direccion: 'Av. Víctor Andrés Belaunde 240', referencia: 'A dos cuadras del óvalo Quiñones' },
+      { nombre: 'Bodega Santa Rosa Yanahuara', direccion: 'Calle Santa Rosa 325', referencia: 'Al costado de la parroquia Santa Rosa' },
+      { nombre: 'Tienda El Volcán', direccion: 'Calle El Volcán 510', referencia: 'Frente a la plazuela El Volcán' },
+      { nombre: 'Minimarket Yanahuara Express', direccion: 'Av. Ejército 620', referencia: 'Cerca al grifo Primax de Av. Ejército' }
     ],
     'Yarabamba': [
       { nombre: 'Bodega Yarabamba Centro', direccion: 'Calle Principal S/N', referencia: 'Frente a la Plaza de Armas de Yarabamba' },

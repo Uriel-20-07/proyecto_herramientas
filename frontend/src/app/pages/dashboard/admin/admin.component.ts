@@ -434,8 +434,14 @@ export class AdminDashboardComponent implements OnInit {
     const distritosCount = new Map<string, number>();
 
     activeVentas.forEach(venta => {
-      const dir = (venta.direccionEnvio || '').toLowerCase();
-      let distritoDetectado = 'Yanahuara'; // Distrito por defecto
+      const dir = (venta.direccionEnvio || '').trim();
+      let distritoDetectado = 'Yanahuara'; // Fallback: distrito con más ventas
+
+      // El formato de direccionEnvio es: "Bodega Nombre - Av. Calle 123, Distrito"
+      // El distrito va siempre en el último segmento después de la última coma
+      const partes = dir.split(',');
+      const ultimaParteRaw = (partes[partes.length - 1] || '').trim().toLowerCase();
+
       const distritosList = [
         'alto selva alegre', 'arequipa', 'cercado', 'cayma', 'cerro colorado',
         'characato', 'chiguata', 'jacobo hunter', 'josé luis bustamante y rivero',
@@ -445,10 +451,22 @@ export class AdminDashboardComponent implements OnInit {
         'socabaya', 'tiabaya', 'uchumayo', 'vitor', 'yanahuara', 'yarabamba', 'yura'
       ];
 
+      // Buscar en la última parte (más preciso)
       for (const d of distritosList) {
-        if (dir.includes(d)) {
+        if (ultimaParteRaw.includes(d)) {
           distritoDetectado = d.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
           break;
+        }
+      }
+
+      // Fallback: buscar el distrito al final de toda la cadena
+      if (distritoDetectado === 'Otro') {
+        const dirCompleto = dir.toLowerCase();
+        for (const d of distritosList) {
+          if (dirCompleto.endsWith(d) || dirCompleto.includes(`, ${d}`)) {
+            distritoDetectado = d.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            break;
+          }
         }
       }
 
