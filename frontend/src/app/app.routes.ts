@@ -13,7 +13,7 @@ import { RecuperarContraseñaComponent } from './components/recuperar-contrasena
 import { PedidosComponent } from './pages/pedidos/pedidos';
 import { ProductoDetalleComponent } from './pages/producto-detalle/producto-detalle';
 import { FavoritosComponent } from './pages/favoritos/favoritos';
-
+import { SeguimientoPedidoComponent } from './pages/seguimiento-pedido/seguimiento-pedido';
 
 
 /**
@@ -75,6 +75,7 @@ export const routes: Routes = [
   { path: 'registro', redirectTo: '', pathMatch: 'full' },  // Registro es un modal, no página
   { path: 'favoritos', component: FavoritosComponent },
   { path: 'pedidos', component: PedidosComponent },
+  { path: 'pedidos/pedido/:id/seguimiento', component: SeguimientoPedidoComponent},
 
   // Wildcard: cualquier ruta no definida → redirige a inicio
   { path: '**', redirectTo: '', pathMatch: 'full' },
