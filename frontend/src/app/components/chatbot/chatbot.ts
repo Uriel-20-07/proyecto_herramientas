@@ -3,9 +3,10 @@ import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { CartService } from '../../services/cart.service';
+import { CartService, CartItem } from '../../services/cart.service';
 import { AuthService } from '../../services/auth.service';
 import { AuthModalService } from '../../services/auth-modal.service';
+import { environment } from '../../../environments/environment';
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -28,7 +29,7 @@ export class ChatbotComponent implements OnInit, OnDestroy {
   userInput = '';
   messages: ChatMessage[] = [];
 
-  private readonly chatApiUrl = 'http://localhost:8080/api/chatbot/consultar';
+  private readonly chatApiUrl = `${environment.apiUrl}/api/chatbot/consultar`;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,

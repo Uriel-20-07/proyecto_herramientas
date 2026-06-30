@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { ProductoApi } from './catalogo.service';
 import { AuthService } from './auth.service';
 import { AuthModalService } from './auth-modal.service';
+import { environment } from '../../environments/environment';
 
 /**
  * Interfaz que representa un ítem (línea) dentro del carrito de compras.
@@ -34,7 +35,7 @@ export interface CartItem {
 })
 export class CartService {
   /** URL base de la API del carrito en el backend. */
-  private readonly apiUrl = 'http://localhost:8080/api/carrito';
+  private readonly apiUrl = `${environment.apiUrl}/api/carrito`;
 
   /** Clave usada para persistir el carrito en localStorage. */
   private readonly storageKey = 'carrito';

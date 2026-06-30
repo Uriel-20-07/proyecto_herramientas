@@ -4,7 +4,6 @@
     <div class="sidebar-brand">
       <span>FarmaCode Admin</span>
     </div>
-
     <nav class="sidebar-nav">
       <button [class.active]="activeTab === 'resumen'" (click)="setTab('resumen')" class="nav-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -16,7 +15,6 @@
         </svg>
         <span>Resumen</span>
       </button>
-
       <button [class.active]="activeTab === 'ventas'" (click)="setTab('ventas')" class="nav-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
@@ -26,7 +24,6 @@
         </svg>
         <span>Ventas</span>
       </button>
-
       <button [class.active]="activeTab === 'inventario'" (click)="setTab('inventario')" class="nav-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
@@ -38,7 +35,6 @@
         </svg>
         <span>Inventario</span>
       </button>
-
       <button [class.active]="activeTab === 'reportes'" (click)="setTab('reportes')" class="nav-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
@@ -50,7 +46,6 @@
         </svg>
         <span>Reportes</span>
       </button>
-
       <button [class.active]="activeTab === 'predicciones'" (click)="setTab('predicciones')" class="nav-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" class="nav-icon">
@@ -60,7 +55,6 @@
         <span>Predicciones</span>
       </button>
     </nav>
-
     <div class="sidebar-footer">
       <div class="user-profile">
         <div class="user-avatar">
@@ -86,7 +80,6 @@
       </button>
     </div>
   </aside>
-
   <main class="main-content">
     <header class="main-header">
       <div class="header-title">
@@ -97,7 +90,6 @@
         <span class="date-badge">{{ adminUser?.correoCorp }}</span>
       </div>
     </header>
-
     <!-- TAB: RESUMEN -->
     <div *ngIf="activeTab === 'resumen'" class="tab-pane animated-fade">
       <div class="metrics-grid">
@@ -191,7 +183,6 @@
         </div>
       </div>
     </div>
-
     <!-- TAB: VENTAS -->
     <div *ngIf="activeTab === 'ventas'" class="tab-pane animated-fade">
       <div class="card table-card">
@@ -240,7 +231,6 @@
         </div>
       </div>
     </div>
-
     <!-- TAB: INVENTARIO -->
     <div *ngIf="activeTab === 'inventario'" class="tab-pane animated-fade">
       <div class="card table-card">
@@ -305,10 +295,8 @@
         </div>
       </div>
     </div>
-
     <!-- TAB: REPORTES -->
     <div *ngIf="activeTab === 'reportes'" class="tab-pane animated-fade">
-
       <!-- Encabezado principal -->
       <div class="main-header" style="margin-bottom: 28px;">
         <div class="header-title">
@@ -316,7 +304,6 @@
           <div class="tab-indicator">Datos en tiempo real desde la base de datos</div>
         </div>
       </div>
-
       <!-- Loading spinner -->
       <div *ngIf="cargandoReportes" class="empty-message"
         style="min-height:300px;display:flex;align-items:center;justify-content:center;gap:12px;">
@@ -326,9 +313,7 @@
         </svg>
         Cargando reportes...
       </div>
-
       <div *ngIf="!cargandoReportes && reporteData">
-
         <!-- ═══════════════════════════════════════════════════════════════ -->
         <!-- REPORTE 1 — Ventas por Período (ancho completo)                -->
         <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -350,7 +335,6 @@
               Descargar PDF
             </button>
           </div>
-
           <!-- 3 tarjetas de métricas usando el estilo .metric-card del proyecto -->
           <div class="metrics-grid" style="margin-bottom:0;">
             <!-- Semana -->
@@ -377,7 +361,6 @@
               <div style="font-size:13px;color:#718096;padding-left:2px;">{{
                 reporteData.ventasPeriodo?.semana?.numeroPedidos }} pedidos realizados</div>
             </div>
-
             <!-- Mes — tarjeta destacada -->
             <div class="metric-card"
               style="flex-direction:column;align-items:flex-start;gap:8px;border-left:3px solid #ea580c;background:linear-gradient(135deg,#fff7ed 0%,#ffffff 60%);">
@@ -400,7 +383,6 @@
               <div style="font-size:13px;color:#718096;padding-left:2px;">{{
                 reporteData.ventasPeriodo?.mes?.numeroPedidos }} pedidos realizados</div>
             </div>
-
             <!-- Año -->
             <div class="metric-card"
               style="flex-direction:column;align-items:flex-start;gap:8px;border-left:3px solid #e2e8f0;">
@@ -424,10 +406,8 @@
             </div>
           </div>
         </div>
-
         <!-- Fila inferior: 2 columnas -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
-
           <!-- ════════════════════════════════════════════════════ -->
           <!-- REPORTE 2 — Top 10 Productos Más Vendidos           -->
           <!-- ════════════════════════════════════════════════════ -->
@@ -449,10 +429,8 @@
                 PDF
               </button>
             </div>
-
             <div class="empty-message" *ngIf="!reporteData.topProductos?.length">Sin datos de ventas en los últimos 30
               días.</div>
-
             <div class="table-responsive" *ngIf="reporteData.topProductos?.length">
               <table class="dashboard-table">
                 <thead>
@@ -486,7 +464,6 @@
               </table>
             </div>
           </div>
-
           <!-- ════════════════════════════════════════════════════ -->
           <!-- REPORTE 3 — Lotes Próximos a Vencer                 -->
           <!-- ════════════════════════════════════════════════════ -->
@@ -508,11 +485,9 @@
                 PDF
               </button>
             </div>
-
             <div class="empty-message" *ngIf="!reporteData.lotesProximosVencer?.length" style="color:#48bb78;">
               ✓ Sin lotes próximos a vencer. Inventario en buen estado.
             </div>
-
             <div class="table-responsive" *ngIf="reporteData.lotesProximosVencer?.length">
               <table class="dashboard-table">
                 <thead>
@@ -550,7 +525,6 @@
             </div>
           </div>
         </div>
-
         <!-- ════════════════════════════════════════════════════════ -->
         <!-- REPORTE 4 — Top 5 Clientes (ancho completo)             -->
         <!-- ════════════════════════════════════════════════════════ -->
@@ -572,9 +546,7 @@
               Descargar PDF
             </button>
           </div>
-
           <div class="empty-message" *ngIf="!reporteData.clientesTop?.length">Sin datos de clientes registrados.</div>
-
           <div class="table-responsive" *ngIf="reporteData.clientesTop?.length">
             <table class="dashboard-table">
               <thead>
@@ -625,252 +597,258 @@
     </div><!-- fin TAB REPORTES -->
 
 
-
-
-    <!-- TAB: PREDICCIONES -->
-
-
-
-
-
-
-    <!-- TAB: PREDICCIONES -->
-
     <div *ngIf="activeTab === 'predicciones'" class="tab-pane animated-fade">
-      <div class="card-header" style="margin-bottom: 20px;">
-        <h2>Predicciones de Abastecimiento y Liquidación (I.A.)</h2>
-        <span class="card-subtitle">Algoritmos inteligentes basados en ventas recientes (últimos 30 días), existencias
-          en inventario y reglas FEFO</span>
+      
+      <!-- NOTIFICACIÓN FLOTANTE -->
+      <div *ngIf="mensajeExito" 
+           style="position: fixed; top: 24px; right: 24px; z-index: 1000; display: flex; align-items: center; gap: 10px; padding: 16px 24px; background: rgba(17, 29, 46, 0.95); border: 1px solid rgba(234, 88, 12, 0.4); border-radius: 12px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.2); backdrop-filter: blur(10px); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span style="font-size: 14px; font-weight: 600; font-family: 'Outfit', sans-serif;">{{ mensajeExito }}</span>
       </div>
-
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-
-        <!-- Accordion 1: Compras Recomendadas -->
-        <div class="card"
-          style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
-          <div (click)="mostrarCompraCollapse = !mostrarCompraCollapse"
-            style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; cursor: pointer; background: #f8fafc; border-bottom: 1px solid #e2e8f0; transition: background 0.2s;"
-            class="accordion-header-btn">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <!-- Chevron SVG -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="#1a2e4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                [style.transform]="mostrarCompraCollapse ? 'rotate(90deg)' : 'rotate(0deg)'"
-                style="transition: transform 0.2s ease;">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-              <h3 style="margin: 0; color: #1a2e4a; font-size: 1.1rem; font-weight: 700;">
-                Productos a Comprar Más (Sugerencias de Abastecimiento)
-              </h3>
-              <!-- Contador de alertas -->
-              <span
-                style="background-color: #ef4444; color: white; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 5px;">
-                {{ sugerenciasCompra.length }} Alertas
-              </span>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px;">
+<!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- 1. PREDICCIÓN DE QUIEBRE DE STOCK                             -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="card" 
+style="grid-column: 1 / -1; transition: transform 0.2s;" 
+             onmouseover="this.style.transform='translateY(-2px)'" 
+             onmouseout="this.style.transform='translateY(0)'">
+<div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+              <h2 style="margin:0;">1. Predicción de Quiebre de Stock</h2>
+              <span class="card-subtitle">Fecha estimada de agotamiento e indicador de prioridad de reabastecimiento</span>
             </div>
-            <span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">
-              {{ mostrarCompraCollapse ? 'Ocultar sugerencias' : 'Ver sugerencias' }}
+<span class="status-badge danger-badge">
+              {{ prediccionQuiebreStock.length }} Alertas Activas
             </span>
           </div>
-
-          <!-- Body collapsible -->
-          <div *ngIf="mostrarCompraCollapse"
-            style="padding: 24px; border-top: 1px solid #e2e8f0; animation: slideDown 0.25s ease-out;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;">
-              <div *ngFor="let sug of sugerenciasCompra"
-                style="display: flex; gap: 12px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafafa; position: relative;">
-
-                <!-- Badge de Prioridad -->
-                <span
-                  [style.background-color]="sug.prioridad === 'CRÍTICA' ? '#ef4444' : (sug.prioridad === 'ALTA' ? '#f97316' : '#eab308')"
-                  style="position: absolute; top: 12px; right: 12px; color: white; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 20px; letter-spacing: 0.5px;">
-                  {{ sug.prioridad }}
-                </span>
-
-                <!-- Miniatura -->
-                <div
-                  style="width: 50px; height: 50px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
-                  <img *ngIf="sug.imgUrl" [src]="sug.imgUrl"
-                    style="max-width: 100%; max-height: 100%; object-fit: contain;" />
-                  <div *ngIf="!sug.imgUrl" style="display: flex; align-items: center; justify-content: center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                      stroke="#94a3b8" stroke-width="2">
-                      <path
-                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                      <line x1="12" y1="22.08" x2="12" y2="12" />
-                    </svg>
-                  </div>
-                </div>
-
-                <!-- Detalles del producto -->
-                <div
-                  style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
-                  <div>
-                    <h4
-                      style="margin: 0 80px 4px 0; font-size: 0.92rem; font-weight: 700; color: #1e293b; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                      {{ sug.nombre }}
-                    </h4>
-                    <p
-                      style="margin: 0; font-size: 0.78rem; color: #ef4444; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                        style="color: #ef4444; flex-shrink: 0;">
-                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                        <line x1="12" y1="9" x2="12" y2="13" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
-                      {{ sug.motivo }}
-                    </p>
-                  </div>
-
-                  <div
-                    style="display: flex; align-items: center; gap: 15px; margin-top: 8px; font-size: 0.8rem; color: #475569;">
-                    <span>Stock: <strong>{{ sug.stock }} u.</strong></span>
-                    <span>Ventas (30d): <strong>{{ sug.ventas30d }} u.</strong></span>
-                  </div>
-                </div>
-
-                <!-- Sugerencia de Compra -->
-                <div
-                  style="display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff3e6; border: 1px solid rgba(232, 93, 4, 0.2); border-radius: 8px; padding: 6px 12px; min-width: 100px; flex-shrink: 0;">
-                  <span
-                    style="font-size: 0.68rem; color: #e85d04; font-weight: 700; text-transform: uppercase;">Sugerido</span>
-                  <span style="font-size: 1.1rem; color: #e85d04; font-weight: 800; margin-top: 2px;">+{{
-                    sug.cantidadSugerida }} u.</span>
-                </div>
-              </div>
+<div class="empty-message" *ngIf="!prediccionQuiebreStock.length">
+            ✓ No se proyectan quiebres de stock en los próximos 45 días.
+          </div>
+          <div class="table-responsive" *ngIf="prediccionQuiebreStock.length">
+<table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th style="text-align:center;">Stock Actual</th>
+                  <th style="text-align:center;">Consumo Diario</th>
+                  <th style="text-align:center;">Días Restantes</th>
+                  <th>Fecha de Quiebre</th>
+                  <th style="text-align:center;">Prioridad</th>
+                  <th style="text-align:center;">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of prediccionQuiebreStock" style="transition: background 0.2s;">
+                  <td>
+                    <div style="display:flex; align-items:center; gap:12px;">
+<img *ngIf="item.producto.imgUrl" [src]="item.producto.imgUrl" class="prod-thumbnail" />
+                      <div class="prod-title-desc">
+                        <span class="bold-text" style="font-size:14px;">{{ item.producto.nombre }}</span>
+                        <span style="font-size:11px; color:#718096;">ID: #{{ item.producto.idProducto }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td style="text-align:center;" class="bold-text">{{ item.producto.stock }} u.</td>
+ <td style="text-align:center; color:#475569; font-weight:600;">{{ item.tasaConsumo | number:'1.1-2' }} u/día</td>
+                  <td style="text-align:center;">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                      <span class="bold-text" [style.color]="item.colorProgreso" style="font-size: 13px;">
+{{ item.diasRestantes === 0 ? '¡AGOTADO!' : item.diasRestantes + ' días' }}
+                      </span>
+                      <div style="width:100px; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+                        <div [style.width]="item.diasRestantes === 0 ? '100%' : (100 - (item.diasRestantes * 2)) + '%'"
+                             [style.background]="item.colorProgreso" style="height:100%;"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="bold-text" [style.color]="item.diasRestantes <= 7 ? '#ef4444' : '#1e293b'">
+                      {{ item.fechaQuiebre }}
+                    </span>
+                  </td>
+                  <td style="text-align:center;">
+                    <span class="status-badge"
+                          [style.background]="item.alerta === 'CRÍTICA' ? 'rgba(239,68,68,0.1)' : (item.alerta === 'ALTA' ? 'rgba(249,115,22,0.1)' : 'rgba(234,179,8,0.1)')"
+                          [style.color]="item.colorProgreso"
+                          [style.border]="'1px solid ' + item.colorProgreso"
+                          style="font-size:11px; padding: 4px 10px; font-weight: 700;">
+                      {{ item.alerta }}
+                    </span>
+                  </td>
+                  <td style="text-align:center;">
+<button (click)="openLotesModal(item.producto)" class="btn-action">
+                      Reabastecer
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- 2. PREDICCIÓN DE DEMANDA ESTACIONAL                           -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="card" 
+             style="transition: transform 0.2s;" 
+             onmouseover="this.style.transform='translateY(-2px)'" 
+             onmouseout="this.style.transform='translateY(0)'">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+<h2 style="margin:0;">2. Demanda Estacional Proyectada</h2>
+              <span class="card-subtitle">Alertas climáticas estacionales y proyecciones de volumen</span>
             </div>
-
-            <div *ngIf="sugerenciasCompra.length === 0" style="text-align: center; padding: 40px 20px; color: #64748b;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                style="margin-bottom: 10px;">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <div style="font-weight: 600; color: #334155; font-size: 0.95rem;">Todo en orden</div>
-              <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">No hay alertas de reabastecimiento en
-                este momento. El inventario está asegurado.</div>
+          </div>
+<div style="display:flex; flex-direction:column; gap:16px;">
+            <div *ngFor="let est of prediccionDemandaEstacional"
+                 style="border:1px solid #e2e8f0; border-radius:12px; padding:16px; background:#f8fafc; position:relative; transition: border-color 0.2s; display:flex; flex-direction:column; justify-content:space-between;"
+                 onmouseover="this.style.borderColor='#ea580c'"
+                 onmouseout="this.style.borderColor='#e2e8f0'">
+              <div>
+                <span class="status-badge" style="position:absolute; top:16px; right:16px; background:rgba(234,88,12,0.1); color:#ea580c; border:1px solid rgba(234,88,12,0.25); font-weight:700; font-size:11px;">
+                  +{{ est.incremento }}% Demanda
+                </span>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+<img *ngIf="est.producto.imgUrl" [src]="est.producto.imgUrl" class="prod-thumbnail" />
+                  <div class="prod-title-desc">
+                    <h4 style="margin:0; font-size:14.5px; color:#111d2e; font-weight:700;">{{ est.producto.nombre }}</h4>
+                    <span style="font-size:11px; color:#718096; text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:3px; margin-top:2px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+Periodo: {{ est.estacion }}
+                    </span>
+                  </div>
+                </div>
+                <p style="font-size:12.5px; color:#475569; margin:0 0 14px 0; line-height:1.4;">
+                  {{ est.recomendacion }}
+                </p>
+              </div>
+              <div style="border-top: 1px dashed #cbd5e1; padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:12px; color:#1e293b; font-weight:600;">
+                  Proyección I.A.: <span style="color:#ea580c; font-weight:800;">{{ est.sugerenciaStock }} u.</span>
+                </div>
+<button (click)="openLotesModal(est.producto)" class="btn-action edit-btn">
+                  Ajustar Lote
+                </button>
+              </div>
             </div>
           </div>
         </div>
-
-        <!-- Accordion 2: Rebajas Recomendadas -->
-        <div class="card"
-          style="padding: 0; overflow: hidden; border-radius: 12px; border: 1px solid #e2e8f0; background: white;">
-          <div (click)="mostrarDescuentoCollapse = !mostrarDescuentoCollapse"
-            style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; cursor: pointer; background: #f8fafc; border-bottom: 1px solid #e2e8f0; transition: background 0.2s;"
-            class="accordion-header-btn">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <!-- Chevron SVG -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="#1a2e4a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                [style.transform]="mostrarDescuentoCollapse ? 'rotate(90deg)' : 'rotate(0deg)'"
-                style="transition: transform 0.2s ease;">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-              <h3 style="margin: 0; color: #1a2e4a; font-size: 1.1rem; font-weight: 700;">
-                Rebajas Recomendadas (Sugerencias de Liquidación y Descuento)
-              </h3>
-              <!-- Contador de ofertas -->
-              <span
-                style="background-color: #0ea5e9; color: white; font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; margin-left: 5px;">
-                {{ sugerenciasDescuento.length }} Sugerencias
-              </span>
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- 3. PREDICCIÓN DE DEMANDA LOCALIZADA                           -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="card" 
+             style="transition: transform 0.2s;" 
+             onmouseover="this.style.transform='translateY(-2px)'" 
+             onmouseout="this.style.transform='translateY(0)'">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+<h2 style="margin:0;">3. Demanda por Distrito (Arequipa)</h2>
+              <span class="card-subtitle">Análisis geolocalizado de ventas y rotación regional</span>
             </div>
-            <span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">
-              {{ mostrarDescuentoCollapse ? 'Ocultar sugerencias' : 'Ver sugerencias' }}
-            </span>
           </div>
-
-          <!-- Body collapsible -->
-          <div *ngIf="mostrarDescuentoCollapse"
-            style="padding: 24px; border-top: 1px solid #e2e8f0; animation: slideDown 0.25s ease-out;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;">
-              <div *ngFor="let sug of sugerenciasDescuento"
-                style="display: flex; gap: 12px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafafa; position: relative;">
-
-                <!-- Porcentaje de Descuento -->
-                <span
-                  style="position: absolute; top: 12px; right: 12px; background: #d9f99d; color: #3f6212; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 20px;">
-                  Desc. Sugerido: {{ sug.porcentajeSugerido }}%
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div *ngFor="let loc of prediccionDemandaLocalizada"
+                 style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:12px; transition: background 0.15s; padding: 6px 12px; border-radius: 8px;"
+                 onmouseover="this.style.background='#f8fafc'"
+                 onmouseout="this.style.background='transparent'">
+              <div>
+                <h4 style="margin:0; font-size:14.5px; color:#111d2e; font-weight:700;">{{ loc.distrito }}</h4>
+                <span style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:5px; margin-top:3px;">
+                  Líder: <strong style="color:#ea580c; font-weight:700;">{{ loc.productoEstrella.nombre }}</strong>
                 </span>
-
-                <!-- Miniatura -->
-                <div
-                  style="width: 50px; height: 50px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
-                  <img *ngIf="sug.imgUrl" [src]="sug.imgUrl"
-                    style="max-width: 100%; max-height: 100%; object-fit: contain;" />
-                  <div *ngIf="!sug.imgUrl" style="display: flex; align-items: center; justify-content: center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                      stroke="#94a3b8" stroke-width="2">
-                      <path
-                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                      <line x1="12" y1="22.08" x2="12" y2="12" />
-                    </svg>
-                  </div>
-                </div>
-
-                <!-- Detalles del producto -->
-                <div
-                  style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
-                  <div>
-                    <h4
-                      style="margin: 0 130px 4px 0; font-size: 0.92rem; font-weight: 700; color: #1e293b; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
-                      {{ sug.nombre }}
-                    </h4>
-                    <p
-                      style="margin: 0; font-size: 0.78rem; color: #0284c7; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                        style="color: #0284c7; flex-shrink: 0;">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      {{ sug.motivo }}
-                    </p>
-                  </div>
-
-                  <div
-                    style="display: flex; align-items: center; gap: 15px; margin-top: 8px; font-size: 0.8rem; color: #475569;">
-                    <span>Stock: <strong>{{ sug.stock }} u.</strong></span>
-                    <span>Ventas (30d): <strong>{{ sug.ventas30d }} u.</strong></span>
-                  </div>
-                </div>
-
-                <!-- Precios sugeridos -->
-                <div
-                  style="display: flex; flex-direction: column; justify-content: center; align-items: flex-end; min-width: 85px; flex-shrink: 0;">
-                  <span style="font-size: 0.75rem; text-decoration: line-through; color: #94a3b8;">S/ {{
-                    sug.precioActual | number:'1.2-2' }}</span>
-                  <span style="font-size: 1.05rem; color: #1a2e4a; font-weight: 800; margin-top: 1px;">S/ {{
-                    sug.precioSugerido | number:'1.2-2' }}</span>
-                </div>
               </div>
-            </div>
-
-            <div *ngIf="sugerenciasDescuento.length === 0"
-              style="text-align: center; padding: 40px 20px; color: #64748b;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                style="margin-bottom: 10px;">
-                <line x1="18" y1="20" x2="18" y2="10" />
-                <line x1="12" y1="20" x2="12" y2="4" />
-                <line x1="6" y1="20" x2="6" y2="14" />
-              </svg>
-              <div style="font-weight: 600; color: #334155; font-size: 0.95rem;">Lotes en óptimo movimiento</div>
-              <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">No hay productos con baja rotación. Todos
-                los lotes se mueven al ritmo esperado.</div>
+              <div style="display:flex; align-items:center; gap:16px;">
+                <div style="text-align:right;">
+                  <div style="font-size:13.5px; font-weight:700; color:#111d2e;">{{ loc.ventasTotales }} pedidos</div>
+                  <span class="status-badge"
+                        [style.background]="loc.colorNivel === '#ef4444' ? 'rgba(239,68,68,0.1)' : 'rgba(234,88,12,0.1)'"
+                        [style.color]="loc.colorNivel"
+                        [style.border]="'1px solid ' + loc.colorNivel"
+                        style="font-size:10px; padding:2px 8px; margin-top:3px; display:inline-block; font-weight:700;">
+                    DEMANDA {{ loc.nivelDemanda }}
+                  </span>
+                </div>
+                <button (click)="mostrarNotificacion('Filtrando envíos a ' + loc.distrito + ' (Demostración)')"
+                        style="background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none; transition: color 0.15s;"
+                        onmouseover="this.style.color='#ea580c'"
+                        onmouseout="this.style.color='#64748b'">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- 4. PREDICCIÓN DE VENTA CRUZADA INTELIGENTE                     -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="card" 
+style="grid-column: 1 / -1; margin-bottom: 24px; transition: transform 0.2s;" 
+             onmouseover="this.style.transform='translateY(-2px)'" 
+             onmouseout="this.style.transform='translateY(0)'">
+<div class="card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+<h2 style="margin:0;">4. Venta Cruzada Recomendada</h2>
+              <span class="card-subtitle">Asociación analítica de productos comprados juntos con alta probabilidad</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; grid-auto-rows:1fr;">
+            <div *ngFor="let combo of prediccionVentaCruzada"
+                 style="border:1px solid #e2e8f0; border-radius:14px; padding:18px; background:#f8fafc; display:flex; flex-direction:column; transition: border-color 0.2s; height:100%;"
+                 onmouseover="this.style.borderColor='#ea580c'"
+                 onmouseout="this.style.borderColor='#e2e8f0'">
+              <!-- Cabecera: badges -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <span class="status-badge" style="background:rgba(234, 88, 12, 0.08); color:#ea580c; border:1px solid rgba(234, 88, 12, 0.2); font-size:11px; font-weight: 700; padding: 4px 10px;">
+                  Confianza: {{ combo.probabilidad }}%
+                </span>
+                <span style="font-size:12px; color:#64748b; font-weight:600;">Co-compras: {{ combo.coincidencias }} veces</span>
+              </div>
 
+              <!-- Productos -->
+              <div style="display:flex; align-items:stretch; justify-content:center; gap:12px; margin:12px 0; background: white; padding: 14px 10px; border-radius: 12px; border: 1px dashed #cbd5e1; flex-grow:1;">
+                <!-- Producto A -->
+                <div style="text-align:center; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                  <div style="width:56px; height:56px; display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">
+                    <img *ngIf="combo.productoPrincipal.imgUrl" [src]="combo.productoPrincipal.imgUrl" style="max-width:56px; max-height:56px; object-fit:contain;" />
+                  </div>
+                  <div style="font-size:12px; font-weight:700; color:#111d2e; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
+                    {{ combo.productoPrincipal.nombre }}
+                  </div>
+                </div>
+                <!-- Separador -->
+                <div style="font-size:20px; font-weight:800; color:#ea580c; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding: 0 4px;">+</div>
+                <!-- Producto B -->
+                <div style="text-align:center; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                  <div style="width:56px; height:56px; display:flex; align-items:center; justify-content:center; margin:0 auto 8px;">
+                    <img *ngIf="combo.productoAsociado.imgUrl" [src]="combo.productoAsociado.imgUrl" style="max-width:56px; max-height:56px; object-fit:contain;" />
+                  </div>
+                  <div style="font-size:12px; font-weight:700; color:#111d2e; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
+                    {{ combo.productoAsociado.nombre }}
+                  </div>
+                </div>
+              </div>
+              <!-- Campaña + botón al pie -->
+              <div style="border-top:1px dashed #e2e8f0; padding-top:12px; margin-top:12px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                <div style="flex-grow:1; min-height:44px;">
+                  <div style="font-size:11px; color:#ea580c; font-weight:700; margin-bottom:3px; text-transform:uppercase; letter-spacing:0.4px;">Campaña Sugerida:</div>
+                  <p style="font-size:11.5px; color:#475569; margin:0; line-height:1.4;">{{ combo.sugerenciaPromo }}</p>
+                </div>
+                <button (click)="mostrarNotificacion('¡Campaña activada para el combo ' + combo.productoPrincipal.nombre + ' + ' + combo.productoAsociado.nombre + '!')" class="btn-action" style="flex-shrink:0; align-self:flex-end;">
+                  Activar Combo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
-
   <!-- MODAL: DETALLE DE VENTA -->
   <div *ngIf="selectedVenta" class="modal-overlay">
     <div class="modal-card animated-zoom">
@@ -918,7 +896,6 @@
       </div>
     </div>
   </div>
-
   <!-- MODAL: GESTIÓN DE LOTES -->
   <div *ngIf="selectedProductoLotes" class="modal-overlay">
     <div class="modal-card modal-large animated-zoom">
@@ -952,7 +929,6 @@
             {{ loadingLotes ? 'Guardando...' : 'Agregar Lote al Inventario' }}
           </button>
         </div>
-
         <div class="details-list">
           <h3>Lotes Activos (FEFO)</h3>
           <div class="details-table-wrapper">

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio para gestionar las peticiones HTTP relacionadas con los pedidos del usuario.
@@ -14,7 +15,7 @@ import { AuthService } from './auth.service';
 })
 export class PedidoService {
   /** URL base para los endpoints de pedidos */
-  private readonly apiUrl = 'http://localhost:8080/api/pedidos';
+  private readonly apiUrl = `${environment.apiUrl}/api/pedidos`;
 
   /**
    * @param http cliente HTTP de Angular.

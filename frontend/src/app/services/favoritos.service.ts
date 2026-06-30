@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FavoritosService {
-  private readonly apiUrl = 'http://localhost:8080/api/favoritos';
+  private readonly apiUrl = `${environment.apiUrl}/api/favoritos`;
   private readonly favoritesSubject = new BehaviorSubject<number[]>([]);
   readonly favorites$ = this.favoritesSubject.asObservable();
 

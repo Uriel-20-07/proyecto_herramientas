@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AdminService {
-  private apiUrl = 'http://localhost:8080/api/admin';
+  private apiUrl = `${environment.apiUrl}/api/admin`;
   private adminTokenSubject = new BehaviorSubject<string | null>(null);
   public adminToken$ = this.adminTokenSubject.asObservable();
   private adminUserSubject = new BehaviorSubject<any>(null);
