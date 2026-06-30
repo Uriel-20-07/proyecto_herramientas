@@ -85,8 +85,7 @@ public class ReporteController {
                 .map(Pedido::getIdPedido)
                 .collect(Collectors.toSet());
 
-        List<DetallePedido> detallesMes = detallePedidoRepository.findAll().stream()
-                .filter(d -> d.getPedido() != null && pedidosMesIds.contains(d.getPedido().getIdPedido()))
+        List<DetallePedido> detallesMes = pedidosMesIds.isEmpty() ? new ArrayList<>() : detallePedidoRepository.findByPedido_IdPedidoIn(pedidosMesIds).stream()
                 .filter(d -> d.getProducto() != null)
                 .collect(Collectors.toList());
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 /**
  * Interfaz que representa una marca de producto en la API.
@@ -50,13 +51,13 @@ export interface ProductoApi {
 })
 export class CatalogoService {
   /** URL del endpoint de productos del backend. */
-  private readonly productosUrl = 'http://localhost:8080/api/productos';
+  private readonly productosUrl = `${environment.apiUrl}/api/productos`;
 
   /** URL del endpoint de categorías del backend. */
-  private readonly categoriasUrl = 'http://localhost:8080/api/categorias';
+  private readonly categoriasUrl = `${environment.apiUrl}/api/categorias`;
 
   /** URL del endpoint de marcas del backend. */
-  private readonly marcasUrl = 'http://localhost:8080/api/marcas';
+  private readonly marcasUrl = `${environment.apiUrl}/api/marcas`;
 
   /**
    * @param http cliente HTTP de Angular para realizar las peticiones GET.

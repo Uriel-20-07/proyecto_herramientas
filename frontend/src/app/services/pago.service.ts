@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio para procesar pagos enviando los datos al backend.
@@ -17,7 +18,7 @@ export class PagoService {
   /**
    * URL base del controlador de pagos.
    */
-  private readonly baseUrl = 'http://localhost:8080/api/pago';
+  private readonly baseUrl = `${environment.apiUrl}/api/pago`;
 
   /**
    * @param http cliente HTTP de Angular.

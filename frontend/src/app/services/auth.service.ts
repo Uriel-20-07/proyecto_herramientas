@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio de autenticación para usuarios clientes.
@@ -20,7 +21,7 @@ import { map, tap } from 'rxjs/operators';
 })
 export class AuthService {
   /** URL base de la API de autenticación en el backend Spring Boot. */
-  private apiUrl = 'http://localhost:8080/api/auth';
+  private apiUrl = `${environment.apiUrl}/api/auth`;
 
   /**
    * BehaviorSubject que mantiene el estado del usuario actual.

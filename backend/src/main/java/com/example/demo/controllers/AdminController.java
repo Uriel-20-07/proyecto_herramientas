@@ -122,6 +122,13 @@ public class AdminController {
     @GetMapping("/ventas")
     public ResponseEntity<?> listarVentas() {
         List<Pedido> pedidos = pedidoRepository.findAll();
+        List<Integer> pedidoIds = pedidos.stream().map(Pedido::getIdPedido).collect(Collectors.toList());
+
+        List<DetallePedido> todosLosDetalles = pedidoIds.isEmpty() ? new ArrayList<>() : detallePedidoRepository.findByPedido_IdPedidoIn(pedidoIds);
+
+        Map<Integer, List<DetallePedido>> detallesPorPedido = todosLosDetalles.stream()
+                .filter(d -> d.getPedido() != null)
+                .collect(Collectors.groupingBy(d -> d.getPedido().getIdPedido()));
 
         List<Map<String, Object>> response = pedidos.stream().map(pedido -> {
             Map<String, Object> map = new HashMap<>();
@@ -134,9 +141,7 @@ public class AdminController {
                     "apellido", pedido.getUsuario().getApellido(),
                     "email", pedido.getUsuario().getEmail()));
 
-            List<DetallePedido> detalles = detallePedidoRepository.findAll().stream()
-                    .filter(d -> d.getPedido().getIdPedido().equals(pedido.getIdPedido()))
-                    .collect(Collectors.toList());
+            List<DetallePedido> detalles = detallesPorPedido.getOrDefault(pedido.getIdPedido(), new ArrayList<>());
 
             List<Map<String, Object>> detallesMap = detalles.stream().map(d -> {
                 Map<String, Object> dm = new HashMap<>();
@@ -232,9 +237,8 @@ public class AdminController {
                 .map(Pedido::getIdPedido)
                 .collect(Collectors.toSet());
 
-        List<DetallePedido> detalles = detallePedidoRepository.findAll();
+        List<DetallePedido> detalles = pedidosValidosIds.isEmpty() ? new ArrayList<>() : detallePedidoRepository.findByPedido_IdPedidoIn(pedidosValidosIds);
         Map<String, Integer> conteoPorProducto = detalles.stream()
-                .filter(d -> d.getPedido() != null && pedidosValidosIds.contains(d.getPedido().getIdPedido()))
                 .filter(d -> d.getProducto() != null)
                 .collect(Collectors.groupingBy(
                         d -> d.getProducto().getNombre(),
