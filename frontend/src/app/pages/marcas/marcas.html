@@ -9,7 +9,7 @@
             <span class="hero-badge">
                 MARCAS DESTACADAS
             </span>
-
+ 
             <h1>
                 Las marcas farmacéuticas
                 <span>más confiables del Perú</span>
@@ -34,20 +34,21 @@
 
     <section class="brands-filters">
 
-        <button class="filter active">Todas</button>
-        <button class="filter">Vitaminas</button>
-        <button class="filter">Dermocosmética</button>
-        <button class="filter">Bebés</button>
-        <button class="filter">Cuidado personal</button>
-        <button class="filter">Medicamentos</button>
+        <button
+            class="filter"
+            [class.active]="categoriaActiva === cat"
+            *ngFor="let cat of categorias"
+            (click)="filtrarPorCategoria(cat)">
+            {{ cat }}
+        </button>
 
     </section>
 
     <!-- GRID -->
 
-    <section class="brands-grid" *ngIf="marcas.length > 0; else noMarcas">
+    <section class="brands-grid" *ngIf="marcasFiltradas.length > 0; else noMarcas">
 
-        <div class="brand-card" *ngFor="let marca of marcas">
+        <div class="brand-card" *ngFor="let marca of marcasFiltradas">
 
             <img [src]="marca.imgUrl || 'assets/placeholder-image.png'" [alt]="marca.nombre">
 
