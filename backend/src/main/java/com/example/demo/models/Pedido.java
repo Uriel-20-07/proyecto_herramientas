@@ -1,11 +1,19 @@
 package com.example.demo.models;
 
-import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
  * Entidad JPA que representa un pedido (orden de compra) de un usuario.
@@ -61,4 +69,12 @@ public class Pedido {
     /** Indica si el pedido es urgente (envío a domicilio por S/ 10). */
     @Column(name = "es_urgente", nullable = false, columnDefinition = "boolean default false")
     private boolean esUrgente = false;
+
+    /** Distrito de entrega del pedido (ej. "Yanahuara", "Cayma"). */
+    @Column(name = "distrito", nullable = true)
+    private String distrito;
+
+    /** Método de pago usado: "YAPE" o "TARJETA". */
+    @Column(name = "metodo_pago", nullable = true)
+    private String metodoPago;
 }

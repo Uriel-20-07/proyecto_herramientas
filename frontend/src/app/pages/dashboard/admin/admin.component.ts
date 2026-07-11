@@ -63,6 +63,11 @@ export class AdminDashboardComponent implements OnInit {
   reporteData: any = null;
   cargandoReportes: boolean = false;
 
+  // Top productos por distrito
+  distritoSeleccionado: string = '';
+  topProductosDistrito: any[] = [];
+  cargandoDistrito: boolean = false;
+
   chartPath = '';
   chartAreaPath = '';
   chartPoints: { x: number; y: number; date: string; value: number }[] = [];
@@ -224,10 +229,26 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         this.reporteData = data;
         this.cargandoReportes = false;
+        // Cargar top por distrito inicial (todos los distritos)
+        this.cargarTopPorDistrito();
       },
       error: (err: any) => {
         console.error('Error al cargar reportes:', err);
         this.cargandoReportes = false;
+      }
+    });
+  }
+
+  cargarTopPorDistrito(): void {
+    this.cargandoDistrito = true;
+    this.adminService.getTopProductosPorDistrito(this.distritoSeleccionado).subscribe({
+      next: (data: any[]) => {
+        this.topProductosDistrito = data;
+        this.cargandoDistrito = false;
+      },
+      error: () => {
+        this.topProductosDistrito = [];
+        this.cargandoDistrito = false;
       }
     });
   }

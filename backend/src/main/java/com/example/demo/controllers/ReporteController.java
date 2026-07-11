@@ -1,22 +1,32 @@
 package com.example.demo.controllers;
 
-import com.example.demo.models.InventarioLote;
-import com.example.demo.models.Pedido;
-import com.example.demo.models.DetallePedido;
-import com.example.demo.repositories.PedidoRepository;
-import com.example.demo.repositories.DetallePedidoRepository;
-import com.example.demo.repositories.InventarioLoteRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.RequestMethod;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.models.DetallePedido;
+import com.example.demo.models.InventarioLote;
+import com.example.demo.models.Pedido;
+import com.example.demo.repositories.DetallePedidoRepository;
+import com.example.demo.repositories.InventarioLoteRepository;
+import com.example.demo.repositories.PedidoRepository;
 
 @RestController
 @RequestMapping("/api/admin/reportes")
@@ -190,6 +200,104 @@ public class ReporteController {
         respuesta.put("lotesProximosVencer", lotesVencer);
         respuesta.put("clientesTop", clientesTop);
 
+        // Lista de distritos disponibles (de pedidos que tienen distrito registrado)
+        List<String> distritos = todosLosPedidos.stream()
+                .map(Pedido::getDistrito)
+                .filter(d -> d != null && !d.isBlank())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+        respuesta.put("distritos", distritos);
+
         return ResponseEntity.ok(respuesta);
+    }
+
+    /**
+     * GET /api/admin/reportes/por-distrito?distrito=Yanahuara
+     *
+     * Retorna el Top 10 productos más vendidos filtrando por el distrito
+     * del pedido. Incluye el método de pago predominante por producto.
+     *
+     * Si no se pasa parámetro (o es vacío), devuelve datos de todos los distritos.
+     */
+    @GetMapping("/por-distrito")
+    public ResponseEntity<?> topProductosPorDistrito(
+            @RequestParam(value = "distrito", required = false) String distrito) {
+
+        List<Pedido> pedidosFiltrados = pedidoRepository.findAll().stream()
+                .filter(p -> {
+                    if (distrito == null || distrito.isBlank()) return true;
+                    return distrito.equalsIgnoreCase(p.getDistrito());
+                })
+                .collect(Collectors.toList());
+
+        if (pedidosFiltrados.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        Set<Integer> pedidoIds = pedidosFiltrados.stream()
+                .map(Pedido::getIdPedido)
+                .collect(Collectors.toSet());
+
+        // Mapa pedidoId → metodoPago para joinear luego
+        Map<Integer, String> metodoPagoPorPedido = pedidosFiltrados.stream()
+                .filter(p -> p.getMetodoPago() != null)
+                .collect(Collectors.toMap(
+                        Pedido::getIdPedido,
+                        Pedido::getMetodoPago,
+                        (a, b) -> a
+                ));
+
+        List<DetallePedido> detalles = pedidoIds.isEmpty()
+                ? new ArrayList<>()
+                : detallePedidoRepository.findByPedido_IdPedidoIn(pedidoIds).stream()
+                        .filter(d -> d.getProducto() != null)
+                        .collect(Collectors.toList());
+
+        // Agrupar por producto
+        Map<String, long[]> conteo = new LinkedHashMap<>();
+        Map<String, BigDecimal> ingresos = new LinkedHashMap<>();
+        // Contar votos de método de pago por producto
+        Map<String, Map<String, Long>> metodoVotos = new LinkedHashMap<>();
+
+        for (DetallePedido d : detalles) {
+            String nombre = d.getProducto().getNombre();
+            int cant = d.getCantidad() != null ? d.getCantidad() : 0;
+            BigDecimal ingreso = d.getPrecioHistorico() != null
+                    ? d.getPrecioHistorico().multiply(BigDecimal.valueOf(cant))
+                    : BigDecimal.ZERO;
+
+            conteo.merge(nombre, new long[]{cant}, (old, n) -> { old[0] += cant; return old; });
+            ingresos.merge(nombre, ingreso, BigDecimal::add);
+
+            // Acumular método de pago del pedido correspondiente
+            int pedidoId = d.getPedido().getIdPedido();
+            String metodo = metodoPagoPorPedido.getOrDefault(pedidoId, "N/A");
+            metodoVotos.computeIfAbsent(nombre, k -> new LinkedHashMap<>())
+                    .merge(metodo, 1L, Long::sum);
+        }
+
+        List<Map<String, Object>> resultado = conteo.entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]))
+                .limit(10)
+                .map(e -> {
+                    String nombre = e.getKey();
+                    // Método de pago predominante para este producto en el distrito
+                    String metodoPredominante = metodoVotos.getOrDefault(nombre, Map.of())
+                            .entrySet().stream()
+                            .max(Map.Entry.comparingByValue())
+                            .map(Map.Entry::getKey)
+                            .orElse("N/A");
+
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("nombre", nombre);
+                    m.put("cantidadVendida", e.getValue()[0]);
+                    m.put("ingresoGenerado", ingresos.getOrDefault(nombre, BigDecimal.ZERO));
+                    m.put("metodoPago", metodoPredominante);
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(resultado);
     }
 }

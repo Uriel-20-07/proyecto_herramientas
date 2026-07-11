@@ -124,4 +124,9 @@ export class AdminService {
   getReportes(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/reportes`, { headers: this.getHeaders() });
   }
+
+  getTopProductosPorDistrito(distrito: string): Observable<any[]> {
+    const params = distrito ? `?distrito=${encodeURIComponent(distrito)}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/reportes/por-distrito${params}`, { headers: this.getHeaders() });
+  }
 }
