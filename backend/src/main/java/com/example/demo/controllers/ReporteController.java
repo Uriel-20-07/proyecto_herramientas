@@ -1,32 +1,22 @@
 package com.example.demo.controllers;
 
+import com.example.demo.models.InventarioLote;
+import com.example.demo.models.Pedido;
+import com.example.demo.models.DetallePedido;
+import com.example.demo.repositories.PedidoRepository;
+import com.example.demo.repositories.DetallePedidoRepository;
+import com.example.demo.repositories.InventarioLoteRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.demo.models.DetallePedido;
-import com.example.demo.models.InventarioLote;
-import com.example.demo.models.Pedido;
-import com.example.demo.repositories.DetallePedidoRepository;
-import com.example.demo.repositories.InventarioLoteRepository;
-import com.example.demo.repositories.PedidoRepository;
 
 @RestController
 @RequestMapping("/api/admin/reportes")
@@ -294,6 +284,74 @@ public class ReporteController {
                     m.put("cantidadVendida", e.getValue()[0]);
                     m.put("ingresoGenerado", ingresos.getOrDefault(nombre, BigDecimal.ZERO));
                     m.put("metodoPago", metodoPredominante);
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(resultado);
+    }
+
+    /**
+     * GET /api/admin/reportes/top-por-fecha?dia=YYYY-MM-DD
+     * GET /api/admin/reportes/top-por-fecha?mes=YYYY-MM
+     *
+     * Retorna el Top 10 productos más vendidos filtrados por día exacto o mes.
+     */
+    @GetMapping("/top-por-fecha")
+    public ResponseEntity<?> topProductosPorFecha(
+            @RequestParam(value = "dia", required = false) String dia,
+            @RequestParam(value = "mes", required = false) String mes) {
+
+        List<Pedido> pedidosFiltrados = pedidoRepository.findAll().stream()
+                .filter(p -> {
+                    if (p.getFecha() == null) return false;
+                    LocalDate fecha = p.getFecha().toLocalDate();
+                    if (dia != null && !dia.isBlank()) {
+                        return fecha.toString().equals(dia);
+                    }
+                    if (mes != null && !mes.isBlank()) {
+                        // mes = "YYYY-MM"
+                        String pedidoMes = String.format("%04d-%02d", fecha.getYear(), fecha.getMonthValue());
+                        return pedidoMes.equals(mes);
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        if (pedidosFiltrados.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        Set<Integer> pedidoIds = pedidosFiltrados.stream()
+                .map(Pedido::getIdPedido)
+                .collect(Collectors.toSet());
+
+        List<DetallePedido> detalles = detallePedidoRepository
+                .findByPedido_IdPedidoIn(pedidoIds).stream()
+                .filter(d -> d.getProducto() != null)
+                .collect(Collectors.toList());
+
+        Map<String, long[]> conteo = new LinkedHashMap<>();
+        Map<String, BigDecimal> ingresos = new LinkedHashMap<>();
+
+        for (DetallePedido d : detalles) {
+            String nombre = d.getProducto().getNombre();
+            int cant = d.getCantidad() != null ? d.getCantidad() : 0;
+            BigDecimal ingreso = d.getPrecioHistorico() != null
+                    ? d.getPrecioHistorico().multiply(BigDecimal.valueOf(cant))
+                    : BigDecimal.ZERO;
+            conteo.merge(nombre, new long[]{cant}, (old, n) -> { old[0] += cant; return old; });
+            ingresos.merge(nombre, ingreso, BigDecimal::add);
+        }
+
+        List<Map<String, Object>> resultado = conteo.entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]))
+                .limit(10)
+                .map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("nombre", e.getKey());
+                    m.put("cantidadVendida", e.getValue()[0]);
+                    m.put("ingresoGenerado", ingresos.getOrDefault(e.getKey(), BigDecimal.ZERO));
                     return m;
                 })
                 .collect(Collectors.toList());

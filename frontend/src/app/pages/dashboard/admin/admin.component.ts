@@ -72,9 +72,16 @@ export class AdminDashboardComponent implements OnInit {
     'San Juan de Tarucani', 'Santa Isabel de Siguas', 'Santa Rita de Siguas',
     'Socabaya', 'Tiabaya', 'Uchumayo', 'Vitor', 'Yanahuara', 'Yarabamba', 'Yura'
   ];
-  distritoSeleccionado: string = 'Alto Selva Alegre';
+  distritoSeleccionado: string = '';
   topProductosDistrito: any[] = [];
   cargandoDistrito: boolean = false;
+
+  // Filtro calendario Top 10
+  filtroMes: string = '';
+  filtroDia: string = '';
+  topProductosFiltrados: any[] | null = null;
+  cargandoTopFiltrado: boolean = false;
+  fechaFiltroLabel: string = 'Más vendidos en los últimos 30 días';
 
   chartPath = '';
   chartAreaPath = '';
@@ -257,6 +264,56 @@ export class AdminDashboardComponent implements OnInit {
       error: () => {
         this.topProductosDistrito = [];
         this.cargandoDistrito = false;
+      }
+    });
+  }
+
+  // ── Filtro calendario Top 10 ─────────────────────────────────────────────
+
+  onFiltroFechaChange(): void {
+    // Si se seleccionó un día, el mes se sincroniza automáticamente
+    if (this.filtroDia) {
+      this.filtroMes = this.filtroDia.substring(0, 7); // YYYY-MM
+    }
+    this.aplicarFiltroFecha();
+  }
+
+  limpiarFiltroFecha(): void {
+    this.filtroMes = '';
+    this.filtroDia = '';
+    this.topProductosFiltrados = null;
+    this.fechaFiltroLabel = 'Más vendidos en los últimos 30 días';
+  }
+
+  private aplicarFiltroFecha(): void {
+    if (!this.filtroMes && !this.filtroDia) {
+      this.topProductosFiltrados = null;
+      this.fechaFiltroLabel = 'Más vendidos en los últimos 30 días';
+      return;
+    }
+
+    this.cargandoTopFiltrado = true;
+    this.topProductosFiltrados = null;
+
+    // Actualizar label descriptivo
+    if (this.filtroDia) {
+      const [y, m, d] = this.filtroDia.split('-');
+      const fecha = new Date(+y, +m - 1, +d);
+      this.fechaFiltroLabel = `Ventas del ${fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+    } else {
+      const [y, m] = this.filtroMes.split('-');
+      const fecha = new Date(+y, +m - 1, 1);
+      this.fechaFiltroLabel = `Más vendidos en ${fecha.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })}`;
+    }
+
+    this.adminService.getTopProductosFiltrados(this.filtroDia || null, this.filtroMes || null).subscribe({
+      next: (data: any[]) => {
+        this.topProductosFiltrados = data;
+        this.cargandoTopFiltrado = false;
+      },
+      error: () => {
+        this.topProductosFiltrados = [];
+        this.cargandoTopFiltrado = false;
       }
     });
   }

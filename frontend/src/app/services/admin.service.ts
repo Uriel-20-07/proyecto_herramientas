@@ -129,4 +129,12 @@ export class AdminService {
     const params = distrito ? `?distrito=${encodeURIComponent(distrito)}` : '';
     return this.http.get<any[]>(`${this.apiUrl}/reportes/por-distrito${params}`, { headers: this.getHeaders() });
   }
+
+  getTopProductosFiltrados(dia: string | null, mes: string | null): Observable<any[]> {
+    const params = new URLSearchParams();
+    if (dia) params.set('dia', dia);
+    else if (mes) params.set('mes', mes);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.http.get<any[]>(`${this.apiUrl}/reportes/top-por-fecha${query}`, { headers: this.getHeaders() });
+  }
 }
