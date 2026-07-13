@@ -18,7 +18,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/pago")
-@CrossOrigin(origins = "http://localhost:4200")
 public class PagoController {
 
     @Autowired private PagoService pagoService;

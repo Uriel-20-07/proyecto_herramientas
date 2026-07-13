@@ -37,7 +37,6 @@ import com.example.demo.services.CarritoService;
  */
 @RestController
 @RequestMapping("/api/carrito")
-@CrossOrigin(origins = "http://localhost:4200") // Permite peticiones desde Angular
 public class CarritoController {
 
     /** Servicio con la lógica del carrito (agregar, eliminar, vaciar, etc.). */

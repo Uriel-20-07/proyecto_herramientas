@@ -29,7 +29,6 @@ import com.example.demo.services.ProductoService;
  */
 @RestController
 @RequestMapping("/api/productos")
-@CrossOrigin(origins = "http://localhost:4200") // Permitir CORS desde Angular
 public class ProductoController {
 
     /** Servicio con la lógica de negocio de productos. */
