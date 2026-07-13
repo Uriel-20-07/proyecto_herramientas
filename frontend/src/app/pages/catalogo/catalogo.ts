@@ -1,9 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CartService } from '../../services/cart.service';
 import { CatalogoService, CategoriaApi, ProductoApi } from '../../services/catalogo.service';
+import { AlgoliaService, AlgoliaProducto } from '../../services/algolia.service';
+import { FavoritosService } from '../../services/favoritos.service';
+import { AuthService } from '../../services/auth.service';
+import { AuthModalService } from '../../services/auth-modal.service';
+import { Subject, takeUntil } from 'rxjs';
 
+/**
+ * Interfaz interna para representar un producto adaptado a la vista del catálogo.
+ */
 interface ProductoVista {
   id: number;
   nombre: string;
@@ -13,16 +22,35 @@ interface ProductoVista {
   imagen: string;
   etiquetaPromo?: string;
   colorPromo?: 'orange' | 'red';
+  fechaCaducidad?: string;
+  descuentoInfo?: {
+    percentage: number;
+    message: string;
+    isExpired: boolean;
+  };
 }
 
+/**
+ * Componente del catálogo.
+ *
+ * La barra de búsqueda con autocomplete de Algolia vive ahora en el navbar
+ * (ver NavbarComponent). Este componente:
+ * - Recibe el término de búsqueda vía query param `?q=` y lo consulta en
+ *   Algolia para mostrar los resultados correspondientes.
+ * - Mantiene los filtros propios del catálogo: categoría, precio máximo
+ *   y ordenamiento (relevancia, precio asc/desc, nombre A-Z).
+ * - Resalta el término buscado en los nombres de los resultados.
+ */
 @Component({
   selector: 'app-catalogo',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './catalogo.html',
   styleUrls: ['./catalogo.css']
 })
-export class CatalogoComponent implements OnInit {
+export class CatalogoComponent implements OnInit, OnDestroy {
+
+  // ─── Estado principal ─────────────────────────────────────────────────────
   categorias: CategoriaApi[] = [];
   productos: ProductoVista[] = [];
   productosFiltrados: ProductoVista[] = [];
@@ -30,8 +58,16 @@ export class CatalogoComponent implements OnInit {
   busqueda = '';
   cargando = true;
   mensaje = '';
+
+  // ─── Filtros avanzados ────────────────────────────────────────────────────
+  ordenamiento: 'relevancia' | 'precio_asc' | 'precio_desc' | 'nombre_asc' = 'relevancia';
+  precioMaximo = 500;
+  precioMaximoTotal = 500;
+
+  // ─── Internos ─────────────────────────────────────────────────────────────
   private queryBusqueda = '';
   private queryCategoria = '';
+  private destroy$ = new Subject<void>();
 
   private readonly imagenPorCategoria: Record<string, string> = {
     medicamentos: 'assets/img/producto1.png',
@@ -46,17 +82,28 @@ export class CatalogoComponent implements OnInit {
   constructor(
     private readonly catalogoService: CatalogoService,
     private readonly cartService: CartService,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly algoliaService: AlgoliaService,
+    private readonly favoritosService: FavoritosService,
+    private readonly authService: AuthService,
+    private readonly authModalService: AuthModalService
   ) {}
 
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe((params) => {
+    // Suscripción a query params (búsqueda y categoría llegan desde el navbar)
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
       this.queryBusqueda = params.get('q') ?? '';
       this.queryCategoria = params.get('categoria') ?? '';
-
       this.cargarDatos();
     });
   }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ─── Carga de datos desde el backend ─────────────────────────────────────
 
   cargarDatos(): void {
     this.cargando = true;
@@ -65,7 +112,10 @@ export class CatalogoComponent implements OnInit {
         this.categorias = categorias;
         this.catalogoService.getProductos().subscribe({
           next: (productos) => {
-            this.productos = productos.map((producto) => this.mapProducto(producto));
+            this.productos = productos.map((p) => this.mapProducto(p));
+            // Calcular el precio máximo del catálogo para el slider
+            this.precioMaximoTotal = Math.ceil(Math.max(...this.productos.map(p => p.precio), 500));
+            this.precioMaximo = this.precioMaximoTotal;
             this.aplicarFiltrosDesdeUrl();
             this.cargando = false;
           },
@@ -82,13 +132,55 @@ export class CatalogoComponent implements OnInit {
     });
   }
 
+  // ─── Búsqueda con Algolia (vía ?q= desde el navbar) ───────────────────────
+
+  /**
+   * Ejecuta la búsqueda completa con Algolia para el término actual.
+   * Reemplaza la lista de productos visibles con los resultados de Algolia,
+   * filtrados por precio y ordenados según el criterio seleccionado.
+   */
   buscar(): void {
-    this.aplicarFiltros();
+    if (!this.busqueda.trim()) {
+      // Sin texto: mostrar todos los productos locales
+      this.productosFiltrados = [...this.productos];
+      this.aplicarFiltros();
+      return;
+    }
+
+    this.cargando = true;
+    this.algoliaService.buscar(this.busqueda, {
+      hitsPerPage: 100,
+      categoriaId: this.categoriaSeleccionadaId ?? undefined
+    }).subscribe({
+      next: (resultados) => {
+        // Convertir AlgoliaProducto → ProductoVista
+        const productosAlgolia = resultados.map((hit) => this.mapAlgoliaHit(hit));
+        this.productosFiltrados = this.filtrarPorPrecio(productosAlgolia);
+        this.ordenarProductos();
+        this.cargando = false;
+      },
+      error: () => {
+        // Fallback: búsqueda local si Algolia falla
+        this.aplicarFiltros();
+        this.cargando = false;
+      }
+    });
   }
+
+  // ─── Filtros avanzados ────────────────────────────────────────────────────
 
   seleccionarCategoria(idCategoria: number | null): void {
     this.categoriaSeleccionadaId = idCategoria;
-    this.aplicarFiltros();
+    // Si hay texto buscado, relanzar búsqueda con filtro de categoría
+    if (this.busqueda.trim()) {
+      this.buscar();
+    } else {
+      this.aplicarFiltros();
+    }
+  }
+
+  aplicarOrdenamiento(): void {
+    this.ordenarProductos();
   }
 
   limpiarFiltros(): void {
@@ -96,7 +188,124 @@ export class CatalogoComponent implements OnInit {
     this.categoriaSeleccionadaId = null;
     this.queryBusqueda = '';
     this.queryCategoria = '';
+    this.ordenamiento = 'relevancia';
+    this.precioMaximo = this.precioMaximoTotal;
     this.productosFiltrados = [...this.productos];
+  }
+
+  hayFiltrosActivos(): boolean {
+    return !!(
+      this.busqueda ||
+      this.categoriaSeleccionadaId !== null ||
+      this.precioMaximo < this.precioMaximoTotal ||
+      this.ordenamiento !== 'relevancia'
+    );
+  }
+
+  /**
+   * Aplica filtros locales (categoría + precio) sobre la lista de productos.
+   * Se usa cuando no hay texto de búsqueda (Algolia no es necesario).
+   */
+  aplicarFiltros(): void {
+    const termino = this.busqueda.trim().toLowerCase();
+
+    let filtrados = this.productos.filter((p) => {
+      const coincideCategoria =
+        this.categoriaSeleccionadaId === null ||
+        this.categorias.find((c) => c.idCategoria === this.categoriaSeleccionadaId)?.nombre === p.categoriaNombre;
+
+      const coincideBusqueda =
+        !termino ||
+        p.nombre.toLowerCase().includes(termino) ||
+        p.descripcion.toLowerCase().includes(termino) ||
+        p.categoriaNombre.toLowerCase().includes(termino);
+
+      return coincideCategoria && coincideBusqueda;
+    });
+
+    filtrados = this.filtrarPorPrecio(filtrados);
+    this.productosFiltrados = filtrados;
+    this.ordenarProductos();
+  }
+
+  private filtrarPorPrecio(lista: ProductoVista[]): ProductoVista[] {
+    return lista.filter((p) => {
+      const precioFinal = p.descuentoInfo && p.descuentoInfo.percentage > 0
+        ? p.precio * (1 - p.descuentoInfo.percentage)
+        : p.precio;
+      return precioFinal <= this.precioMaximo;
+    });
+  }
+
+  private ordenarProductos(): void {
+    switch (this.ordenamiento) {
+      case 'precio_asc':
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => {
+          const precioA = a.descuentoInfo && a.descuentoInfo.percentage > 0 ? a.precio * (1 - a.descuentoInfo.percentage) : a.precio;
+          const precioB = b.descuentoInfo && b.descuentoInfo.percentage > 0 ? b.precio * (1 - b.descuentoInfo.percentage) : b.precio;
+          return precioA - precioB;
+        });
+        break;
+      case 'precio_desc':
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => {
+          const precioA = a.descuentoInfo && a.descuentoInfo.percentage > 0 ? a.precio * (1 - a.descuentoInfo.percentage) : a.precio;
+          const precioB = b.descuentoInfo && b.descuentoInfo.percentage > 0 ? b.precio * (1 - b.descuentoInfo.percentage) : b.precio;
+          return precioB - precioA;
+        });
+        break;
+      case 'nombre_asc':
+        this.productosFiltrados = [...this.productosFiltrados].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        break;
+      default:
+        // 'relevancia': el orden lo da Algolia, no se modifica
+        break;
+    }
+  }
+
+  // ─── Resaltado de texto buscado ───────────────────────────────────────────
+
+  /**
+   * Envuelve el término buscado en <mark> para resaltarlo en el nombre del producto.
+   */
+  resaltarTexto(texto: string): string {
+    if (!this.busqueda.trim()) return texto;
+    const termino = this.busqueda.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return texto.replace(new RegExp(`(${termino})`, 'gi'), '<mark>$1</mark>');
+  }
+
+  getFecha(producto: any): string {
+    const fecha = producto.fechaCaducidad || producto.fecha_caducidad;
+    if (!fecha) return '';
+    if (Array.isArray(fecha)) {
+      const mes = fecha[1] < 10 ? '0' + fecha[1] : fecha[1];
+      const dia = fecha[2] < 10 ? '0' + fecha[2] : fecha[2];
+      return `${fecha[0]}-${mes}-${dia}`;
+    }
+    return fecha;
+  }
+
+  getDiscountInfo(fechaCaducidad: string): {
+    percentage: number;
+    message: string;
+    isExpired: boolean;
+  } {
+    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
+    const expDate = new Date(fechaCaducidad);
+    const today = new Date();
+    const monthsLeft =
+      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
+
+    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
+      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
+    }
+
+    if (monthsLeft <= 6)
+      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
+    if (monthsLeft <= 12)
+      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
+    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
+
+    return { percentage: 0, message: '', isExpired: false };
   }
 
   agregarProducto(producto: ProductoVista): void {
@@ -105,11 +314,13 @@ export class CatalogoComponent implements OnInit {
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precioVenta: producto.precio,
-      categoria: this.categorias.find((categoria) => categoria.nombre === producto.categoriaNombre) ?? null
+      categoria: this.categorias.find((c) => c.nombre === producto.categoriaNombre) ?? null,
+      fechaCaducidad: producto.fechaCaducidad
     };
 
     this.cartService.add(productoApi);
     this.mensaje = `${producto.nombre} agregado al carrito.`;
+
     window.setTimeout(() => {
       if (this.mensaje.includes(producto.nombre)) {
         this.mensaje = '';
@@ -121,43 +332,15 @@ export class CatalogoComponent implements OnInit {
     return producto.id;
   }
 
-  private aplicarFiltros(): void {
-    const termino = this.busqueda.trim().toLowerCase();
-
-    this.productosFiltrados = this.productos.filter((producto) => {
-      const coincideCategoria = this.categoriaSeleccionadaId === null ||
-        this.categorias.find((categoria) => categoria.idCategoria === this.categoriaSeleccionadaId)?.nombre === producto.categoriaNombre;
-
-      const coincideBusqueda = !termino ||
-        producto.nombre.toLowerCase().includes(termino) ||
-        producto.descripcion.toLowerCase().includes(termino) ||
-        producto.categoriaNombre.toLowerCase().includes(termino);
-
-      return coincideCategoria && coincideBusqueda;
-    });
-  }
-
-  private aplicarFiltrosDesdeUrl(): void {
-    this.busqueda = this.queryBusqueda;
-
-    if (this.queryCategoria) {
-      const categoriaNormalizada = this.queryCategoria.toLowerCase();
-      const categoriaEncontrada = this.categorias.find(
-        (item) => item.nombre.toLowerCase() === categoriaNormalizada
-      );
-
-      this.categoriaSeleccionadaId = categoriaEncontrada?.idCategoria ?? null;
-    } else {
-      this.categoriaSeleccionadaId = null;
-    }
-
-    this.aplicarFiltros();
-  }
+  // ─── Mappers ──────────────────────────────────────────────────────────────
 
   private mapProducto(producto: ProductoApi): ProductoVista {
     const categoriaNombre = producto.categoria?.nombre ?? 'General';
     const categoriaKey = categoriaNombre.toLowerCase();
     const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
+    
+    const fechaCad = this.getFecha(producto);
+    const descuento = this.getDiscountInfo(fechaCad);
 
     return {
       id: producto.idProducto,
@@ -166,22 +349,79 @@ export class CatalogoComponent implements OnInit {
       precio: Number(producto.precioVenta),
       categoriaNombre,
       imagen,
-      etiquetaPromo: this.obtenerPromo(producto.nombre, categoriaNombre),
-      colorPromo: categoriaNombre === 'MEDICAMENTOS' ? 'red' : 'orange'
+      etiquetaPromo: descuento.message || this.obtenerPromo(producto.nombre, categoriaNombre),
+      colorPromo: descuento.message ? 'red' : (categoriaNombre === 'MEDICAMENTOS' ? 'red' : 'orange'),
+      fechaCaducidad: fechaCad,
+      descuentoInfo: descuento
+    };
+  }
+
+  private mapAlgoliaHit(hit: AlgoliaProducto): ProductoVista {
+    const categoriaKey = (hit.categoriaNombre ?? 'general').toLowerCase();
+    const imagen = hit.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
+    
+    const fechaCad = this.getFecha(hit);
+    const descuento = this.getDiscountInfo(fechaCad);
+
+    return {
+      id: hit.idProducto,
+      nombre: hit.nombre,
+      descripcion: hit.descripcion ?? 'Producto del catálogo FarmaCode',
+      precio: hit.precioVenta,
+      categoriaNombre: hit.categoriaNombre ?? 'General',
+      imagen,
+      etiquetaPromo: descuento.message || this.obtenerPromo(hit.nombre, hit.categoriaNombre ?? ''),
+      colorPromo: descuento.message ? 'red' : ((hit.categoriaNombre ?? '').toUpperCase() === 'MEDICAMENTOS' ? 'red' : 'orange'),
+      fechaCaducidad: fechaCad,
+      descuentoInfo: descuento
     };
   }
 
   private obtenerPromo(nombre: string, categoriaNombre: string): string | undefined {
     const etiqueta = categoriaNombre.toLowerCase();
-    if (etiqueta.includes('medic')) {
-      return 'Oferta especial';
-    }
-    if (nombre.toLowerCase().includes('huggies') || nombre.toLowerCase().includes('pampers')) {
-      return 'Más vendido';
-    }
-    if (etiqueta.includes('belleza')) {
-      return 'Nuevo';
-    }
+    if (etiqueta.includes('medic')) return 'Oferta especial';
+    if (nombre.toLowerCase().includes('huggies') || nombre.toLowerCase().includes('pampers')) return 'Más vendido';
+    if (etiqueta.includes('belleza')) return 'Nuevo';
     return undefined;
+  }
+
+
+
+  /**
+   * Lee `?q=` y `?categoria=` de la URL (provistos por el navbar) y
+   * dispara la búsqueda en Algolia o el filtrado local según corresponda.
+   */
+  private aplicarFiltrosDesdeUrl(): void {
+    this.busqueda = this.queryBusqueda;
+
+    if (this.queryCategoria) {
+      const categoriaNormalizada = this.queryCategoria.toLowerCase();
+      const encontrada = this.categorias.find((c) => c.nombre.toLowerCase() === categoriaNormalizada);
+      this.categoriaSeleccionadaId = encontrada?.idCategoria ?? null;
+    } else {
+      this.categoriaSeleccionadaId = null;
+    }
+
+    if (this.busqueda.trim()) {
+      // Hay término de búsqueda: usar Algolia
+      this.buscar();
+    } else {
+      // Sin término: filtrado local por categoría/precio
+      this.aplicarFiltros();
+    }
+  }
+
+  isFavorito(idProducto: number): boolean {
+    return this.favoritosService.isFavorito(idProducto);
+  }
+
+  toggleFavorito(idProducto: number, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!this.authService.isAuthenticated()) {
+      this.authModalService.open('login');
+      return;
+    }
+    this.favoritosService.toggleFavorito(idProducto).subscribe();
   }
 }

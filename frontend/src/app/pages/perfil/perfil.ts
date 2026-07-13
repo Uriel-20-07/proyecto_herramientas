@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-perfil',
@@ -20,7 +21,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class PerfilComponent implements OnInit {
 
-  private apiUrl = 'http://localhost:8080/api/auth';
+  private apiUrl = `${environment.apiUrl}/api/auth`;
 
   seccionActiva = signal<'info' | 'password'>('info');
   mensajeExito = '';
@@ -50,8 +51,7 @@ export class PerfilComponent implements OnInit {
     this.infoForm = this.fb.group({
       nombre:         [user.nombre   || '', Validators.required],
       apellido:       [user.apellido || ''],
-      email:          [user.email    || '', [Validators.required, Validators.email]],
-      direccion_envio:[user.direccion_envio || '']
+      email:          [user.email    || '', [Validators.required, Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9_.-]+\.[a-zA-Z]{2,}$/)]]
     });
 
     this.passwordForm = this.fb.group({
