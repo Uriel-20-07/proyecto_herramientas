@@ -1,17 +1,24 @@
 package com.example.demo.controllers;
 
-import com.example.demo.models.Pedido;
-import com.example.demo.models.DetallePedido;
-import com.example.demo.models.User;
-import com.example.demo.repositories.PedidoRepository;
-import com.example.demo.repositories.DetallePedidoRepository;
-import com.example.demo.services.AuthService;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.security.Principal;
-import java.util.*;
-import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.models.DetallePedido;
+import com.example.demo.models.Pedido;
+import com.example.demo.models.User;
+import com.example.demo.repositories.DetallePedidoRepository;
+import com.example.demo.repositories.PedidoRepository;
+import com.example.demo.services.AuthService;
 
 /**
  * Controlador REST para el historial de pedidos del usuario cliente.
