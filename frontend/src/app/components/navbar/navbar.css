@@ -1,13 +1,7 @@
-/* ===========================
-   FARMACODE — NAVBAR v3
-   Colores hardcodeados para compatibilidad Angular
-   =========================== */
-
 .fc-navbar {
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: #111d2e;
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
@@ -23,9 +17,8 @@
 
 /* ── TOP BAR ──────────────────────────── */
 .fc-topbar {
-    background: #1a2a4a;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 7px 0;
+    background: #0b2350;
+    padding: 8px 0;
 
     .fc-container {
         gap: 0;
@@ -34,7 +27,8 @@
 
 .topbar-left {
     display: flex;
-    gap: 22px;
+    align-items: center;
+    gap: 14px;
     flex: 1;
 }
 
@@ -42,36 +36,36 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11.5px;
-    color: #8fa8c8;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
 
     svg {
         flex-shrink: 0;
-        opacity: 0.8;
-        stroke: #8fa8c8;
+        opacity: 0.85;
+        stroke: rgba(255, 255, 255, 0.85);
     }
 
     strong {
-        color: rgba(255, 255, 255, 0.85);
-        font-weight: 600;
+        color: #ffffff;
+        font-weight: 700;
     }
 }
 
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
 .topbar-user {
-    font-size: 11.5px;
+    font-size: 12px;
     color: #ffffff;
     font-weight: 700;
 }
 
 .topbar-link {
-    font-size: 11.5px;
-    color: #8fa8c8;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
     text-decoration: none;
     transition: color 0.2s;
     background: transparent;
@@ -80,7 +74,7 @@
     cursor: pointer;
 
     &:hover {
-        color: #fff;
+        color: #ffffff;
     }
 }
 
@@ -99,29 +93,33 @@
 .topbar-sep {
     width: 1px;
     height: 12px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.25);
     display: block;
 }
 
 /* ── MAIN BAR ─────────────────────────── */
 .fc-mainbar {
-    background: #1a2a4a;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    padding: 18px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.fc-mainbar .fc-container {
+    justify-content: space-between;
 }
 
 /* ── LOGO ─────────────────────────────── */
 .fc-logo {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    align-items: baseline;
+    gap: 2px;
     text-decoration: none;
     flex-shrink: 0;
 
     .logo-farma {
         font-size: 26px;
         font-weight: 800;
-        color: #ffffff;
+        color: #0b2350;
         letter-spacing: -0.5px;
         line-height: 1;
     }
@@ -133,75 +131,26 @@
         letter-spacing: -0.5px;
         line-height: 1;
     }
-
-    .logo-pill {
-        background: #dc2626;
-        color: #fff;
-        font-size: 12px;
-        font-weight: 900;
-        width: 20px;
-        height: 20px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 3px;
-        transition: transform 0.2s;
-    }
-
-    &:hover .logo-pill {
-        transform: scale(1.15) rotate(10deg);
-    }
 }
 
 /* ── SEARCH ───────────────────────────── */
 .fc-search-wrapper {
     flex: 1;
+    max-width: 700px;
+    margin: 0 40px;
     position: relative;
 }
 
 .fc-search {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1.5px solid rgba(255, 255, 255, 0.14);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color 0.2s, background 0.2s;
+    background: #ffffff;
+    border: 1.5px solid #dee2e6;
+    border-radius: 8px;
+    transition: border-color 0.2s;
 
     &:focus-within {
         border-color: #2b78e4;
-        background: rgba(255, 255, 255, 0.1);
-    }
-}
-
-.search-cat {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 0 14px;
-    height: 44px;
-    border-right: 1px solid rgba(255, 255, 255, 0.12);
-    cursor: pointer;
-    flex-shrink: 0;
-
-    select {
-        border: none;
-        outline: none;
-        background: transparent;
-        font-size: 12px;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.75);
-        cursor: pointer;
-        appearance: none;
-        -webkit-appearance: none;
-        font-family: inherit;
-    }
-
-    svg {
-        opacity: 0.5;
-        stroke: #ffffff;
-        pointer-events: none;
     }
 }
 
@@ -211,38 +160,31 @@
     outline: none;
     background: transparent;
     padding: 0 16px;
-    font-size: 13.5px;
-    color: #ffffff;
+    font-size: 14px;
+    color: #495057;
     height: 44px;
     font-family: inherit;
 
     &::placeholder {
-        color: rgba(255, 255, 255, 0.3);
+        color: #adb5bd;
     }
 }
 
 .search-btn {
     display: flex;
     align-items: center;
-    gap: 7px;
-    background: #2b78e4;
-    color: #ffffff;
+    justify-content: center;
+    background: transparent;
+    color: #495057;
     border: none;
-    padding: 0 22px;
+    width: 44px;
     height: 44px;
-    font-size: 13px;
-    font-weight: 700;
     cursor: pointer;
     flex-shrink: 0;
-    font-family: inherit;
-    transition: background 0.2s;
-
-    svg {
-        stroke: #ffffff;
-    }
+    transition: color 0.2s;
 
     &:hover {
-        background: #0056B3;
+        color: #0b2350;
     }
 }
 
@@ -250,178 +192,87 @@
 .fc-tools {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 18px;
     flex-shrink: 0;
+}
+
+.tools-sep {
+    width: 1px;
+    height: 22px;
+    background: #e9ecef;
 }
 
 .tool-btn {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 8px 10px;
-    border-radius: 12px;
-    transition: background 0.2s;
-
-    &:hover {
-        background: rgba(255, 255, 255, 0.06);
-    }
-
-    .tool-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.08);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #8fa8c8;
-        flex-shrink: 0;
-        transition: all 0.2s;
-
-        svg {
-            stroke: #8fa8c8;
-            transition: stroke 0.2s;
-        }
-    }
-
-    &:hover .tool-icon {
-        background: #2b78e4;
-        border-color: #2b78e4;
-
-        svg {
-            stroke: #ffffff;
-        }
-    }
-
-    .tool-label {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-
-        .tool-hint {
-            font-size: 10.5px;
-            color: #8fa8c8;
-            line-height: 1;
-        }
-
-        .tool-main {
-            font-size: 13px;
-            font-weight: 700;
-            color: #ffffff;
-            line-height: 1;
-        }
-    }
-}
-
-.tool-icon-only {
-    padding: 8px;
-}
-
-/* ── CART ─────────────────────────────── */
-.cart-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #ea580c;
-    color: #ffffff;
-    border: none;
-    cursor: pointer;
-    padding: 9px 16px;
-    border-radius: 12px;
-    transition: background 0.2s, transform 0.2s;
-    flex-shrink: 0;
+    padding: 0;
+    color: #0b2350;
+    font-size: 14px;
+    font-weight: 600;
     font-family: inherit;
-
-    &:hover {
-        background: #c2410c;
-        transform: translateY(-1px);
-    }
-}
-
-.cart-icon {
+    transition: color 0.2s;
     position: relative;
-    flex-shrink: 0;
 
     svg {
-        display: block;
-        stroke: #ffffff;
+        stroke: currentColor;
+        flex-shrink: 0;
     }
 
-    .cart-badge {
-        position: absolute;
-        top: -8px;
-        right: -9px;
-        background: #dc2626;
-        color: #ffffff;
-        font-size: 9px;
-        font-weight: 800;
-        min-width: 17px;
-        height: 17px;
-        border-radius: 9px;
-        border: 2px solid #ea580c;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 3px;
-        line-height: 1;
+    &:hover {
+        color: #2b78e4;
     }
 }
 
-.cart-label {
+.cart-badge {
+    background: #ea580c;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-
-    .cart-hint {
-        font-size: 10.5px;
-        color: rgba(255, 255, 255, 0.7);
-        line-height: 1;
-    }
-
-    .cart-price {
-        font-size: 14px;
-        font-weight: 800;
-        color: #ffffff;
-        line-height: 1;
-    }
+    align-items: center;
+    justify-content: center;
+    padding: 0 5px;
+    line-height: 1;
 }
 
-/* ── BOTTOM BAR ───────────────────────── */
-.fc-bottombar {
-    background: #1a2a4a;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-
-    .fc-container {
-        gap: 0;
-        padding: 0 0 0 0;
-        max-width: 1280px;
-        margin: 0 auto;
-    }
+/* ── CATEGORY BAR ─────────────────────── */
+.fc-catbar {
+    background: #ffffff;
+    border-bottom: 1px solid #e9ecef;
 }
 
 .bn-inner {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     width: 100%;
-    padding-right: 24px;
+    padding: 12px 0;
+    gap: 28px;
+}
+
+.cats-dropdown-wrapper {
+    position: relative;
+    flex-shrink: 0;
 }
 
 .cats-btn {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #ea580c;
+    background: #0b2350;
     color: #ffffff;
     border: none;
-    padding: 0 22px;
-    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
     font-weight: 700;
     cursor: pointer;
-    flex-shrink: 0;
     font-family: inherit;
     transition: background 0.2s;
 
@@ -431,32 +282,20 @@
     }
 
     &:hover {
-        background: #c2410c;
+        background: #0056b3;
     }
-}
-
-/* ── DROPDOWN CATEGORIAS ──────────────── */
-.cats-dropdown-wrapper {
-    position: relative;
-    display: inline-block;
-    align-self: stretch;
-}
-
-.cats-dropdown-wrapper .cats-btn {
-    height: 100%;
 }
 
 .cats-dropdown-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 6px);
     left: 0;
     z-index: 1001;
     min-width: 220px;
-    background: #1a2a4a;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px -6px rgba(11, 35, 80, 0.2);
     overflow: hidden;
 }
 
@@ -466,9 +305,9 @@
     text-align: left;
     background: transparent;
     border: none;
-    color: rgba(255, 255, 255, 0.85);
-    padding: 11.5px 20px;
-    font-size: 12.5px;
+    color: #1f263e;
+    padding: 11px 18px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
@@ -481,49 +320,36 @@
 }
 
 .cats-dropdown-item:hover {
-    background: #ea580c;
-    color: #ffffff;
+    background: #e1f5fe;
+    color: #0b2350;
 }
 
 .bn-links {
     display: flex;
-    align-items: stretch;
-    flex: 1;
-    padding: 0 8px;
+    align-items: center;
+    gap: 30px;
+    flex-wrap: wrap;
 }
 
 .bn-link {
     display: flex;
     align-items: center;
-    gap: 7px;
-    color: rgba(255, 255, 255, 0.6);
+    gap: 4px;
+    color: #1f263e;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
-    padding: 14px 14px;
-    border-bottom: 3px solid transparent;
-    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    transition: color 0.2s;
     white-space: nowrap;
 
     svg {
         flex-shrink: 0;
         stroke: currentColor;
-        opacity: 0.7;
-        transition: opacity 0.2s;
+        opacity: 0.6;
     }
 
-    &:hover,
-    &.active {
-        color: #ffffff;
-        border-bottom-color: #ea580c;
-
-        svg {
-            opacity: 1;
-        }
-    }
-
-    &.active {
-        background: rgba(255, 255, 255, 0.05);
+    &:hover {
+        color: #2b78e4;
     }
 }
 
@@ -536,16 +362,10 @@
     right: 0;
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 14px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
     z-index: 1100;
     overflow: hidden;
-    animation: navbarDropdownFade 0.15s ease;
-}
-
-@keyframes navbarDropdownFade {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
 }
 
 .navbar-autocomplete-item {
@@ -625,16 +445,12 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s, transform 0.1s;
+    transition: background 0.15s, color 0.15s;
 }
 
 .navbar-sug-add-btn:hover {
     background: #2b78e4;
     color: #ffffff;
-}
-
-.navbar-sug-add-btn:active {
-    transform: scale(0.92);
 }
 
 @media (max-width: 768px) {
@@ -646,17 +462,7 @@
     }
 }
 
-
-    .search-cat {
-        display: none;
-    }
-
-    .tool-label {
-        display: none;
-    }
-
-
-
+/* ── RESPONSIVE ───────────────────────── */
 @media (max-width: 768px) {
     .fc-topbar {
         display: none;
@@ -667,29 +473,22 @@
         gap: 12px;
     }
 
+    .fc-search-wrapper {
+        margin: 0;
+        max-width: none;
+    }
+
+
     .logo-farma,
     .logo-code {
-        font-size: 21px;
+        font-size: 20px;
     }
 
-    .search-btn span {
+    .fc-tools .tool-label {
         display: none;
     }
 
-    .search-btn {
-        padding: 0 14px;
-    }
-
-    .cart-label {
-        display: none;
-    }
-
-    .cart-btn {
-        padding: 9px 12px;
-    }
-
-    .fc-bottombar .fc-container {
-        padding: 0;
+    .fc-catbar .fc-container {
         overflow-x: auto;
 
         &::-webkit-scrollbar {
@@ -698,16 +497,16 @@
     }
 
     .bn-inner {
-        padding-right: 0;
+        padding: 10px 0;
+        gap: 18px;
     }
 
     .bn-link {
-        padding: 12px 10px;
-        font-size: 12px;
+        font-size: 12.5px;
     }
 
     .cats-btn {
-        padding: 0 14px;
-        font-size: 12px;
+        padding: 8px 14px;
+        font-size: 12.5px;
     }
 }
