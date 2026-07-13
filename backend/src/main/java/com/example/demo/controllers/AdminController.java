@@ -1,29 +1,44 @@
 package com.example.demo.controllers;
 
-import com.example.demo.models.Administrador;
-import com.example.demo.models.Pedido;
-import com.example.demo.models.Producto;
-import com.example.demo.models.DetallePedido;
-import com.example.demo.models.InventarioLote;
-import com.example.demo.repositories.AdministradorRepository;
-import com.example.demo.repositories.PedidoRepository;
-import com.example.demo.repositories.DetallePedidoRepository;
-import com.example.demo.repositories.InventarioLoteRepository;
-import com.example.demo.repositories.ProductoRepository;
-import com.example.demo.services.JwtService;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.example.demo.models.Administrador;
+import com.example.demo.models.DetallePedido;
+import com.example.demo.models.InventarioLote;
+import com.example.demo.models.Pedido;
+import com.example.demo.models.Producto;
+import com.example.demo.repositories.AdministradorRepository;
+import com.example.demo.repositories.DetallePedidoRepository;
+import com.example.demo.repositories.InventarioLoteRepository;
+import com.example.demo.repositories.PedidoRepository;
+import com.example.demo.repositories.ProductoRepository;
+import com.example.demo.services.JwtService;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -136,6 +151,8 @@ public class AdminController {
             map.put("fecha", pedido.getFecha());
             map.put("estado", pedido.getEstado());
             map.put("total", pedido.getTotal());
+            map.put("metodoPago", pedido.getMetodoPago() != null ? pedido.getMetodoPago() : "N/A");
+            map.put("distrito", pedido.getDistrito() != null ? pedido.getDistrito() : "");
             map.put("usuario", Map.of(
                     "nombre", pedido.getUsuario().getNombre(),
                     "apellido", pedido.getUsuario().getApellido(),

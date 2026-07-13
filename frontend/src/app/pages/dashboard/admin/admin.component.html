@@ -1038,6 +1038,24 @@ style="grid-column: 1 / -1; margin-bottom: 24px; transition: transform 0.2s;"
           <p><strong>Nombre:</strong> {{ selectedVenta.usuario.nombre }} {{ selectedVenta.usuario.apellido }}</p>
           <p><strong>Email:</strong> {{ selectedVenta.usuario.email }}</p>
           <p><strong>Fecha Compra:</strong> {{ selectedVenta.fecha | date:'dd MMMM yyyy, HH:mm' }}</p>
+          <p>
+            <strong>Método de Pago:</strong>
+            <span *ngIf="selectedVenta.metodoPago === 'YAPE'"
+              style="display:inline-flex;align-items:center;gap:5px;background:#f3e8ff;color:#7c3aed;font-weight:700;font-size:12px;border-radius:20px;padding:3px 12px;margin-left:6px;">
+              💜 Yape
+            </span>
+            <span *ngIf="selectedVenta.metodoPago === 'TARJETA'"
+              style="display:inline-flex;align-items:center;gap:5px;background:#dbeafe;color:#1d4ed8;font-weight:700;font-size:12px;border-radius:20px;padding:3px 12px;margin-left:6px;">
+              💳 Tarjeta
+            </span>
+            <span *ngIf="selectedVenta.metodoPago !== 'YAPE' && selectedVenta.metodoPago !== 'TARJETA'"
+              style="color:#94a3b8;font-size:13px;margin-left:6px;font-style:italic;">
+              No registrado
+            </span>
+          </p>
+          <p *ngIf="selectedVenta.distrito">
+            <strong>Distrito:</strong> {{ selectedVenta.distrito }}
+          </p>
         </div>
         <div class="details-list">
           <h3>Productos Adquiridos</h3>
