@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").authenticated() // Panel admin (requiere JWT)
                         .requestMatchers("/api/carrito/**").authenticated() // Protegemos el carrito
                         .requestMatchers("/api/pedidos/**").authenticated() // Protegemos el historial de pedidos
+                        .requestMatchers("/api/recetas/**").authenticated() // Protegemos recetas médicas
                         .anyRequest().permitAll() // Resto de rutas: públicas
                 )
                 // Agrega el filtro JWT antes del filtro estándar de usuario/contraseña
