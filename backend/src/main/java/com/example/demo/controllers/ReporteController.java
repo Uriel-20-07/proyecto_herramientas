@@ -89,19 +89,8 @@ public class ReporteController {
                 .filter(d -> d.getProducto() != null)
                 .collect(Collectors.toList());
 
-        Map<String, Object> productoTopMap = new LinkedHashMap<>();
-        detallesMes.forEach(d -> {
-            String nombre = d.getProducto().getNombre();
-            int cant = d.getCantidad() != null ? d.getCantidad() : 0;
-            BigDecimal precio = d.getPrecioHistorico() != null ? d.getPrecioHistorico() : BigDecimal.ZERO;
-            productoTopMap.merge(nombre, new long[]{cant, 0}, (old, added) -> {
-                long[] o = (long[]) old;
-                o[0] += cant;
-                return o;
-            });
-        });
 
-        // Recalcular con BigDecimal para ingresos
+        // Calcular conteo de unidades vendidas e ingresos por producto
         Map<String, long[]> conteoProductos = new LinkedHashMap<>();
         Map<String, BigDecimal> ingresosProductos = new LinkedHashMap<>();
         detallesMes.forEach(d -> {
