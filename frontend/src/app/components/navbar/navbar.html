@@ -13,6 +13,7 @@
                     </svg>
                     Envío gratis desde <strong>S/ 50</strong>
                 </div>
+                <span class="topbar-sep"></span>
                 <div class="topbar-item">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -44,116 +45,96 @@
         <div class="fc-container">
 
             <a routerLink="/" class="fc-logo">
-                <span class="logo-farma">Farma</span>
-                <span class="logo-code">Code</span>
-                <div class="logo-pill">+</div>
+                <span class="logo-farma">Farma</span><span class="logo-code">Code</span>
             </a>
 
             <div class="fc-search-wrapper">
                 <div class="fc-search">
-                    <div class="search-cat">
-                        <select [(ngModel)]="categoriaSeleccionada">
-                            @for (categoria of categorias; track categoria) {
-                            <option [value]="categoria">{{ categoria }}</option>
-                            }
-                        </select>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                    </div>
-                    <div class="search-divider"></div>
-                    <input type="text" placeholder="Busca tu medicina, vitaminas, suplementos..." class="search-input"
-                        [(ngModel)]="terminoBusqueda" (input)="onBusquedaInput()" (keyup.enter)="buscarCatalogo()" />
-                    <button type="button" class="search-btn" (click)="buscarCatalogo()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <input type="text" placeholder="Buscar medicamentos, vitaminas, cuidado personal..."
+                        class="search-input" [(ngModel)]="terminoBusqueda" (input)="onBusquedaInput()"
+                        (keyup.enter)="buscarCatalogo()" />
+                    <button type="button" class="search-btn" (click)="buscarCatalogo()" aria-label="Buscar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round">
                             <circle cx="11" cy="11" r="8" />
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
-                        Buscar
                     </button>
                 </div>
 
                 @if (sugerencias.length > 0 && mostrarSugerencias) {
-                    <div class="navbar-autocomplete-dropdown">
-                        @for (sug of sugerencias; track sug.objectID) {
-                            <div class="navbar-autocomplete-item" (click)="seleccionarSugerencia(sug)">
-                                <div class="navbar-sug-thumb">
-                                    @if (sug.imgUrl) {
-                                        <img [src]="sug.imgUrl" [alt]="sug.nombre" loading="lazy" />
-                                    } @else {
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                                            fill="none" stroke="#8fa8c8" stroke-width="2" viewBox="0 0 24 24">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                                            <circle cx="9" cy="9" r="2" />
-                                            <path d="m21 15-5-5L5 21" />
-                                        </svg>
-                                    }
-                                </div>
-                                <div class="navbar-sug-info">
-                                    <span class="navbar-sug-nombre">{{ sug.nombre }}</span>
-                                    <span class="navbar-sug-categoria">{{ sug.categoriaNombre }}</span>
-                                </div>
-                                <div class="navbar-sug-precio-container" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 70px;">
-                                    @if (hasDiscount(sug)) {
-                                        <span class="navbar-sug-precio" style="color: #e63946; font-weight: 800;">S/ {{ getFinalPrice(sug) | number:'1.2-2' }}</span>
-                                        <span class="navbar-sug-original-precio" style="text-decoration: line-through; color: #94a3b8; font-size: 0.75rem; margin-top: 1px;">S/ {{ sug.precioVenta | number:'1.2-2' }}</span>
-                                    } @else {
-                                        <span class="navbar-sug-precio">S/ {{ sug.precioVenta | number:'1.2-2' }}</span>
-                                    }
-                                </div>
-                                <button type="button" class="navbar-sug-add-btn"
-                                    title="Agregar al carrito"
-                                    (click)="agregarDesdeSugerencia(sug, $event)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                        fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                        <path d="M12 5v14M5 12h14" />
-                                    </svg>
-                                </button>
-                            </div>
-                        }
+                <div class="navbar-autocomplete-dropdown">
+                    @for (sug of sugerencias; track sug.objectID) {
+                    <div class="navbar-autocomplete-item" (click)="seleccionarSugerencia(sug)">
+                        <div class="navbar-sug-thumb">
+                            @if (sug.imgUrl) {
+                            <img [src]="sug.imgUrl" [alt]="sug.nombre" loading="lazy" />
+                            } @else {
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="#8fa8c8"
+                                stroke-width="2" viewBox="0 0 24 24">
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="9" cy="9" r="2" />
+                                <path d="m21 15-5-5L5 21" />
+                            </svg>
+                            }
+                        </div>
+                        <div class="navbar-sug-info">
+                            <span class="navbar-sug-nombre">{{ sug.nombre }}</span>
+                            <span class="navbar-sug-categoria">{{ sug.categoriaNombre }}</span>
+                        </div>
+                        <div class="navbar-sug-precio-container"
+                            style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; min-width: 70px;">
+                            @if (hasDiscount(sug)) {
+                            <span class="navbar-sug-precio" style="color: #e63946; font-weight: 800;">S/ {{
+                                getFinalPrice(sug) | number:'1.2-2' }}</span>
+                            <span class="navbar-sug-original-precio"
+                                style="text-decoration: line-through; color: #94a3b8; font-size: 0.75rem; margin-top: 1px;">S/
+                                {{ sug.precioVenta | number:'1.2-2' }}</span>
+                            } @else {
+                            <span class="navbar-sug-precio">S/ {{ sug.precioVenta | number:'1.2-2' }}</span>
+                            }
+                        </div>
+                        <button type="button" class="navbar-sug-add-btn" title="Agregar al carrito"
+                            (click)="agregarDesdeSugerencia(sug, $event)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none"
+                                stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path d="M12 5v14M5 12h14" />
+                            </svg>
+                        </button>
                     </div>
+                    }
+                </div>
                 }
             </div>
 
             <div class="fc-tools">
                 <button class="tool-btn" (click)="goToPerfil()">
-                    <div class="tool-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                    </div>
-                    <div class="tool-label">
-                        <span class="tool-hint">@if (currentUser$ | async; as usuario) { Hola, {{ usuario.nombre }} }
-                            @else { Hola, usuario }</span>
-                        <span class="tool-main">Mi Cuenta</span>
-                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span class="tool-label">Mi cuenta</span>
                 </button>
 
-                <button class="cart-btn" routerLink="/carrito">
-                    <div class="cart-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                            <line x1="3" y1="6" x2="21" y2="6" />
-                            <path d="M16 10a4 4 0 0 1-8 0" />
-                        </svg>
-                        <span class="cart-badge">{{ getCartCount((cartCount$ | async) ?? []) }}</span>
-                    </div>
-                    <div class="cart-label">
-                        <span class="cart-hint">Mi carrito</span>
-                        <span class="cart-price">S/ {{ getCartTotal() }}</span>
-                    </div>
+                <span class="tools-sep"></span>
+
+                <button class="tool-btn" routerLink="/carrito">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <path d="M16 10a4 4 0 0 1-8 0" />
+                    </svg>
+                    <span class="tool-label">Carrito</span>
+                    <span class="cart-badge">{{ getCartCount((cartCount$ | async) ?? []) }}</span>
                 </button>
             </div>
 
         </div>
     </div>
 
-    <div class="fc-bottombar">
+    <div class="fc-catbar">
         <div class="fc-container">
             <div class="bn-inner">
 
@@ -183,39 +164,24 @@
                 </div>
 
                 <nav class="bn-links">
-                    <a routerLink="/catalogo" class="bn-link" routerLinkActive="active">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <a routerLink="/catalogo" [queryParams]="{ categoria: 'MEDICAMENTOS' }" class="bn-link">
+                        Medicamentos
+                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <polyline points="6 9 12 15 18 9" />
                         </svg>
-                        Catálogo
                     </a>
-                    <a routerLink="/marcas" class="bn-link" routerLinkActive="active">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon
-                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        Marcas
+                    <a routerLink="/catalogo" [queryParams]="{ categoria: 'VITAMINAS / SUPLEMENTOS' }" class="bn-link">
+                        Vitaminas y Suplementos
                     </a>
-                    <a routerLink="/blog" class="bn-link" routerLinkActive="active">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                            <line x1="16" y1="13" x2="8" y2="13" />
-                            <line x1="16" y1="17" x2="8" y2="17" />
-                        </svg>
-                        Blog
+                    <a routerLink="/catalogo" [queryParams]="{ categoria: 'CUIDADO PERSONAL' }" class="bn-link">
+                        Cuidado Personal
                     </a>
-                    <a routerLink="/nosotros" class="bn-link" routerLinkActive="active">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                        </svg>
-                        Nosotros
+                    <a routerLink="/catalogo" [queryParams]="{ categoria: 'BEBÉ' }" class="bn-link">
+                        Bebés y Mamás
+                    </a>
+                    <a routerLink="/catalogo" [queryParams]="{ categoria: 'EQUIPOS MÉDICOS' }" class="bn-link">
+                        Dispositivos Médicos
                     </a>
                     <a routerLink="/favoritos" class="bn-link" routerLinkActive="active">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
