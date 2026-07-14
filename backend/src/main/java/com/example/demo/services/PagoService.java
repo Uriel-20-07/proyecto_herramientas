@@ -135,6 +135,8 @@ public class PagoService {
         pedido.setTotal(totalFinal);
         pedido.setDireccionEnvio(request.getDireccionEnvio());
         pedido.setEsUrgente(request.isEsUrgente());
+        pedido.setDistrito(request.getDistrito());
+        pedido.setMetodoPago(request.getMetodoPago());
         pedidoRepository.save(pedido); // Guarda el objeto
         // Como el objeto 'pedido' ya existe en memoria, ya tiene el ID asignado
         // y puedes seguir usándolo sin necesidad de re-asignarlo.

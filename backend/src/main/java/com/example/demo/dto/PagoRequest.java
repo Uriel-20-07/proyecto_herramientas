@@ -10,6 +10,9 @@ public class PagoRequest {
     private String codigoCupon;
     private boolean esUrgente;
 
+    // Distrito seleccionado por el usuario en el checkout
+    private String distrito;
+
     private String numeroCelular;
     private String tokenYape;
 

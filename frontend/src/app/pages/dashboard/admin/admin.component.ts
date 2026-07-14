@@ -70,6 +70,26 @@ export class AdminDashboardComponent implements OnInit {
   reporteData: any = null;
   cargandoReportes: boolean = false;
 
+  // Top productos por distrito
+  readonly distritosArequipa: string[] = [
+    'Alto Selva Alegre', 'Arequipa (Cercado)', 'Cayma', 'Cerro Colorado',
+    'Characato', 'Chiguata', 'Jacobo Hunter', 'José Luis Bustamante y Rivero',
+    'La Joya', 'Mariano Melgar', 'Miraflores', 'Mollebaya', 'Paucarpata',
+    'Pocsi', 'Polobaya', 'Quequeña', 'Sabandía', 'Sachaca', 'San Juan de Siguas',
+    'San Juan de Tarucani', 'Santa Isabel de Siguas', 'Santa Rita de Siguas',
+    'Socabaya', 'Tiabaya', 'Uchumayo', 'Vitor', 'Yanahuara', 'Yarabamba', 'Yura'
+  ];
+  distritoSeleccionado: string = '';
+  topProductosDistrito: any[] = [];
+  cargandoDistrito: boolean = false;
+
+  // Filtro calendario Top 10
+  filtroMes: string = '';
+  filtroDia: string = '';
+  topProductosFiltrados: any[] | null = null;
+  cargandoTopFiltrado: boolean = false;
+  fechaFiltroLabel: string = 'Más vendidos en los últimos 30 días';
+
   chartPath = '';
   chartAreaPath = '';
   chartPoints: { x: number; y: number; date: string; value: number }[] = [];
@@ -238,10 +258,76 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         this.reporteData = data;
         this.cargandoReportes = false;
+        // Cargar top por distrito inicial (todos los distritos)
+        this.cargarTopPorDistrito();
       },
       error: (err: any) => {
         console.error('Error al cargar reportes:', err);
         this.cargandoReportes = false;
+      }
+    });
+  }
+
+  cargarTopPorDistrito(): void {
+    this.cargandoDistrito = true;
+    this.adminService.getTopProductosPorDistrito(this.distritoSeleccionado).subscribe({
+      next: (data: any[]) => {
+        this.topProductosDistrito = data;
+        this.cargandoDistrito = false;
+      },
+      error: () => {
+        this.topProductosDistrito = [];
+        this.cargandoDistrito = false;
+      }
+    });
+  }
+
+  // ── Filtro calendario Top 10 ─────────────────────────────────────────────
+
+  onFiltroFechaChange(): void {
+    // Si se seleccionó un día, el mes se sincroniza automáticamente
+    if (this.filtroDia) {
+      this.filtroMes = this.filtroDia.substring(0, 7); // YYYY-MM
+    }
+    this.aplicarFiltroFecha();
+  }
+
+  limpiarFiltroFecha(): void {
+    this.filtroMes = '';
+    this.filtroDia = '';
+    this.topProductosFiltrados = null;
+    this.fechaFiltroLabel = 'Más vendidos en los últimos 30 días';
+  }
+
+  private aplicarFiltroFecha(): void {
+    if (!this.filtroMes && !this.filtroDia) {
+      this.topProductosFiltrados = null;
+      this.fechaFiltroLabel = 'Más vendidos en los últimos 30 días';
+      return;
+    }
+
+    this.cargandoTopFiltrado = true;
+    this.topProductosFiltrados = null;
+
+    // Actualizar label descriptivo
+    if (this.filtroDia) {
+      const [y, m, d] = this.filtroDia.split('-');
+      const fecha = new Date(+y, +m - 1, +d);
+      this.fechaFiltroLabel = `Ventas del ${fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+    } else {
+      const [y, m] = this.filtroMes.split('-');
+      const fecha = new Date(+y, +m - 1, 1);
+      this.fechaFiltroLabel = `Más vendidos en ${fecha.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })}`;
+    }
+
+    this.adminService.getTopProductosFiltrados(this.filtroDia || null, this.filtroMes || null).subscribe({
+      next: (data: any[]) => {
+        this.topProductosFiltrados = data;
+        this.cargandoTopFiltrado = false;
+      },
+      error: () => {
+        this.topProductosFiltrados = [];
+        this.cargandoTopFiltrado = false;
       }
     });
   }
@@ -992,10 +1078,52 @@ export class AdminDashboardComponent implements OnInit {
       this._pdfShell('Top 5 Clientes por Gasto Total', 'R-CLI-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }
 
+  // ── PDF 5: Top Productos por Distrito ─────────────────────────────────────
+  descargarReporteDistrito(): void {
+    if (!this.topProductosDistrito) return;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const distrito = this.distritoSeleccionado || 'Todos los distritos';
+    const fmt = (v: any) => `S/ ${Number(v || 0).toFixed(2)}`;
+    const medals = ['🥇', '🥈', '🥉'];
 
-  // =========================================================================
-  // REPORTE PDF PREMIUM COMPLETO (Nombre de Archivo Integrado con Chrome)
-  // =========================================================================
+    const filas = this.topProductosDistrito.length === 0
+      ? `<tr><td colspan="4" style="text-align:center; padding:20px; color:#718096;">Este distrito aún no cuenta con una venta.</td></tr>`
+      : this.topProductosDistrito.map((item: any, i: number) => `
+          <tr>
+            <td class="td-center">${i < 3 ? medals[i] : i + 1}</td>
+            <td>${item.nombre}</td>
+            <td class="td-center">${item.cantidadVendida} u.</td>
+            <td class="td-right" style="color:#ea580c; font-weight:800;">${fmt(item.ingresoGenerado)}</td>
+          </tr>`).join('');
+
+    const totalUnidades = this.topProductosDistrito.reduce((s: number, i: any) => s + (i.cantidadVendida || 0), 0);
+    const totalIngresos = this.topProductosDistrito.reduce((s: number, i: any) => s + Number(i.ingresoGenerado || 0), 0);
+
+    const contenido = `
+      <div class="highlight-note">
+        Distrito filtrado: <strong>${distrito}</strong> &nbsp;|&nbsp; ${this.topProductosDistrito.length} producto(s) con ventas registradas
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="td-center" style="width:56px;">#</th>
+            <th>Producto</th>
+            <th class="td-center" style="width:100px;">Unidades</th>
+            <th class="td-right" style="width:130px;">Ingresos</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="total-box">
+        <span class="total-label">Total unidades vendidas: ${totalUnidades} u.</span>
+        <span class="total-value">${fmt(totalIngresos)}</span>
+      </div>`;
+
+    this._imprimirPDF(`TOP_PRODUCTOS_${distrito.replace(/\s+/g, '_').toUpperCase()}`,
+      this._pdfShell(`Top Productos — ${distrito}`, 'R-DIST-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
+  }
+
+
 
 
   descargarReporte(tipo: 'semana' | 'mes'): void {

@@ -579,7 +579,8 @@ export class PagoComponent implements OnInit, AfterViewChecked {
            metodoPago: this.metodoSeleccionado,
            codigoCupon: this.cuponAplicado ? this.codigoAplicado : null,
            direccionEnvio: `${this.formPago.direccionDetalle}, ${this.formPago.distrito}`,
-           esUrgente: this.formPago.esUrgente
+           esUrgente: this.formPago.esUrgente,
+           distrito: this.formPago.distrito,
        };
 
       this.pagoService.procesarPago(datosPago).subscribe({
