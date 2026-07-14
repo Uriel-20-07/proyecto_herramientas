@@ -43,6 +43,12 @@ export class AdminDashboardComponent implements OnInit {
   nuevoLote = { codigoLote: '', cantidadActual: 0, fechaVencimiento: '' };
   loadingLotes = false;
 
+  // Variables Oferta
+  productoEnOfertaModal: any = null;
+  precioOfertaInput: number = 0;
+
+  combosActivos: any[] = [];
+
   // Variables Predicción
   topSemana: any[] = [];
   topMes: any[] = [];
@@ -171,7 +177,27 @@ export class AdminDashboardComponent implements OnInit {
         this.maxTopMes = Math.max(...data.map((d) => d.cantidad), 1);
       },
     });
+
   }
+
+
+
+  isComboActivo(productoPrincipalId: number, productoAsociadoId: number): boolean {
+    return this.combosActivos.some(c =>
+      c.productoPrincipal.idProducto === productoPrincipalId &&
+      c.productoAsociado.idProducto === productoAsociadoId
+    );
+  }
+
+  activarCombo(combo: any): void {
+    const principalId = combo.productoPrincipal.idProducto;
+    const asociadoId = combo.productoAsociado.idProducto;
+    const descuento = 10;
+    const descripcion = `${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre} con 10% de descuento`;
+
+  }
+
+
 
   // Semáforo de Lotes Visual
   getVencimientoClass(fecha: string): string {
@@ -184,6 +210,52 @@ export class AdminDashboardComponent implements OnInit {
     if (diffDays <= 0) return 'status-vencido';
     if (diffDays <= 180) return 'status-alerta';
     return 'status-seguro';
+  }
+
+  // ===== MÉTODOS OFERTA =====
+  openOfertaModal(prod: any): void {
+    this.productoEnOfertaModal = prod;
+    this.precioOfertaInput = 0;
+  }
+
+  closeOfertaModal(): void {
+    this.productoEnOfertaModal = null;
+    this.precioOfertaInput = 0;
+  }
+
+  guardarOferta(): void {
+    if (!this.productoEnOfertaModal) return;
+    const id = this.productoEnOfertaModal.idProducto;
+    this.adminService.actualizarOferta(id, true, this.precioOfertaInput).subscribe({
+      next: (actualizado: any) => {
+        const idx = this.productos.findIndex((p: any) => p.idProducto === id);
+        if (idx !== -1) {
+          this.productos[idx] = actualizado;
+        }
+        this.mostrarNotificacion(`¡Oferta activada! ${this.productoEnOfertaModal.nombre} ahora está a S/. ${this.precioOfertaInput.toFixed(2)}`);
+        this.closeOfertaModal();
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.mostrarNotificacion('Error al guardar la oferta.');
+      }
+    });
+  }
+
+  quitarOferta(prod: any): void {
+    this.adminService.actualizarOferta(prod.idProducto, false).subscribe({
+      next: (actualizado: any) => {
+        const idx = this.productos.findIndex((p: any) => p.idProducto === prod.idProducto);
+        if (idx !== -1) {
+          this.productos[idx] = actualizado;
+        }
+        this.mostrarNotificacion(`Oferta eliminada de ${prod.nombre}.`);
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.mostrarNotificacion('Error al quitar la oferta.');
+      }
+    });
   }
 
   calcularMetricasVentas(): void {
@@ -350,15 +422,15 @@ export class AdminDashboardComponent implements OnInit {
     if (!activeVentas || activeVentas.length === 0) {
       const mockVentas: any[] = [];
       const distritosDemo = ['Yanahuara', 'Cayma', 'Cerro Colorado', 'José Luis Bustamante y Rivero', 'Paucarpata', 'Cercado', 'Socabaya'];
-      
+
       for (let i = 0; i < 40; i++) {
         const fecha = new Date();
         fecha.setDate(hoy.getDate() - Math.floor(Math.random() * 28)); // últimos 28 días
-        
+
         // Elegir de 1 a 3 productos aleatorios
         const numItems = 1 + Math.floor(Math.random() * 3);
         const selectedProds = [...this.productos].sort(() => 0.5 - Math.random()).slice(0, numItems);
-        
+
         const detalles = selectedProds.map(prod => ({
           producto: prod,
           cantidad: 1 + Math.floor(Math.random() * 3) // 1 a 3 unidades

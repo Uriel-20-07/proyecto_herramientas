@@ -53,6 +53,21 @@ public class PagoService {
         List<InventarioLote> lotes = loteRepository.findByProductoIdProductoOrderByFechaVencimientoAsc(idProducto);
         int cantidadRestante = cantidadComprada;
 
+        if (lotes.isEmpty()) {
+            // El producto no tiene lotes físicos registrados:
+            // se descuenta directamente del stock general del producto.
+            Producto producto = productoRepository.findById(idProducto)
+                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + idProducto));
+            int stockActual = producto.getStock() != null ? producto.getStock() : 0;
+            if (stockActual < cantidadComprada) {
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
+            }
+            producto.setStock(stockActual - cantidadComprada);
+            productoRepository.save(producto);
+            return;
+        }
+
+        // Lógica FEFO: descontar de los lotes que vencen primero
         for (InventarioLote lote : lotes) {
             if (cantidadRestante <= 0)
                 break;

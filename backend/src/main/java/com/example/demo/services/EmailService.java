@@ -35,26 +35,25 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     /**
-     * Envía un correo con el enlace de recuperación de contraseña.
+     * Envía un correo con el token de recuperación de contraseña.
      * 
-     * El enlace incluye un token UUID único que expira en 1 hora.
-     * El formato del enlace es: http://localhost:4200/reset-password/{token}
+     * El token es un código numérico de 5 dígitos que expira en 1 hora.
      *
      * @param destinatario email del usuario que olvidó su contraseña.
-     * @param resetLink    URL completa con el token de recuperación.
+     * @param token        código de recuperación de 5 dígitos.
      */
-    public void sendPasswordResetEmail(String destinatario, String resetLink) {
+    public void sendPasswordResetEmail(String destinatario, String token) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom("noreply@mifarmacode.com");  // Remitente de la plataforma
             message.setTo(destinatario);
-            message.setSubject("Recuperación de Contraseña - MiFarmaCode");
+            message.setSubject("Código de Recuperación de Contraseña - MiFarmaCode");
 
             String contenido = "Hola,\n\n" +
-                    "Hemos recibido una solicitud para recuperar tu contraseña. " +
-                    "Haz clic en el siguiente enlace para crear una nueva contraseña:\n\n" +
-                    resetLink + "\n\n" +
-                    "Este enlace expirará en 1 hora.\n\n" +
+                    "Hemos recibido una solicitud para recuperar tu contraseña.\n\n" +
+                    "Tu código de recuperación es: " + token + "\n\n" +
+                    "Por favor, ingresa este código en la sección de recuperación de contraseña.\n" +
+                    "Este código expirará en 1 hora.\n\n" +
                     "Si no solicitaste esta recuperación, por favor ignora este correo.\n\n" +
                     "Saludos,\nEquipo MiFarmaCode";
 

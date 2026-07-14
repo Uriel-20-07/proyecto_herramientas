@@ -7,11 +7,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Clase principal de arranque de la aplicación Spring Boot.
  * 
  * @SpringBootApplication combina tres anotaciones:
- *   - @Configuration: marca esta clase como fuente de beans de Spring.
- *   - @EnableAutoConfiguration: activa la configuración automática de Spring.
- *   - @ComponentScan: escanea el paquete actual y sus sub-paquetes en busca de componentes.
+ *                        - @Configuration: marca esta clase como fuente de
+ *                        beans de Spring.
+ *                        - @EnableAutoConfiguration: activa la configuración
+ *                        automática de Spring.
+ *                        - @ComponentScan: escanea el paquete actual y sus
+ *                        sub-paquetes en busca de componentes.
  * 
- * Esta es la aplicación backend del proyecto MiFarmaCode (farmacia en línea).
+ *                        Esta es la aplicación backend del proyecto MiFarmaCode
+ *                        (farmacia en línea).
  */
 @SpringBootApplication
 public class DemoApplication {

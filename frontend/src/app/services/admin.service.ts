@@ -69,6 +69,15 @@ export class AdminService {
     return this.http.put(`${this.apiUrl}/productos/${id}/stock`, { stock }, { headers: this.getHeaders() });
   }
 
+  actualizarOferta(id: number, enOferta: boolean, precioOferta?: number): Observable<any> {
+    const body: any = { enOferta };
+    if (enOferta && precioOferta != null) {
+      body.precioOferta = precioOferta;
+    }
+    return this.http.put(`${this.apiUrl}/productos/${id}/oferta`, body, { headers: this.getHeaders() });
+  }
+
+
   getVentas(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/ventas`, { headers: this.getHeaders() });
   }

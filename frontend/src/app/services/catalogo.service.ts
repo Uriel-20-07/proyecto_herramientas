@@ -31,6 +31,8 @@ export interface ProductoApi {
   nombre: string;
   descripcion?: string;      // Descripción del producto (opcional)
   precioVenta: number;
+  precioOferta?: number;     // Precio de oferta (menor al regular), null si no aplica
+  enOferta?: boolean;        // true si el producto está en oferta actualmente
   categoria?: CategoriaApi | null; // Categoría del producto (null si no tiene)
   imgUrl?: string;           // URL de la imagen del producto (opcional)
   fechaCaducidad?: any;
