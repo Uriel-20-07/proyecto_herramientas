@@ -178,21 +178,13 @@ export class AdminDashboardComponent implements OnInit {
       },
     });
 
-    this.recargarCombosActivos();
   }
 
-  recargarCombosActivos(): void {
-    this.comboService.obtenerCombosActivos().subscribe({
-      next: (combos: any[]) => {
-        this.combosActivos = combos;
-      },
-      error: (err: any) => console.error('Error al cargar combos activos', err)
-    });
-  }
+
 
   isComboActivo(productoPrincipalId: number, productoAsociadoId: number): boolean {
-    return this.combosActivos.some(c => 
-      c.productoPrincipal.idProducto === productoPrincipalId && 
+    return this.combosActivos.some(c =>
+      c.productoPrincipal.idProducto === productoPrincipalId &&
       c.productoAsociado.idProducto === productoAsociadoId
     );
   }
@@ -203,33 +195,9 @@ export class AdminDashboardComponent implements OnInit {
     const descuento = 10;
     const descripcion = `${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre} con 10% de descuento`;
 
-    this.comboService.activarCombo(principalId, asociadoId, descuento, descripcion).subscribe({
-      next: (_res: any) => {
-        this.mostrarNotificacion(`¡Campaña activada para el combo: ${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre}!`);
-        this.recargarCombosActivos();
-      },
-      error: (err: any) => {
-        console.error(err);
-        this.mostrarNotificacion('Error al activar el combo.');
-      }
-    });
   }
 
-  detenerCombo(combo: any): void {
-    const principalId = combo.productoPrincipal.idProducto;
-    const asociadoId = combo.productoAsociado.idProducto;
 
-    this.comboService.desactivarCombo(principalId, asociadoId).subscribe({
-      next: (_res: any) => {
-        this.mostrarNotificacion(`¡Campaña desactivada para el combo: ${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre}!`);
-        this.recargarCombosActivos();
-      },
-      error: (err: any) => {
-        console.error(err);
-        this.mostrarNotificacion('Error al detener el combo.');
-      }
-    });
-  }
 
   // Semáforo de Lotes Visual
   getVencimientoClass(fecha: string): string {
@@ -454,15 +422,15 @@ export class AdminDashboardComponent implements OnInit {
     if (!activeVentas || activeVentas.length === 0) {
       const mockVentas: any[] = [];
       const distritosDemo = ['Yanahuara', 'Cayma', 'Cerro Colorado', 'José Luis Bustamante y Rivero', 'Paucarpata', 'Cercado', 'Socabaya'];
-      
+
       for (let i = 0; i < 40; i++) {
         const fecha = new Date();
         fecha.setDate(hoy.getDate() - Math.floor(Math.random() * 28)); // últimos 28 días
-        
+
         // Elegir de 1 a 3 productos aleatorios
         const numItems = 1 + Math.floor(Math.random() * 3);
         const selectedProds = [...this.productos].sort(() => 0.5 - Math.random()).slice(0, numItems);
-        
+
         const detalles = selectedProds.map(prod => ({
           producto: prod,
           cantidad: 1 + Math.floor(Math.random() * 3) // 1 a 3 unidades
