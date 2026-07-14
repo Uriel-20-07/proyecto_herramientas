@@ -298,11 +298,16 @@
                 <!-- Columna Oferta -->
                 <td>
                   <div *ngIf="prod.enOferta" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-                    <span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:6px;">EN OFERTA</span>
+                    <span
+                      style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:6px;">EN
+                      OFERTA</span>
                     <span style="font-size:0.75rem;color:#64748b;">S/. {{ prod.precioOferta | number:'1.2-2' }}</span>
-                    <button (click)="quitarOferta(prod)" class="btn-action" style="font-size:0.7rem;padding:3px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Quitar</button>
+                    <button (click)="quitarOferta(prod)" class="btn-action"
+                      style="font-size:0.7rem;padding:3px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Quitar</button>
                   </div>
-                  <button *ngIf="!prod.enOferta" (click)="openOfertaModal(prod)" class="btn-action" style="font-size:0.75rem;padding:4px 10px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">+ Oferta</button>
+                  <button *ngIf="!prod.enOferta" (click)="openOfertaModal(prod)" class="btn-action"
+                    style="font-size:0.75rem;padding:4px 10px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">+
+                    Oferta</button>
                 </td>
                 <!-- Columna Acciones -->
                 <td>
@@ -450,12 +455,15 @@
             <!-- Controles de calendario -->
             <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
               <div style="display:flex;flex-direction:column;gap:4px;">
-                <label style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Mes</label>
+                <label
+                  style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Mes</label>
                 <input type="month" [(ngModel)]="filtroMes" (change)="onFiltroFechaChange()"
                   style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#2d3436;outline:none;cursor:pointer;background:#fff;" />
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;">
-                <label style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Día específico</label>
+                <label
+                  style="font-size:11px;font-weight:700;color:#718096;text-transform:uppercase;letter-spacing:0.5px;">Día
+                  específico</label>
                 <input type="date" [(ngModel)]="filtroDia" (change)="onFiltroFechaChange()"
                   [min]="filtroMes ? filtroMes + '-01' : ''"
                   style="padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;color:#2d3436;outline:none;cursor:pointer;background:#fff;" />
@@ -502,12 +510,14 @@
                     <td><span style="font-weight:700;color:#ea580c;font-size:15px;">{{ i + 1 }}</span></td>
                     <td><span class="bold-text" style="font-size:13px;">{{ item.nombre }}</span></td>
                     <td style="text-align:center;">
-                      <span class="status-badge" style="background:rgba(234,88,12,0.1);color:#ea580c;border:1px solid rgba(234,88,12,0.2);">
+                      <span class="status-badge"
+                        style="background:rgba(234,88,12,0.1);color:#ea580c;border:1px solid rgba(234,88,12,0.2);">
                         {{ item.cantidadVendida }} u.
                       </span>
                     </td>
                     <td style="text-align:right;">
-                      <span class="bold-text" style="color:#ea580c;">S/ {{ item.ingresoGenerado | number:'1.2-2' }}</span>
+                      <span class="bold-text" style="color:#ea580c;">S/ {{ item.ingresoGenerado | number:'1.2-2'
+                        }}</span>
                     </td>
                   </tr>
                 </tbody>
@@ -1040,10 +1050,6 @@
                   class="btn-action" style="flex-shrink:0; align-self:flex-end;">
                   Activar Combo
                 </button>
-                <button *ngIf="isComboActivo(combo.productoPrincipal.idProducto, combo.productoAsociado.idProducto)"
-                        (click)="detenerCombo(combo)" class="btn-action" style="flex-shrink:0; align-self:flex-end; background: #dc2626 !important;">
-                  Detener Combo
-                </button>
               </div>
             </div>
           </div>
@@ -1123,20 +1129,24 @@
       </div>
       <div class="modal-body" style="padding:24px;">
         <p style="color:#475569;margin-bottom:16px;">Producto: <strong>{{ productoEnOfertaModal.nombre }}</strong></p>
-        <p style="color:#475569;margin-bottom:20px;">Precio regular: <strong>S/. {{ productoEnOfertaModal.precioVenta | number:'1.2-2' }}</strong></p>
+        <p style="color:#475569;margin-bottom:20px;">Precio regular: <strong>S/. {{ productoEnOfertaModal.precioVenta |
+            number:'1.2-2' }}</strong></p>
         <div style="margin-bottom:16px;">
           <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Precio de Oferta (S/.)</label>
           <input type="number" [(ngModel)]="precioOfertaInput" min="0.01" step="0.01"
             [max]="productoEnOfertaModal.precioVenta - 0.01"
             style="width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:1rem;"
             placeholder="Ej: 8.50" />
-          <small *ngIf="precioOfertaInput >= productoEnOfertaModal.precioVenta" style="color:#ef4444;display:block;margin-top:4px;">
+          <small *ngIf="precioOfertaInput >= productoEnOfertaModal.precioVenta"
+            style="color:#ef4444;display:block;margin-top:4px;">
             Debe ser menor al precio regular
           </small>
         </div>
-        <div *ngIf="precioOfertaInput > 0 && precioOfertaInput < productoEnOfertaModal.precioVenta" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:16px;text-align:center;">
+        <div *ngIf="precioOfertaInput > 0 && precioOfertaInput < productoEnOfertaModal.precioVenta"
+          style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:16px;text-align:center;">
           <span style="color:#16a34a;font-weight:700;font-size:1.1rem;">
-            {{ ((productoEnOfertaModal.precioVenta - precioOfertaInput) / productoEnOfertaModal.precioVenta * 100) | number:'1.0-0' }}% de descuento
+            {{ ((productoEnOfertaModal.precioVenta - precioOfertaInput) / productoEnOfertaModal.precioVenta * 100) |
+            number:'1.0-0' }}% de descuento
           </span>
         </div>
         <div class="modal-footer" style="padding:0;">
