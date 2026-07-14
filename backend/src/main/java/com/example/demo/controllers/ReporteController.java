@@ -184,12 +184,98 @@ public class ReporteController {
         // ─────────────────────────────────────────────────────────
         // Respuesta unificada
         // ─────────────────────────────────────────────────────────
+        List<String> distritos = todosLosPedidos.stream()
+                .map(Pedido::getDistrito)
+                .filter(d -> d != null && !d.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
         Map<String, Object> respuesta = new LinkedHashMap<>();
         respuesta.put("ventasPeriodo", ventasPeriodo);
         respuesta.put("topProductos", topProductos);
         respuesta.put("lotesProximosVencer", lotesVencer);
         respuesta.put("clientesTop", clientesTop);
+        respuesta.put("distritos", distritos);
 
         return ResponseEntity.ok(respuesta);
+    }
+
+    private List<Map<String, Object>> calcularTopProductos(List<Pedido> pedidosFiltrados) {
+        Set<Integer> pedidoIds = pedidosFiltrados.stream()
+                .map(Pedido::getIdPedido)
+                .collect(Collectors.toSet());
+
+        List<DetallePedido> detalles = pedidoIds.isEmpty() ? new ArrayList<>() : detallePedidoRepository.findByPedido_IdPedidoIn(pedidoIds).stream()
+                .filter(d -> d.getProducto() != null)
+                .collect(Collectors.toList());
+
+        Map<String, long[]> conteoProductos = new LinkedHashMap<>();
+        Map<String, BigDecimal> ingresosProductos = new LinkedHashMap<>();
+        detalles.forEach(d -> {
+            String nombre = d.getProducto().getNombre();
+            int cant = d.getCantidad() != null ? d.getCantidad() : 0;
+            BigDecimal ingreso = d.getPrecioHistorico() != null
+                    ? d.getPrecioHistorico().multiply(BigDecimal.valueOf(cant))
+                    : BigDecimal.ZERO;
+            conteoProductos.merge(nombre, new long[]{cant}, (old, n) -> { old[0] += cant; return old; });
+            ingresosProductos.merge(nombre, ingreso, BigDecimal::add);
+        });
+
+        return conteoProductos.entrySet().stream()
+                .sorted((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]))
+                .limit(10)
+                .map(e -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("nombre", e.getKey());
+                    m.put("cantidadVendida", e.getValue()[0]);
+                    m.put("ingresoGenerado", ingresosProductos.getOrDefault(e.getKey(), BigDecimal.ZERO));
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @GetMapping("/top-productos-filtrados")
+    public ResponseEntity<?> obtenerTopProductosFiltrados(
+            @RequestParam(required = false) String dia,
+            @RequestParam(required = false) String mes) {
+
+        List<Pedido> pedidos = pedidoRepository.findAll();
+        List<Pedido> filtrados = new ArrayList<>();
+
+        if (dia != null && !dia.isEmpty()) {
+            LocalDate targetDia = LocalDate.parse(dia);
+            filtrados = pedidos.stream()
+                    .filter(p -> p.getFecha() != null && p.getFecha().toLocalDate().equals(targetDia))
+                    .collect(Collectors.toList());
+        } else if (mes != null && !mes.isEmpty()) {
+            String[] parts = mes.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]);
+            filtrados = pedidos.stream()
+                    .filter(p -> p.getFecha() != null 
+                            && p.getFecha().getYear() == year 
+                            && p.getFecha().getMonthValue() == month)
+                    .collect(Collectors.toList());
+        } else {
+            LocalDateTime limite = LocalDateTime.now().minusDays(30);
+            filtrados = pedidos.stream()
+                    .filter(p -> p.getFecha() != null && p.getFecha().isAfter(limite))
+                    .collect(Collectors.toList());
+        }
+
+        List<Map<String, Object>> top = calcularTopProductos(filtrados);
+        return ResponseEntity.ok(top);
+    }
+
+    @GetMapping("/top-productos-distrito")
+    public ResponseEntity<?> obtenerTopProductosPorDistrito(@RequestParam String distrito) {
+        List<Pedido> pedidos = pedidoRepository.findAll();
+        List<Pedido> filtrados = pedidos.stream()
+                .filter(p -> p.getDistrito() != null && p.getDistrito().equalsIgnoreCase(distrito))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> top = calcularTopProductos(filtrados);
+        return ResponseEntity.ok(top);
     }
 }

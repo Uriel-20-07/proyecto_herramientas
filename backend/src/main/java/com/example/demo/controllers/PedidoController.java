@@ -62,6 +62,8 @@ public class PedidoController {
                 map.put("estado", pedido.getEstado());
                 map.put("total", pedido.getTotal());
                 map.put("direccionEnvio", pedido.getDireccionEnvio());
+                map.put("distrito", pedido.getDistrito());
+                map.put("metodoPago", pedido.getMetodoPago());
                 map.put("esUrgente", pedido.isEsUrgente());
 
                 // Obtener detalles del pedido desde la BD de forma eficiente

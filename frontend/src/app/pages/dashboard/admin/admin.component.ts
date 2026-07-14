@@ -70,6 +70,18 @@ export class AdminDashboardComponent implements OnInit {
   reporteData: any = null;
   cargandoReportes: boolean = false;
 
+  // Top productos por distrito
+  distritoSeleccionado: string = '';
+  topProductosDistrito: any[] = [];
+  cargandoDistrito: boolean = false;
+
+  // Filtro calendario Top 10
+  filtroMes: string = '';
+  filtroDia: string = '';
+  topProductosFiltrados: any[] | null = null;
+  cargandoTopFiltrado: boolean = false;
+  fechaFiltroLabel: string = 'Más vendidos en los últimos 30 días';
+
   chartPath = '';
   chartAreaPath = '';
   chartPoints: { x: number; y: number; date: string; value: number }[] = [];
@@ -238,12 +250,111 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         this.reporteData = data;
         this.cargandoReportes = false;
+        // Si hay distritos y no se ha seleccionado ninguno, seleccionamos el primero por defecto
+        if (this.reporteData?.distritos?.length && !this.distritoSeleccionado) {
+          this.distritoSeleccionado = this.reporteData.distritos[0];
+        }
+        this.cargarTopPorDistrito();
       },
       error: (err: any) => {
         console.error('Error al cargar reportes:', err);
         this.cargandoReportes = false;
       }
     });
+  }
+
+  cargarTopPorDistrito(): void {
+    if (!this.distritoSeleccionado) return;
+    this.cargandoDistrito = true;
+    this.adminService.getTopProductosPorDistrito(this.distritoSeleccionado).subscribe({
+      next: (data: any[]) => {
+        this.topProductosDistrito = data;
+        this.cargandoDistrito = false;
+      },
+      error: () => {
+        this.topProductosDistrito = [];
+        this.cargandoDistrito = false;
+      }
+    });
+  }
+
+  // ── Filtro calendario Top 10 ─────────────────────────────────────────────
+
+  onFiltroFechaChange(): void {
+    if (this.filtroDia) {
+      this.filtroMes = this.filtroDia.substring(0, 7); // YYYY-MM
+    }
+    this.aplicarFiltroFecha();
+  }
+
+  limpiarFiltroFecha(): void {
+    this.filtroMes = '';
+    this.filtroDia = '';
+    this.topProductosFiltrados = null;
+    this.fechaFiltroLabel = 'Más vendidos en los últimos 30 días';
+  }
+
+  private aplicarFiltroFecha(): void {
+    if (!this.filtroMes && !this.filtroDia) {
+      this.topProductosFiltrados = null;
+      this.fechaFiltroLabel = 'Más vendidos en los últimos 30 días';
+      return;
+    }
+
+    this.cargandoTopFiltrado = true;
+    this.topProductosFiltrados = null;
+
+    if (this.filtroDia) {
+      const [y, m, d] = this.filtroDia.split('-');
+      const fecha = new Date(+y, +m - 1, +d);
+      this.fechaFiltroLabel = `Ventas del ${fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}`;
+    } else {
+      const [y, m] = this.filtroMes.split('-');
+      const fecha = new Date(+y, +m - 1, 1);
+      this.fechaFiltroLabel = `Más vendidos en ${fecha.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })}`;
+    }
+
+    this.adminService.getTopProductosFiltrados(this.filtroDia || null, this.filtroMes || null).subscribe({
+      next: (data: any[]) => {
+        this.topProductosFiltrados = data;
+        this.cargandoTopFiltrado = false;
+      },
+      error: () => {
+        this.topProductosFiltrados = [];
+        this.cargandoTopFiltrado = false;
+      }
+    });
+  }
+
+  descargarReporteDistrito(): void {
+    if (!this.distritoSeleccionado || this.topProductosDistrito.length === 0) return;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const filas = this.topProductosDistrito.map((item: any, i: number) => `
+      <tr>
+        <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
+        <td><strong>${item.nombre}</strong></td>
+        <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
+        <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
+      </tr>`).join('');
+    const totalUnidades = this.topProductosDistrito.reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
+    const totalIngresos = this.topProductosDistrito.reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
+    const contenido = `
+      <div class="highlight-note">Distrito de análisis: <strong>${this.distritoSeleccionado}</strong> &mdash; Basado en las ventas geolocalizadas registradas.</div>
+      <table>
+        <thead><tr>
+          <th class="td-center" style="width:8%">Rank</th>
+          <th style="width:52%">Producto / Medicamento</th>
+          <th class="td-center" style="width:20%">Unidades Vendidas</th>
+          <th class="td-right" style="width:20%">Ingreso Generado</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="total-box">
+        <span class="total-label">Total general en ${this.distritoSeleccionado}: ${totalUnidades} unidades</span>
+        <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
+      </div>`;
+    this._imprimirPDF(`TOP_PRODUCTOS_${this.distritoSeleccionado.toUpperCase().replace(/\s+/g, '_')}_FARMACODE`,
+      this._pdfShell(`Top Productos - ${this.distritoSeleccionado}`, 'R-DST-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }
 
   calcularPredicciones(): void {
@@ -879,31 +990,49 @@ export class AdminDashboardComponent implements OnInit {
   // ── PDF 2: Top 10 Productos ───────────────────────────────────────────────
   descargarReporteTopProductos(): void {
     if (!this.reporteData) return;
+    const items = this.topProductosFiltrados !== null ? this.topProductosFiltrados : (this.reporteData.topProductos || []);
+    const label = this.topProductosFiltrados !== null ? this.fechaFiltroLabel : 'últimos 30 días';
+    const labelTotal = this.topProductosFiltrados !== null ? this.fechaFiltroLabel.replace('Más vendidos en ', '').replace('Ventas del ', '') : '30 días';
+
     const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const totalUnidades = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
-    const totalIngresos = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
-    const filas = (this.reporteData.topProductos || []).map((item: any, i: number) => `
-      <tr>
-        <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
-        <td><strong>${item.nombre}</strong></td>
-        <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
-        <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
-      </tr>`).join('');
+    const totalUnidades = items.reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
+    const totalIngresos = items.reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
+
+    let tablaContenido = '';
+    if (items.length === 0) {
+      tablaContenido = `
+        <div style="padding:24px;text-align:center;color:#475569;font-weight:700;font-size:13px;background:#f8fafc;border-radius:4px;border:1px solid #cbd5e1;margin-bottom:20px;">
+          Ese día no se realizaron ventas.
+        </div>`;
+    } else {
+      const filas = items.map((item: any, i: number) => `
+        <tr>
+          <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
+          <td><strong>${item.nombre}</strong></td>
+          <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
+          <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
+        </tr>`).join('');
+
+      tablaContenido = `
+        <table>
+          <thead><tr>
+            <th class="td-center" style="width:8%">Rank</th>
+            <th style="width:52%">Producto / Medicamento</th>
+            <th class="td-center" style="width:20%">Unidades Vendidas</th>
+            <th class="td-right" style="width:20%">Ingreso Generado</th>
+          </tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+        <div class="total-box">
+          <span class="total-label">Total general (${labelTotal}): ${totalUnidades} unidades</span>
+          <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
+        </div>`;
+    }
+
     const contenido = `
-      <div class="highlight-note">Período analizado: <strong>últimos 30 días</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
-      <table>
-        <thead><tr>
-          <th class="td-center" style="width:8%">Rank</th>
-          <th style="width:52%">Producto / Medicamento</th>
-          <th class="td-center" style="width:20%">Unidades Vendidas</th>
-          <th class="td-right" style="width:20%">Ingreso Generado</th>
-        </tr></thead>
-        <tbody>${filas}</tbody>
-      </table>
-      <div class="total-box">
-        <span class="total-label">Total general (30 días): ${totalUnidades} unidades</span>
-        <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
-      </div>`;
+      <div class="highlight-note">Período analizado: <strong>${label}</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
+      ${tablaContenido}`;
+
     this._imprimirPDF('TOP_PRODUCTOS_FARMACODE',
       this._pdfShell('Top 10 Productos Más Vendidos', 'R-PROD-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }

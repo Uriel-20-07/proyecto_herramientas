@@ -533,6 +533,8 @@ export class PagoComponent implements OnInit, AfterViewChecked {
                  moneda: 'pen',
                  codigoCupon: this.cuponAplicado ? this.codigoAplicado : null,
                  direccionEnvio: `${this.formPago.direccionDetalle}, ${this.formPago.distrito}`,
+                 distrito: this.formPago.distrito,
+                 metodoPago: this.metodoSeleccionado,
                  esUrgente: this.formPago.esUrgente
              };
 
@@ -575,12 +577,13 @@ export class PagoComponent implements OnInit, AfterViewChecked {
 
   // Finaliza el proceso y muestra la pantalla de éxito
   private finalizarPedidoEnBackend() {
-       const datosPago = {
-           metodoPago: this.metodoSeleccionado,
-           codigoCupon: this.cuponAplicado ? this.codigoAplicado : null,
-           direccionEnvio: `${this.formPago.direccionDetalle}, ${this.formPago.distrito}`,
-           esUrgente: this.formPago.esUrgente
-       };
+        const datosPago = {
+            metodoPago: this.metodoSeleccionado,
+            codigoCupon: this.cuponAplicado ? this.codigoAplicado : null,
+            direccionEnvio: `${this.formPago.direccionDetalle}, ${this.formPago.distrito}`,
+            distrito: this.formPago.distrito,
+            esUrgente: this.formPago.esUrgente
+        };
 
       this.pagoService.procesarPago(datosPago).subscribe({
           next: () => {
