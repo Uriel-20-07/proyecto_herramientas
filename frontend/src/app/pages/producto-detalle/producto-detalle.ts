@@ -99,7 +99,8 @@ export class ProductoDetalleComponent implements OnInit {
             precioVenta: found.precioVenta,
             categoriaNombre: catNombre,
             imagen: imagen,
-            fechaCaducidad: fechaCad
+            fechaCaducidad: fechaCad,
+            requiereReceta: this.requiereRecetaMedica(found.nombre)
           };
           this.mensaje = ''; // Limpiar mensaje de error ya que el producto fue encontrado con éxito
         } else {
@@ -178,5 +179,11 @@ export class ProductoDetalleComponent implements OnInit {
       return;
     }
     this.favoritosService.toggleFavorito(this.producto.id).subscribe();
+  }
+
+  private requiereRecetaMedica(nombre: string): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('clonazepam') || n.includes('losartan') || n.includes('losartán');
   }
 }

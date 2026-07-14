@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { CartService } from '../../services/cart.service';
 import { PagoService } from '../../services/pago.service';
 import { AuthService } from '../../services/auth.service';
+import { RecetasService, RecetaMedica } from '../../services/recetas.service';
 
 // Stripe Elements para el diseño profesional
 import { loadStripe, Stripe, StripeCardNumberElement, StripeCardExpiryElement, StripeCardCvcElement } from '@stripe/stripe-js';
@@ -26,6 +27,21 @@ const EMAILJS_PUBLIC_KEY  = 'HDwamrH2SgIFGUpNw';
 export class PagoComponent implements OnInit, AfterViewChecked {
 
   metodoSeleccionado: 'TARJETA' | 'YAPE' = 'TARJETA';
+
+  // Variables Receta Checkout
+  requiereReceta: boolean = false;
+  recetaSubidaId: number | null = null;
+  recetaSubidaExito: boolean = false;
+  subiendoReceta: boolean = false;
+  
+  recetaForm = {
+    medicoId: '',
+    fechaEmision: new Date().toISOString().split('T')[0],
+  };
+  recetaFile: File | null = null;
+  recetaFileName: string = '';
+  recetaMensajeError: string = '';
+  recetaMensajeExito: string = '';
   subtotal: number = 0;
   descuento: number = 0;
   total: number = 0;
@@ -296,7 +312,8 @@ export class PagoComponent implements OnInit, AfterViewChecked {
     private readonly cartService: CartService,
     private readonly router: Router,
     private readonly pagoService: PagoService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly recetasService: RecetasService
   ) {}
 
   async ngOnInit() {
@@ -319,6 +336,9 @@ export class PagoComponent implements OnInit, AfterViewChecked {
       this.router.navigate(['/catalogo']);
       return;
     }
+
+    // Verificar si requiere receta
+    this.requiereReceta = this.productosCarrito.some(item => this.requiereRecetaMedica(item.producto.nombre));
 
     // 3. Inicializamos Stripe con tu clave pública
     // ¡REEMPLAZA ESTO CON TU CLAVE REAL!
@@ -514,6 +534,11 @@ export class PagoComponent implements OnInit, AfterViewChecked {
     if (!this.formPago.distrito) { this.mensajeError = 'Selecciona el distrito.'; return; }
     if (!this.formPago.direccionDetalle.trim()) { this.mensajeError = 'Ingresa la dirección.'; return; }
 
+    if (this.requiereReceta && !this.recetaSubidaExito) {
+        this.mensajeError = 'Debes subir y vincular tu receta médica para continuar.';
+        return;
+    }
+
     if (this.metodoSeleccionado === 'TARJETA') {
         if (!this.formPago.nombreTarjeta.trim()) {
             this.mensajeError = 'Ingresa el nombre del titular de la tarjeta.';
@@ -535,7 +560,8 @@ export class PagoComponent implements OnInit, AfterViewChecked {
                  direccionEnvio: `${this.formPago.direccionDetalle}, ${this.formPago.distrito}`,
                  distrito: this.formPago.distrito,
                  metodoPago: this.metodoSeleccionado,
-                 esUrgente: this.formPago.esUrgente
+                 esUrgente: this.formPago.esUrgente,
+                 idReceta: this.recetaSubidaId
              };
 
             const intentResponse: any = await firstValueFrom(this.pagoService.crearPaymentIntent(datosParaIntent));
@@ -582,7 +608,8 @@ export class PagoComponent implements OnInit, AfterViewChecked {
             codigoCupon: this.cuponAplicado ? this.codigoAplicado : null,
             direccionEnvio: `${this.formPago.direccionDetalle}, ${this.formPago.distrito}`,
             distrito: this.formPago.distrito,
-            esUrgente: this.formPago.esUrgente
+            esUrgente: this.formPago.esUrgente,
+            idReceta: this.recetaSubidaId
         };
 
       this.pagoService.procesarPago(datosPago).subscribe({
@@ -600,5 +627,74 @@ export class PagoComponent implements OnInit, AfterViewChecked {
               this.procesandoPago = false;
           }
       });
+  }
+
+  // --- LÓGICA DE RECETA CHECKOUT ---
+
+  requiereRecetaMedica(nombre: string): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('clonazepam') || n.includes('losartan') || n.includes('losartán');
+  }
+
+  onRecetaFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.recetaFile = input.files[0];
+      this.recetaFileName = input.files[0].name;
+    }
+  }
+
+  subirRecetaCheckout(): void {
+    this.recetaMensajeError = '';
+    this.recetaMensajeExito = '';
+
+    if (!this.recetaForm.medicoId.trim()) {
+      this.recetaMensajeError = 'Por favor, ingresa el nombre/colegiatura del médico.';
+      return;
+    }
+    if (!this.recetaFile) {
+      this.recetaMensajeError = 'Por favor, selecciona el archivo de la receta médica.';
+      return;
+    }
+
+    this.subiendoReceta = true;
+
+    // 1. Subir documento a Supabase
+    this.recetasService.subirDocumento(this.recetaFile).subscribe({
+      next: (uploadRes: { url: string }) => {
+        // 2. Crear receta en base de datos
+        const usuario = this.authService.getCurrentUser();
+        const nuevaReceta: RecetaMedica = {
+          pacienteId: usuario?.id ? usuario.id.toString() : '',
+          medicoId: this.recetaForm.medicoId,
+          medicamentos: this.productosCarrito
+            .filter(item => this.requiereRecetaMedica(item.producto.nombre))
+            .map(item => ({ nombre: item.producto.nombre, dosis: `${item.cantidad} u.` })),
+          fechaEmision: this.recetaForm.fechaEmision,
+          estado: 'en_espera',
+          documentoUrl: uploadRes.url
+        };
+
+        this.recetasService.cargarReceta(nuevaReceta).subscribe({
+          next: (savedReceta: RecetaMedica) => {
+            this.subiendoReceta = false;
+            this.recetaSubidaId = savedReceta.idReceta || parseInt(savedReceta.id || '0', 10);
+            this.recetaSubidaExito = true;
+            this.recetaMensajeExito = '¡Receta médica subida y vinculada con éxito!';
+          },
+          error: (err: any) => {
+            this.subiendoReceta = false;
+            this.recetaMensajeError = 'Error al registrar la receta en la base de datos.';
+            console.error('Error al registrar receta:', err);
+          }
+        });
+      },
+      error: (err: any) => {
+        this.subiendoReceta = false;
+        this.recetaMensajeError = 'Error al subir la imagen del documento de receta.';
+        console.error('Error al subir receta:', err);
+      }
+    });
   }
 }

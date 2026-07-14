@@ -12,6 +12,7 @@ interface ProductoVista {
   descuentoPct: number;    // porcentaje de descuento calculado por fecha de caducidad
   categoriaNombre: string;
   imagen: string;
+  requiereReceta?: boolean;
 }
 
 @Component({
@@ -171,7 +172,8 @@ export class ProductCarouselComponent implements OnInit {
       precioOriginal,
       descuentoPct,
       categoriaNombre,
-      imagen
+      imagen,
+      requiereReceta: this.requiereRecetaMedica(producto.nombre)
     };
   }
 
@@ -181,5 +183,11 @@ export class ProductCarouselComponent implements OnInit {
       chunks.push(this.productos.slice(i, i + 4));
     }
     return chunks;
+  }
+
+  private requiereRecetaMedica(nombre: string): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('clonazepam') || n.includes('losartan') || n.includes('losartán');
   }
 }

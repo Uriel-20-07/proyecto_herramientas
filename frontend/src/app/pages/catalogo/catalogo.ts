@@ -28,6 +28,7 @@ interface ProductoVista {
     message: string;
     isExpired: boolean;
   };
+  requiereReceta?: boolean;
 }
 
 /**
@@ -352,7 +353,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       etiquetaPromo: descuento.message || this.obtenerPromo(producto.nombre, categoriaNombre),
       colorPromo: descuento.message ? 'red' : (categoriaNombre === 'MEDICAMENTOS' ? 'red' : 'orange'),
       fechaCaducidad: fechaCad,
-      descuentoInfo: descuento
+      descuentoInfo: descuento,
+      requiereReceta: this.requiereRecetaMedica(producto.nombre)
     };
   }
 
@@ -373,7 +375,8 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       etiquetaPromo: descuento.message || this.obtenerPromo(hit.nombre, hit.categoriaNombre ?? ''),
       colorPromo: descuento.message ? 'red' : ((hit.categoriaNombre ?? '').toUpperCase() === 'MEDICAMENTOS' ? 'red' : 'orange'),
       fechaCaducidad: fechaCad,
-      descuentoInfo: descuento
+      descuentoInfo: descuento,
+      requiereReceta: this.requiereRecetaMedica(hit.nombre)
     };
   }
 
@@ -383,6 +386,12 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     if (nombre.toLowerCase().includes('huggies') || nombre.toLowerCase().includes('pampers')) return 'Más vendido';
     if (etiqueta.includes('belleza')) return 'Nuevo';
     return undefined;
+  }
+
+  private requiereRecetaMedica(nombre: string): boolean {
+    if (!nombre) return false;
+    const n = nombre.toLowerCase();
+    return n.includes('clonazepam') || n.includes('losartan') || n.includes('losartán');
   }
 
 

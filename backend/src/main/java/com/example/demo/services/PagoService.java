@@ -147,15 +147,25 @@ public class PagoService {
         double costoEnvio = request.isEsUrgente() ? 10.0 : ((subtotal > 50.0) ? 0.0 : 5.0);
         totalFinal = totalFinal.add(BigDecimal.valueOf(costoEnvio));
 
+        boolean requiereReceta = false;
+        for (DetalleCarrito detCart : carrito.getDetalles()) {
+            String nombre = detCart.getProducto().getNombre().toLowerCase();
+            if (nombre.contains("clonazepam") || nombre.contains("losartan") || nombre.contains("losartán")) {
+                requiereReceta = true;
+                break;
+            }
+        }
+
         Pedido pedido = new Pedido();
         pedido.setUsuario(carrito.getUsuario());
         pedido.setFecha(LocalDateTime.now());
-        pedido.setEstado("PAGADO");
+        pedido.setEstado(requiereReceta ? "EN_ESPERA" : "PAGADO");
         pedido.setTotal(totalFinal);
         pedido.setDireccionEnvio(request.getDireccionEnvio());
         pedido.setEsUrgente(request.isEsUrgente());
         pedido.setDistrito(request.getDistrito());
         pedido.setMetodoPago(request.getMetodoPago());
+        pedido.setIdReceta(request.getIdReceta());
         pedidoRepository.save(pedido); // Guarda el objeto
         // Como el objeto 'pedido' ya existe en memoria, ya tiene el ID asignado
         // y puedes seguir usándolo sin necesidad de re-asignarlo.

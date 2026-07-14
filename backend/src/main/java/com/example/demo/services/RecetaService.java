@@ -15,6 +15,9 @@ public class RecetaService {
     @Autowired
     private RecetaRepository recetaRepository;
 
+    @Autowired
+    private com.example.demo.repositories.PedidoRepository pedidoRepository;
+
     public Receta guardar(Receta receta) {
         receta.setEstado(EstadoReceta.EN_ESPERA);
         return recetaRepository.save(receta);
@@ -35,6 +38,19 @@ public class RecetaService {
         receta.setRevisadoPor(revisadoPor);
         receta.setComentarioRevision(comentario);
         receta.setFechaRevision(java.time.LocalDateTime.now());
-        return recetaRepository.save(receta);
+        Receta saved = recetaRepository.save(receta);
+
+        // Buscar pedidos asociados y actualizar su estado
+        List<com.example.demo.models.Pedido> pedidos = pedidoRepository.findByIdReceta(id);
+        for (com.example.demo.models.Pedido p : pedidos) {
+            if (nuevoEstado == EstadoReceta.APROBADA) {
+                p.setEstado("CONFIRMADO");
+            } else if (nuevoEstado == EstadoReceta.RECHAZADA) {
+                p.setEstado("RECHAZADO");
+            }
+            pedidoRepository.save(p);
+        }
+
+        return saved;
     }
 }

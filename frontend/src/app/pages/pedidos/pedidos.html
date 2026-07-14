@@ -102,6 +102,23 @@
               <span class="total-amount">S/ {{ pedido.total.toFixed(2) }}</span>
             </div>
 
+            <!-- Badge de Estado del Pedido -->
+            <div class="order-status-badge" style="margin-left: 12px; display: inline-flex;">
+              @if (pedido.estado === 'EN_ESPERA') {
+                <span class="status-badge" style="background-color: #fef3c7; color: #d97706; border: 1.5px solid #fde68a; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; text-transform: uppercase;">
+                  En Espera
+                </span>
+              } @else if (pedido.estado === 'RECHAZADO') {
+                <span class="status-badge" style="background-color: #fee2e2; color: #dc2626; border: 1.5px solid #fecaca; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; text-transform: uppercase;">
+                  Rechazado
+                </span>
+              } @else {
+                <span class="status-badge" style="background-color: #d1fae5; color: #065f46; border: 1.5px solid #a7f3d0; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; text-transform: uppercase;">
+                  Confirmado
+                </span>
+              }
+            </div>
+
 
 
             <div class="header-actions" (click)="$event.stopPropagation()">
@@ -129,6 +146,13 @@
         <!-- Cuerpo / Detalle de la Tarjeta del Pedido -->
         <div class="pedido-card-body animate-slide-down">
           <div class="details-divider"></div>
+
+          <!-- Advertencia de Pedido Rechazado y Reembolso -->
+          @if (pedido.estado === 'RECHAZADO') {
+            <div class="status-rechazado-alert" style="background-color: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; padding: 14px; border-radius: 8px; margin: 15px 15px 0; font-size: 0.85rem; font-weight: 600; line-height: 1.5; text-align: left;">
+              ⚠ Su pedido ha sido rechazado. El dinero será devuelto a su cuenta en un máximo de 24 horas.
+            </div>
+          }
 
           <div class="details-grid">
 

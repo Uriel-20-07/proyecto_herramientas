@@ -137,6 +137,53 @@
         </div>
       </section>
 
+      <!-- SECCIÓN: RECETA MÉDICA REQUERIDA (PASO INTERMEDIO) -->
+      <section class="pago-seccion" *ngIf="requiereReceta">
+        <div class="seccion-header" style="border-bottom: 2px solid #ea580c;">
+          <span class="paso-num" style="background: #ea580c;">📄</span>
+          <h2 style="color: #1a2a4a;">Cargar Receta Médica Obligatoria</h2>
+        </div>
+        <p style="font-size: 0.88rem; color: #4b5563; margin-top: 10px;">
+          Tu carrito contiene medicamentos que requieren receta médica obligatoria (**Clonazepam / Losartán**). Sube tu receta para poder continuar con el pago seguro. El pedido quedará en revisión.
+        </p>
+
+        <div *ngIf="!recetaSubidaExito" style="margin-top: 15px;" class="anim-fade">
+          <div class="form-group">
+            <label>Nombre / Colegiatura del Médico <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="recetaForm.medicoId" placeholder="Ej: Dr. Carlos Pérez - CMP 12345" class="form-input" />
+          </div>
+          <div class="form-row-doble">
+            <div class="form-group">
+              <label>Fecha de Emisión de la Receta <span class="req">*</span></label>
+              <input type="date" [(ngModel)]="recetaForm.fechaEmision" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label>Imagen/Documento de la Receta (.jpg, .png, .pdf) <span class="req">*</span></label>
+              <input type="file" (change)="onRecetaFileSelected($event)" accept="image/*,.pdf" style="display:none;" #fileInput />
+              <button type="button" (click)="fileInput.click()" class="btn-action" style="width:100%; text-align:center; padding: 10px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                {{ recetaFileName || 'Seleccionar Archivo' }}
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="recetaMensajeError" style="color: #991b1b; background: #fee2e2; padding: 10px; border-radius: 8px; font-size: 0.82rem; margin-top: 8px; font-weight: bold; border: 1px solid #fecaca;">
+            ⚠ {{ recetaMensajeError }}
+          </div>
+
+          <button type="button" (click)="subirRecetaCheckout()" [disabled]="subiendoReceta" class="btn-primary" style="margin-top: 15px; background: #ea580c; border: none; padding: 10px 16px; border-radius: 8px; color: white; font-weight: 700; width: 100%; cursor: pointer;">
+            {{ subiendoReceta ? 'Subiendo y validando receta...' : 'Subir y Vincular Receta' }}
+          </button>
+        </div>
+
+        <div *ngIf="recetaSubidaExito" style="margin-top: 15px; background: #dcfce7; border: 1px solid #bbf7d0; padding: 16px; border-radius: 12px; text-align: center; color: #166534;" class="anim-fade">
+          <span style="font-size: 24px;">✅</span>
+          <h4 style="color: #166534; font-weight: bold; margin: 8px 0 4px;">Receta subida con éxito</h4>
+          <p style="font-size: 0.8rem; margin: 0; color: #166534;">
+            Se ha vinculado la receta médica a este pedido. Puedes proceder al pago.
+          </p>
+        </div>
+      </section>
+
       <section class="pago-seccion">
         <div class="seccion-header">
           <span class="paso-num">2</span>
@@ -304,8 +351,8 @@
           <span>Total a pagar</span>
           <span class="precio-final">S/ {{ total | number:'1.2-2' }}</span>
         </div>
-        <button class="btn-pagar-checkout" (click)="ejecutarPago()" [disabled]="procesandoPago"
-          [style.opacity]="procesandoPago ? '0.7' : '1'">
+        <button class="btn-pagar-checkout" (click)="ejecutarPago()" [disabled]="procesandoPago || (requiereReceta && !recetaSubidaExito)"
+          [style.opacity]="procesandoPago || (requiereReceta && !recetaSubidaExito) ? '0.5' : '1'">
           <span *ngIf="!procesandoPago">Procesar Pago Seguro</span>
           <span *ngIf="procesandoPago">Procesando...</span>
         </button>
