@@ -207,8 +207,13 @@ public class AuthService {
 
         User usuario = usuarioOpt.get();
 
-        // Generar token UUID único para el reset (distinto al JWT)
-        String token = UUID.randomUUID().toString();
+        // Generar token numérico de 5 dígitos único para el reset (evitando colisiones)
+        java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+        String token;
+        do {
+            int tokenInt = 10000 + secureRandom.nextInt(90000);
+            token = String.valueOf(tokenInt);
+        } while (passwordResetTokenRepository.findByToken(token).isPresent());
 
         // Persistir el token de reset con su fecha de expiración (1 hora)
         PasswordResetToken resetToken = new PasswordResetToken();
@@ -220,11 +225,8 @@ public class AuthService {
 
         passwordResetTokenRepository.save(resetToken);
 
-        // Construir el enlace de reset que se enviará en el correo
-        String resetLink = frontendUrl + "/reset-password/" + token;
-
-        // Enviar email con el enlace de recuperación
-        emailService.sendPasswordResetEmail(email, resetLink);
+        // Enviar email con el token de recuperación
+        emailService.sendPasswordResetEmail(email, token);
     }
 
     /**

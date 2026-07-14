@@ -133,6 +133,59 @@ public class AdminController {
         return ResponseEntity.ok(guardado);
     }
 
+    @PutMapping("/productos/{id}/oferta")
+    public ResponseEntity<?> actualizarOferta(@PathVariable Integer id, @RequestBody Map<String, Object> request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<Administrador> adminOpt = administradorRepository.findByCorreoCorp(email);
+
+        if (adminOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "No autorizado"));
+        }
+
+        Administrador admin = adminOpt.get();
+        if (!"admin".equalsIgnoreCase(admin.getRol())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: Solo el administrador puede modificar ofertas"));
+        }
+
+        Optional<Producto> prodOpt2 = productoRepository.findById(id);
+        if (prodOpt2.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Producto no encontrado"));
+        }
+
+        Producto producto2 = prodOpt2.get();
+        Boolean enOferta = (Boolean) request.get("enOferta");
+        Object precioOfertaRaw = request.get("precioOferta");
+
+        if (enOferta == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "El campo enOferta es obligatorio"));
+        }
+
+        if (Boolean.TRUE.equals(enOferta)) {
+            if (precioOfertaRaw == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Se requiere precioOferta cuando enOferta es true"));
+            }
+            BigDecimal precioOferta;
+            try {
+                precioOferta = new BigDecimal(precioOfertaRaw.toString());
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "precioOferta debe ser un número válido"));
+            }
+            if (precioOferta.compareTo(producto2.getPrecioVenta()) >= 0) {
+                return ResponseEntity.badRequest().body(Map.of("error", "El precio de oferta debe ser menor al precio de venta"));
+            }
+            producto2.setPrecioOferta(precioOferta);
+            producto2.setEnOferta(true);
+        } else {
+            producto2.setEnOferta(false);
+            producto2.setPrecioOferta(null);
+        }
+
+        Producto guardado2 = productoRepository.save(producto2);
+        return ResponseEntity.ok(guardado2);
+    }
+
+
     @GetMapping("/ventas")
     public ResponseEntity<?> listarVentas() {
         List<Pedido> pedidos = pedidoRepository.findAll();

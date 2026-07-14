@@ -254,6 +254,7 @@
                 <th>Venc. Próximo</th>
                 <th>Precio Venta</th>
                 <th>Stock Real</th>
+                <th>Oferta</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -283,12 +284,22 @@
                     {{ prod.stock }} unidades
                   </span>
                 </td>
+                <!-- Columna Oferta -->
+                <td>
+                  <div *ngIf="prod.enOferta" style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                    <span style="background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:6px;">EN OFERTA</span>
+                    <span style="font-size:0.75rem;color:#64748b;">S/. {{ prod.precioOferta | number:'1.2-2' }}</span>
+                    <button (click)="quitarOferta(prod)" class="btn-action" style="font-size:0.7rem;padding:3px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;">Quitar</button>
+                  </div>
+                  <button *ngIf="!prod.enOferta" (click)="openOfertaModal(prod)" class="btn-action" style="font-size:0.75rem;padding:4px 10px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">+ Oferta</button>
+                </td>
+                <!-- Columna Acciones -->
                 <td>
                   <button (click)="openLotesModal(prod)" class="btn-action edit-btn">Gestionar Lotes</button>
                 </td>
               </tr>
               <tr *ngIf="filteredProductos.length === 0">
-                <td colspan="7" class="empty-message">No se encontraron productos en el inventario.</td>
+                <td colspan="8" class="empty-message">No se encontraron productos en el inventario.</td>
               </tr>
             </tbody>
           </table>
@@ -1015,8 +1026,13 @@ style="grid-column: 1 / -1; margin-bottom: 24px; transition: transform 0.2s;"
                   <div style="font-size:11px; color:#ea580c; font-weight:700; margin-bottom:3px; text-transform:uppercase; letter-spacing:0.4px;">Campaña Sugerida:</div>
                   <p style="font-size:11.5px; color:#475569; margin:0; line-height:1.4;">{{ combo.sugerenciaPromo }}</p>
                 </div>
-                <button (click)="mostrarNotificacion('¡Campaña activada para el combo ' + combo.productoPrincipal.nombre + ' + ' + combo.productoAsociado.nombre + '!')" class="btn-action" style="flex-shrink:0; align-self:flex-end;">
+                <button *ngIf="!isComboActivo(combo.productoPrincipal.idProducto, combo.productoAsociado.idProducto)"
+                        (click)="activarCombo(combo)" class="btn-action" style="flex-shrink:0; align-self:flex-end;">
                   Activar Combo
+                </button>
+                <button *ngIf="isComboActivo(combo.productoPrincipal.idProducto, combo.productoAsociado.idProducto)"
+                        (click)="detenerCombo(combo)" class="btn-action" style="flex-shrink:0; align-self:flex-end; background: #dc2626 !important;">
+                  Detener Combo
                 </button>
               </div>
             </div>
@@ -1025,7 +1041,43 @@ style="grid-column: 1 / -1; margin-bottom: 24px; transition: transform 0.2s;"
       </div>
     </div>
   </main>
+  <!-- MODAL: GESTIONAR OFERTA -->
+  <div *ngIf="productoEnOfertaModal" class="modal-overlay" (click)="closeOfertaModal()">
+    <div class="modal-card animated-zoom" style="max-width:420px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🏷️ Establecer Oferta</h2>
+        <button (click)="closeOfertaModal()" class="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:24px;">
+        <p style="color:#475569;margin-bottom:16px;">Producto: <strong>{{ productoEnOfertaModal.nombre }}</strong></p>
+        <p style="color:#475569;margin-bottom:20px;">Precio regular: <strong>S/. {{ productoEnOfertaModal.precioVenta | number:'1.2-2' }}</strong></p>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-weight:600;color:#374151;margin-bottom:6px;">Precio de Oferta (S/.)</label>
+          <input type="number" [(ngModel)]="precioOfertaInput" min="0.01" step="0.01"
+            [max]="productoEnOfertaModal.precioVenta - 0.01"
+            style="width:100%;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:10px;font-size:1rem;"
+            placeholder="Ej: 8.50" />
+          <small *ngIf="precioOfertaInput >= productoEnOfertaModal.precioVenta" style="color:#ef4444;display:block;margin-top:4px;">
+            Debe ser menor al precio regular
+          </small>
+        </div>
+        <div *ngIf="precioOfertaInput > 0 && precioOfertaInput < productoEnOfertaModal.precioVenta" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:16px;text-align:center;">
+          <span style="color:#16a34a;font-weight:700;font-size:1.1rem;">
+            {{ ((productoEnOfertaModal.precioVenta - precioOfertaInput) / productoEnOfertaModal.precioVenta * 100) | number:'1.0-0' }}% de descuento
+          </span>
+        </div>
+        <div class="modal-footer" style="padding:0;">
+          <button (click)="closeOfertaModal()" class="btn-secondary-modal">Cancelar</button>
+          <button (click)="guardarOferta()" class="btn-primary-modal"
+            [disabled]="!precioOfertaInput || precioOfertaInput <= 0 || precioOfertaInput >= productoEnOfertaModal.precioVenta">
+            Guardar Oferta
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- MODAL: DETALLE DE VENTA -->
+
   <div *ngIf="selectedVenta" class="modal-overlay">
     <div class="modal-card animated-zoom">
       <div class="modal-header">

@@ -7,6 +7,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -57,6 +60,10 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private DetallePedidoRepository detallePedidoRepository;
 
+    /** Fuente de datos JDBC para operaciones directas en base de datos. */
+    @Autowired
+    private DataSource dataSource;
+
     /** Encriptador de contraseñas usando el algoritmo BCrypt (hash seguro). */
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -69,6 +76,24 @@ public class DataSeeder implements CommandLineRunner {
      */
     @Override
     public void run(String... args) throws Exception {
+        // 0. Crear tabla combos si no existe (antes de que la use Hibernate)
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(
+                "CREATE TABLE IF NOT EXISTS combos (" +
+                "    id_combo SERIAL PRIMARY KEY," +
+                "    producto_principal_id INTEGER NOT NULL REFERENCES productos(id_producto)," +
+                "    producto_asociado_id INTEGER NOT NULL REFERENCES productos(id_producto)," +
+                "    descuento INTEGER DEFAULT 10," +
+                "    descripcion VARCHAR(500) NOT NULL," +
+                "    activo BOOLEAN NOT NULL DEFAULT TRUE" +
+                ")"
+            );
+            System.out.println("DataSeeder: Tabla 'combos' verificada/creada exitosamente.");
+        } catch (Exception e) {
+            System.err.println("DataSeeder: Error al crear tabla combos: " + e.getMessage());
+        }
+
         // 1. Crear administrador general si no existe
         if (administradorRepository.findByCorreoCorp("admin@correo_corp.com").isEmpty()) {
             Administrador admin = new Administrador();

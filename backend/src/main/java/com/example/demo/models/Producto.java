@@ -53,6 +53,20 @@ public class Producto {
     private String imgUrl;
 
     /**
+     * Precio de oferta del producto (precio rebajado).
+     * Si es null, el producto no tiene precio especial de oferta.
+     */
+    @Column(name = "precio_oferta", precision = 10, scale = 2)
+    private BigDecimal precioOferta;
+
+    /**
+     * Indica si el producto está actualmente en oferta.
+     * Cuando es true, se usa precioOferta en lugar de precioVenta.
+     */
+    @Column(name = "en_oferta", nullable = false, columnDefinition = "boolean default false")
+    private Boolean enOferta = false;
+
+    /**
      * Unidades disponibles en inventario.
      * Stock mínimo = 0 (no puede ser negativo).
      * Valor por defecto: 0 (sin stock al crear el producto).

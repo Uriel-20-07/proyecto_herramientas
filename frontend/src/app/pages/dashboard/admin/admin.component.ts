@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthModalService } from '../../../services/auth-modal.service';
+import { ComboService } from '../../../services/combo.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -35,6 +36,12 @@ export class AdminDashboardComponent implements OnInit {
   lotesProductoActual: any[] = [];
   nuevoLote = { codigoLote: '', cantidadActual: 0, fechaVencimiento: '' };
   loadingLotes = false;
+
+  // Variables Oferta
+  productoEnOfertaModal: any = null;
+  precioOfertaInput: number = 0;
+
+  combosActivos: any[] = [];
 
   // Variables Predicción
   topSemana: any[] = [];
@@ -93,6 +100,7 @@ export class AdminDashboardComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private authModalService: AuthModalService,
+    private comboService: ComboService,
   ) { }
 
   ngOnInit(): void {
@@ -160,6 +168,58 @@ export class AdminDashboardComponent implements OnInit {
         this.maxTopMes = Math.max(...data.map((d) => d.cantidad), 1);
       },
     });
+
+    this.recargarCombosActivos();
+  }
+
+  recargarCombosActivos(): void {
+    this.comboService.obtenerCombosActivos().subscribe({
+      next: (combos: any[]) => {
+        this.combosActivos = combos;
+      },
+      error: (err: any) => console.error('Error al cargar combos activos', err)
+    });
+  }
+
+  isComboActivo(productoPrincipalId: number, productoAsociadoId: number): boolean {
+    return this.combosActivos.some(c => 
+      c.productoPrincipal.idProducto === productoPrincipalId && 
+      c.productoAsociado.idProducto === productoAsociadoId
+    );
+  }
+
+  activarCombo(combo: any): void {
+    const principalId = combo.productoPrincipal.idProducto;
+    const asociadoId = combo.productoAsociado.idProducto;
+    const descuento = 10;
+    const descripcion = `${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre} con 10% de descuento`;
+
+    this.comboService.activarCombo(principalId, asociadoId, descuento, descripcion).subscribe({
+      next: (_res: any) => {
+        this.mostrarNotificacion(`¡Campaña activada para el combo: ${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre}!`);
+        this.recargarCombosActivos();
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.mostrarNotificacion('Error al activar el combo.');
+      }
+    });
+  }
+
+  detenerCombo(combo: any): void {
+    const principalId = combo.productoPrincipal.idProducto;
+    const asociadoId = combo.productoAsociado.idProducto;
+
+    this.comboService.desactivarCombo(principalId, asociadoId).subscribe({
+      next: (_res: any) => {
+        this.mostrarNotificacion(`¡Campaña desactivada para el combo: ${combo.productoPrincipal.nombre} + ${combo.productoAsociado.nombre}!`);
+        this.recargarCombosActivos();
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.mostrarNotificacion('Error al detener el combo.');
+      }
+    });
   }
 
   // Semáforo de Lotes Visual
@@ -173,6 +233,52 @@ export class AdminDashboardComponent implements OnInit {
     if (diffDays <= 0) return 'status-vencido';
     if (diffDays <= 180) return 'status-alerta';
     return 'status-seguro';
+  }
+
+  // ===== MÉTODOS OFERTA =====
+  openOfertaModal(prod: any): void {
+    this.productoEnOfertaModal = prod;
+    this.precioOfertaInput = 0;
+  }
+
+  closeOfertaModal(): void {
+    this.productoEnOfertaModal = null;
+    this.precioOfertaInput = 0;
+  }
+
+  guardarOferta(): void {
+    if (!this.productoEnOfertaModal) return;
+    const id = this.productoEnOfertaModal.idProducto;
+    this.adminService.actualizarOferta(id, true, this.precioOfertaInput).subscribe({
+      next: (actualizado: any) => {
+        const idx = this.productos.findIndex((p: any) => p.idProducto === id);
+        if (idx !== -1) {
+          this.productos[idx] = actualizado;
+        }
+        this.mostrarNotificacion(`¡Oferta activada! ${this.productoEnOfertaModal.nombre} ahora está a S/. ${this.precioOfertaInput.toFixed(2)}`);
+        this.closeOfertaModal();
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.mostrarNotificacion('Error al guardar la oferta.');
+      }
+    });
+  }
+
+  quitarOferta(prod: any): void {
+    this.adminService.actualizarOferta(prod.idProducto, false).subscribe({
+      next: (actualizado: any) => {
+        const idx = this.productos.findIndex((p: any) => p.idProducto === prod.idProducto);
+        if (idx !== -1) {
+          this.productos[idx] = actualizado;
+        }
+        this.mostrarNotificacion(`Oferta eliminada de ${prod.nombre}.`);
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.mostrarNotificacion('Error al quitar la oferta.');
+      }
+    });
   }
 
   calcularMetricasVentas(): void {
