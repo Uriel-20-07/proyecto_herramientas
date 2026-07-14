@@ -214,8 +214,7 @@ export class NavbarComponent implements OnDestroy {
   }
 
   hasDiscount(sug: AlgoliaProducto): boolean {
-    const fecha = this.cartService.getFecha(sug);
-    return this.cartService.getDiscountInfo(fecha).percentage > 0;
+    return this.cartService.getDiscountInfo(sug).percentage > 0;
   }
 
   getFinalPrice(sug: AlgoliaProducto): number {

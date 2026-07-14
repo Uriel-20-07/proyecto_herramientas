@@ -14,8 +14,22 @@ import { RecetasService, RecetaMedica } from '../../../services/recetas.service'
   styleUrl: './admin.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
-  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas' = 'resumen';
+  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas' | 'cupones' = 'resumen';
   adminUser: any = null;
+
+  // Variables Campaña de Cupones
+  usuarios: any[] = [];
+  cargandoUsuarios: boolean = false;
+  cuponForm = {
+    codigoPrefix: 'PROMO',
+    valorDescuento: 10,
+    descripcion: '',
+    diasVigencia: 15,
+    tipoEnvio: 'TODOS',
+    idUsuario: null as number | null
+  };
+  usuarioSeleccionadoParaCupon: any = null;
+  enviandoCupon: boolean = false;
 
   // Variables Recetas Médicas
   recetas: RecetaMedica[] = [];
@@ -98,7 +112,8 @@ export class AdminDashboardComponent implements OnInit {
 
   chartPath = '';
   chartAreaPath = '';
-  chartPoints: { x: number; y: number; date: string; value: number }[] = [];
+  chartPoints: { x: number; y: number; date: string; value: number; showLabel?: boolean }[] = [];
+  chartYLabels: { y: number; text: string }[] = [];
   selectedPoint: any = null;
 
   constructor(
@@ -121,13 +136,16 @@ export class AdminDashboardComponent implements OnInit {
     // Sincronizar tab desde la URL al inicializar o al navegar
     this.route.params.subscribe(params => {
       const tab = params['tab'];
-      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones', 'recetas'].includes(tab)) {
-        this.activeTab = tab as 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas';
+      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones', 'recetas', 'cupones'].includes(tab)) {
+        this.activeTab = tab as any;
         if (tab === 'reportes') {
           this.cargarReportes();
         }
         if (tab === 'recetas') {
           this.cargarRecetasEnEspera();
+        }
+        if (tab === 'cupones') {
+          this.cargarUsuarios();
         }
       } else {
         // Redirigir por defecto a resumen si el parámetro es vacío o inválido
@@ -213,9 +231,9 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   // ===== MÉTODOS OFERTA =====
-  openOfertaModal(prod: any): void {
+  openOfertaModal(prod: any, sugerido?: number): void {
     this.productoEnOfertaModal = prod;
-    this.precioOfertaInput = 0;
+    this.precioOfertaInput = sugerido ? Number(sugerido.toFixed(2)) : 0;
   }
 
   closeOfertaModal(): void {
@@ -277,8 +295,15 @@ export class AdminDashboardComponent implements OnInit {
     this.chartPoints = this.stats.map((s, i) => {
       const x = n > 1 ? (i / (n - 1)) * width + paddingLeft : paddingLeft + width / 2;
       const y = bottomY - (s.totalVentas / maxVal) * height;
-      return { x, y, date: s.fecha, value: s.totalVentas };
+      const showLabel = i === 0 || i === n - 1 || (n > 5 && i === Math.floor(n / 2));
+      return { x, y, date: s.fecha, value: s.totalVentas, showLabel };
     });
+
+    this.chartYLabels = [
+      { y: 24, text: `S/. ${maxVal.toFixed(0)}` },
+      { y: 94, text: `S/. ${(maxVal / 2).toFixed(0)}` },
+      { y: 164, text: 'S/. 0' }
+    ];
 
     if (this.chartPoints.length > 0) {
       let pathString = `M ${this.chartPoints[0].x} ${this.chartPoints[0].y}`;
@@ -313,7 +338,7 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
-  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas'): void {
+  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas' | 'cupones'): void {
     this.activeTab = tab;
     this.router.navigate(['/dashboard/admin', tab]);
     if (tab === 'reportes') {
@@ -321,6 +346,9 @@ export class AdminDashboardComponent implements OnInit {
     }
     if (tab === 'recetas') {
       this.cargarRecetasEnEspera();
+    }
+    if (tab === 'cupones') {
+      this.cargarUsuarios();
     }
   }
 
@@ -802,7 +830,8 @@ export class AdminDashboardComponent implements OnInit {
           porcentajeSugerido: porcentajeDescuento,
           precioActual: prod.precioVenta,
           precioSugerido: prod.precioVenta * (1 - porcentajeDescuento / 100),
-          motivo: motivoDescuento
+          motivo: motivoDescuento,
+          producto: prod
         });
       }
     });
@@ -1408,6 +1437,62 @@ export class AdminDashboardComponent implements OnInit {
       error: (err: any) => {
         console.error('Error al rechazar receta:', err);
         alert('No se pudo rechazar la receta. Intente nuevamente.');
+      }
+    });
+  }
+
+  // =========================================================================
+  // CAMPAÑA DE CUPONES
+  // =========================================================================
+  cargarUsuarios(): void {
+    this.cargandoUsuarios = true;
+    this.adminService.getUsuarios().subscribe({
+      next: (users) => {
+        this.usuarios = users;
+        this.cargandoUsuarios = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar usuarios', err);
+        this.cargandoUsuarios = false;
+      }
+    });
+  }
+
+  seleccionarUsuarioParaCupon(user: any): void {
+    this.usuarioSeleccionadoParaCupon = user;
+    this.cuponForm.idUsuario = user.id;
+    this.cuponForm.tipoEnvio = 'SELECCIONADO';
+  }
+
+  lanzarCampanaCupones(): void {
+    if (this.cuponForm.valorDescuento <= 0 || this.cuponForm.valorDescuento > 100) {
+      alert('El valor del descuento debe estar entre 1 y 100%');
+      return;
+    }
+    if (this.cuponForm.tipoEnvio === 'SELECCIONADO' && !this.cuponForm.idUsuario) {
+      alert('Debe seleccionar un usuario para el envío individual');
+      return;
+    }
+
+    this.enviandoCupon = true;
+    this.adminService.lanzarCupon(this.cuponForm).subscribe({
+      next: (res: any) => {
+        this.enviandoCupon = false;
+        this.mostrarNotificacion(`¡Campaña lanzada! Se enviaron ${res.cuponesEmitidos} cupones.`);
+        this.cuponForm = {
+          codigoPrefix: 'PROMO',
+          valorDescuento: 10,
+          descripcion: '',
+          diasVigencia: 15,
+          tipoEnvio: 'TODOS',
+          idUsuario: null
+        };
+        this.usuarioSeleccionadoParaCupon = null;
+      },
+      error: (err) => {
+        console.error(err);
+        this.enviandoCupon = false;
+        this.mostrarNotificacion('Error al lanzar la campaña de cupones');
       }
     });
   }

@@ -59,6 +59,8 @@ public class AlgoliaService {
         record.put("nombre", producto.getNombre());
         record.put("descripcion", producto.getDescripcion() != null ? producto.getDescripcion() : "");
         record.put("precioVenta", producto.getPrecioVenta() != null ? producto.getPrecioVenta().doubleValue() : 0.0);
+        record.put("precioConDescuento", producto.getPrecioConDescuento() != null ? producto.getPrecioConDescuento().doubleValue() : (producto.getPrecioVenta() != null ? producto.getPrecioVenta().doubleValue() : 0.0));
+        record.put("descuentoPorcentaje", producto.getDescuentoPorcentaje() != null ? producto.getDescuentoPorcentaje().doubleValue() : 0.0);
         record.put("stock", producto.getStock() != null ? producto.getStock() : 0);
         record.put("imgUrl", producto.getImgUrl() != null ? producto.getImgUrl() : "");
         record.put("fechaCaducidad", producto.getFechaCaducidad() != null ? producto.getFechaCaducidad().toString() : "");

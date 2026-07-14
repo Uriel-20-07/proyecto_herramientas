@@ -57,9 +57,7 @@ export class ProductCarouselComponent implements OnInit {
             // Filtrar productos que tengan descuento activo por fecha de caducidad
             // (misma lógica que el catálogo, sin depender de precioOferta del backend)
             const enOferta = productos.filter((p) => {
-              const fechaCad = this.getFecha(p);
-              if (!fechaCad) return false;
-              const info = this.getDiscountInfo(fechaCad);
+              const info = this.cartService.getDiscountInfo(p);
               return info.percentage > 0 && !info.isExpired;
             });
             this.productos = enOferta
@@ -131,38 +129,14 @@ export class ProductCarouselComponent implements OnInit {
     return fecha;
   }
 
-  /**
-   * Calcula el descuento según la fecha de caducidad.
-   * Lógica idéntica a CatalogoComponent.getDiscountInfo() para que
-   * el carrusel muestre exactamente los mismos precios que el catálogo.
-   */
-  private getDiscountInfo(fechaCaducidad: string): { percentage: number; message: string; isExpired: boolean } {
-    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
-    const expDate = new Date(fechaCaducidad);
-    const today = new Date();
-    const monthsLeft =
-      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
-
-    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
-      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
-    }
-    if (monthsLeft <= 6)  return { percentage: 0.3,  message: 'Liquidación 30% dscto.', isExpired: false };
-    if (monthsLeft <= 12) return { percentage: 0.1,  message: 'Oferta 10% dscto.',      isExpired: false };
-    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.',        isExpired: false };
-    return { percentage: 0, message: '', isExpired: false };
-  }
-
   private mapProducto(producto: ProductoApi): ProductoVista {
     const categoriaNombre = producto.categoria?.nombre ?? 'General';
     const categoriaKey = categoriaNombre.toLowerCase();
     const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
 
-    // Usar precioVenta (igual que el catálogo) y calcular el descuento por caducidad
     const precioOriginal = Number(producto.precioVenta);
-    const fechaCad = this.getFecha(producto);
-    const descuentoInfo = this.getDiscountInfo(fechaCad);
-    const descuentoPct = Math.round(descuentoInfo.percentage * 100);
-    const precio = precioOriginal * (1 - descuentoInfo.percentage);
+    const precio = producto.precioConDescuento != null ? Number(producto.precioConDescuento) : precioOriginal;
+    const descuentoPct = producto.descuentoPorcentaje != null ? Math.round(Number(producto.descuentoPorcentaje) * 100) : 0;
 
     return {
       id: producto.idProducto,

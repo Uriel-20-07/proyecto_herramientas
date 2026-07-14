@@ -12,6 +12,8 @@ export interface AlgoliaProducto {
   nombre: string;
   descripcion?: string;
   precioVenta: number;
+  precioConDescuento?: number;
+  descuentoPorcentaje?: number;
   categoriaId?: number;
   categoriaNombre?: string;
   imgUrl?: string;

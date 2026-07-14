@@ -68,44 +68,21 @@ export class CarritoComponent {
   }
 
   /**
-   * LÓGICA DE NEGOCIO: Calcula el descuento basado en la fecha de caducidad.
+   * Obtiene la información de descuento precalculada por la base de datos.
    */
-  getDiscountInfo(fechaCaducidad: string): {
+  getDiscountInfo(producto: any): {
     percentage: number;
     message: string;
     isExpired: boolean;
   } {
-    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
-
-    const expDate = new Date(fechaCaducidad);
-    const today = new Date();
-
-    // Calculamos la diferencia en meses
-    const monthsLeft =
-      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
-
-    // Si ya pasó la fecha
-    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
-      return { percentage: 0, message: 'PRODUCTO VENCIDO - VENTA BLOQUEADA', isExpired: true };
-    }
-
-    // Escala de descuentos automáticos
-    if (monthsLeft <= 6)
-      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
-    if (monthsLeft <= 12)
-      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
-    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
-
-    return { percentage: 0, message: '', isExpired: false };
+    return this.cartService.getDiscountInfo(producto);
   }
 
   /**
-   * Calcula el precio unitario aplicando el descuento de vencimiento.
+   * Obtiene el precio final unitario del producto con el descuento aplicado.
    */
   getFinalPrice(producto: any): number {
-    const discountInfo = this.getDiscountInfo(this.getFecha(producto));
-    const discountAmount = producto.precioVenta * discountInfo.percentage;
-    return producto.precioVenta - discountAmount;
+    return this.cartService.getFinalPrice(producto);
   }
 
   getSubtotal(): number {

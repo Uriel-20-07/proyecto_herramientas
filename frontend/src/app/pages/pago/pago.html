@@ -139,12 +139,14 @@
 
       <!-- SECCIÓN: RECETA MÉDICA REQUERIDA (PASO INTERMEDIO) -->
       <section class="pago-seccion" *ngIf="requiereReceta">
-        <div class="seccion-header" style="border-bottom: 2px solid #ea580c;">
-          <span class="paso-num" style="background: #ea580c;">📄</span>
-          <h2 style="color: #1a2a4a;">Cargar Receta Médica Obligatoria</h2>
+        <div class="seccion-header">
+          <span class="paso-num" style="background: #1a2e4a; display: inline-flex; align-items: center; justify-content: center;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="color: white;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </span>
+          <h2 style="color: #1a2e4a;">Cargar Receta Médica Obligatoria</h2>
         </div>
         <p style="font-size: 0.88rem; color: #4b5563; margin-top: 10px;">
-          Tu carrito contiene medicamentos que requieren receta médica obligatoria (**Clonazepam / Losartán**). Sube tu receta para poder continuar con el pago seguro. El pedido quedará en revisión.
+          En tu carrito se encuentra productos que necesitan receta medica.
         </p>
 
         <div *ngIf="!recetaSubidaExito" style="margin-top: 15px;" class="anim-fade">
@@ -170,17 +172,13 @@
             ⚠ {{ recetaMensajeError }}
           </div>
 
-          <button type="button" (click)="subirRecetaCheckout()" [disabled]="subiendoReceta" class="btn-primary" style="margin-top: 15px; background: #ea580c; border: none; padding: 10px 16px; border-radius: 8px; color: white; font-weight: 700; width: 100%; cursor: pointer;">
+          <button type="button" (click)="subirRecetaCheckout()" [disabled]="subiendoReceta" class="btn-primary" style="margin-top: 15px; background: #1a2e4a; border: none; padding: 10px 16px; border-radius: 8px; color: white; font-weight: 700; width: 100%; cursor: pointer;">
             {{ subiendoReceta ? 'Subiendo y validando receta...' : 'Subir y Vincular Receta' }}
           </button>
         </div>
 
-        <div *ngIf="recetaSubidaExito" style="margin-top: 15px; background: #dcfce7; border: 1px solid #bbf7d0; padding: 16px; border-radius: 12px; text-align: center; color: #166534;" class="anim-fade">
-          <span style="font-size: 24px;">✅</span>
-          <h4 style="color: #166534; font-weight: bold; margin: 8px 0 4px;">Receta subida con éxito</h4>
-          <p style="font-size: 0.8rem; margin: 0; color: #166534;">
-            Se ha vinculado la receta médica a este pedido. Puedes proceder al pago.
-          </p>
+        <div *ngIf="recetaSubidaExito" style="margin-top: 15px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px 16px; border-radius: 6px; text-align: center; color: #166534; font-weight: 600;" class="anim-fade">
+          Receta vinculada
         </div>
       </section>
 

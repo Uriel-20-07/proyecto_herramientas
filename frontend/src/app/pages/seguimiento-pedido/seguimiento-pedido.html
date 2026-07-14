@@ -60,7 +60,7 @@
 
                 <p>{{ paso.descripcion }}</p>
 
-                <span class="fecha">
+                <span class="fecha" *ngIf="i < estadoActual() || i === 0 || (i === 4 && estadoActual() === 4)">
                     {{ paso.fecha | date:'dd/MM/yyyy HH:mm' }}
                 </span>
 

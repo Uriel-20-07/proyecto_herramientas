@@ -12,6 +12,7 @@ interface ProductoVista {
   nombre: string;
   descripcion: string;
   precio: number;
+  precioOriginal: number;
   categoriaNombre: string;
   imagen: string;
   etiquetaPromo?: string;
@@ -135,13 +136,14 @@ export class FavoritosComponent implements OnInit {
     const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
     
     const fechaCad = this.getFecha(producto);
-    const descuento = this.getDiscountInfo(fechaCad);
+    const descuento = this.cartService.getDiscountInfo(producto);
 
     return {
       id: producto.idProducto,
       nombre: producto.nombre,
       descripcion: producto.descripcion ?? 'Producto del catálogo FarmaCode',
-      precio: Number(producto.precioVenta),
+      precio: producto.precioConDescuento != null ? Number(producto.precioConDescuento) : Number(producto.precioVenta),
+      precioOriginal: Number(producto.precioVenta),
       categoriaNombre,
       imagen,
       etiquetaPromo: descuento.message || this.obtenerPromo(producto.nombre, categoriaNombre),
@@ -160,30 +162,6 @@ export class FavoritosComponent implements OnInit {
       return `${fecha[0]}-${mes}-${dia}`;
     }
     return fecha;
-  }
-
-  private getDiscountInfo(fechaCaducidad: string): {
-    percentage: number;
-    message: string;
-    isExpired: boolean;
-  } {
-    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
-    const expDate = new Date(fechaCaducidad);
-    const today = new Date();
-    const monthsLeft =
-      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
-
-    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
-      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
-    }
-
-    if (monthsLeft <= 6)
-      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
-    if (monthsLeft <= 12)
-      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
-    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
-
-    return { percentage: 0, message: '', isExpired: false };
   }
 
   private obtenerPromo(nombre: string, categoriaNombre: string): string | undefined {

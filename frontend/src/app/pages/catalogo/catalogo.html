@@ -131,8 +131,8 @@
                                     <div class="producto-precios">
                                         <div class="precios-wrapper">
                                             @if (producto.descuentoInfo && producto.descuentoInfo.percentage > 0) {
-                                                <span class="precio-actual">S/ {{ (producto.precio * (1 - producto.descuentoInfo.percentage)) | number:'1.2-2' }}</span>
-                                                <span class="precio-original">S/ {{ producto.precio | number:'1.2-2' }}</span>
+                                                <span class="precio-actual">S/ {{ producto.precio | number:'1.2-2' }}</span>
+                                                <span class="precio-original">S/ {{ producto.precioOriginal | number:'1.2-2' }}</span>
                                             } @else {
                                                 <span class="precio-actual">S/ {{ producto.precio | number:'1.2-2' }}</span>
                                             }

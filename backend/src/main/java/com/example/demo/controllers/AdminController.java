@@ -33,12 +33,19 @@ import com.example.demo.models.DetallePedido;
 import com.example.demo.models.InventarioLote;
 import com.example.demo.models.Pedido;
 import com.example.demo.models.Producto;
+import com.example.demo.models.User;
+import com.example.demo.models.Cupon;
 import com.example.demo.repositories.AdministradorRepository;
 import com.example.demo.repositories.DetallePedidoRepository;
 import com.example.demo.repositories.InventarioLoteRepository;
 import com.example.demo.repositories.PedidoRepository;
 import com.example.demo.repositories.ProductoRepository;
+import com.example.demo.repositories.UserRepository;
+import com.example.demo.repositories.CuponRepository;
 import com.example.demo.services.JwtService;
+import com.example.demo.services.EmailService;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -55,6 +62,15 @@ public class AdminController {
 
     @Autowired
     private DetallePedidoRepository detallePedidoRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CuponRepository cuponRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private JwtService jwtService;
@@ -327,5 +343,126 @@ public class AdminController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(top);
+    }
+
+    // ====================================================================
+    // GESTIÓN DE USUARIOS Y CUPONES
+    // ====================================================================
+    @GetMapping("/usuarios")
+    public ResponseEntity<?> listarUsuarios() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<Administrador> adminOpt = administradorRepository.findByCorreoCorp(email);
+
+        if (adminOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "No autorizado"));
+        }
+
+        List<User> usuarios = userRepository.findAll();
+        // Ocultar contraseñas por seguridad
+        usuarios.forEach(u -> u.setPassword(null));
+        return ResponseEntity.ok(usuarios);
+    }
+
+    @PostMapping("/cupones/lanzar")
+    public ResponseEntity<?> lanzarCupon(@RequestBody Map<String, Object> request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<Administrador> adminOpt = administradorRepository.findByCorreoCorp(email);
+
+        if (adminOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "No autorizado"));
+        }
+
+        Administrador admin = adminOpt.get();
+        if (!"admin".equalsIgnoreCase(admin.getRol())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Acceso denegado: Solo el administrador puede lanzar cupones"));
+        }
+
+        String codigoPrefix = (String) request.get("codigoPrefix");
+        if (codigoPrefix == null || codigoPrefix.trim().isEmpty()) {
+            codigoPrefix = "PROMO";
+        }
+        codigoPrefix = codigoPrefix.trim().toUpperCase();
+
+        Object valorDescuentoRaw = request.get("valorDescuento");
+        if (valorDescuentoRaw == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "El valor del descuento es obligatorio"));
+        }
+        BigDecimal valorDescuento = new BigDecimal(valorDescuentoRaw.toString());
+
+        String descripcion = (String) request.get("descripcion");
+        if (descripcion == null || descripcion.trim().isEmpty()) {
+            descripcion = "Cupón de campaña de descuento";
+        }
+
+        Integer diasVigencia = 15;
+        if (request.get("diasVigencia") != null) {
+            diasVigencia = Integer.parseInt(request.get("diasVigencia").toString());
+        }
+
+        String tipoEnvio = (String) request.get("tipoEnvio");
+        if (tipoEnvio == null || tipoEnvio.trim().isEmpty()) {
+            tipoEnvio = "TODOS";
+        }
+
+        List<User> destinatarios = new ArrayList<>();
+        if ("SELECCIONADO".equalsIgnoreCase(tipoEnvio)) {
+            Object idUsuarioRaw = request.get("idUsuario");
+            if (idUsuarioRaw == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Debe proporcionar idUsuario para envío individual"));
+            }
+            Integer idUsuario = Integer.parseInt(idUsuarioRaw.toString());
+            Optional<User> userOpt = userRepository.findById(idUsuario);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Usuario no encontrado"));
+            }
+            destinatarios.add(userOpt.get());
+        } else {
+            destinatarios = userRepository.findAll().stream().filter(User::getActivo).collect(Collectors.toList());
+        }
+
+        if (destinatarios.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "No hay destinatarios activos para el envío"));
+        }
+
+        // Generar cupones
+        List<Cupon> cuponesGuardados = new ArrayList<>();
+        for (User user : destinatarios) {
+            Cupon cupon = new Cupon();
+            // Generar código único: PREFIX-XXXXXX
+            String uniqueCode = codigoPrefix + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            cupon.setCodigo(uniqueCode);
+            cupon.setUsuario(user);
+            cupon.setTipoDescuento("PORCENTAJE");
+            cupon.setValorDescuento(valorDescuento);
+            cupon.setFechaCreacion(LocalDateTime.now());
+            cupon.setFechaExpiracion(LocalDateTime.now().plusDays(diasVigencia));
+            cupon.setUsado(false);
+            cupon.setDescripcion(descripcion);
+            cupon.setActivo(true);
+            cuponesGuardados.add(cuponRepository.save(cupon));
+        }
+
+        // Enviar correos electrónicos de forma asíncrona
+        final List<Cupon> finalCupones = cuponesGuardados;
+        final double finalDescuento = valorDescuento.doubleValue();
+        final String finalDesc = descripcion;
+        CompletableFuture.runAsync(() -> {
+            for (Cupon c : finalCupones) {
+                emailService.sendCampaignCouponEmail(
+                    c.getUsuario().getEmail(),
+                    c.getUsuario().getNombre(),
+                    c.getCodigo(),
+                    finalDescuento,
+                    finalDesc
+                );
+            }
+        });
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "Campañas de cupones lanzada con éxito",
+            "cuponesEmitidos", cuponesGuardados.size()
+        ));
     }
 }

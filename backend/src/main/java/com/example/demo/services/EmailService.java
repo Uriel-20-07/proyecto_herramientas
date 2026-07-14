@@ -236,4 +236,39 @@ public class EmailService {
             System.out.println("Error enviando email de confirmación de pedido: " + e.getMessage());
         }
     }
+
+    /**
+     * Envía un correo electrónico con un cupón de descuento promocional de campaña.
+     *
+     * @param destinatario email del usuario.
+     * @param nombre       nombre del usuario.
+     * @param codigoCupon  código del cupón generado.
+     * @param descuento    porcentaje de descuento del cupón.
+     * @param descripcion  descripción o motivo de la campaña.
+     */
+    public void sendCampaignCouponEmail(String destinatario, String nombre, String codigoCupon, double descuento, String descripcion) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("noreply@mifarmacode.com");
+            message.setTo(destinatario);
+            message.setSubject("¡Regalo especial para ti! Cupón de Descuento en MiFarmaCode");
+
+            String contenido = "Hola " + nombre + ",\n\n" +
+                    "Queremos premiar tu preferencia y por ello te obsequiamos un cupón de descuento exclusivo:\n\n" +
+                    "Cupón: " + codigoCupon + "\n" +
+                    "Descuento: " + (int)descuento + "% de descuento en tu próxima compra.\n" +
+                    "Campaña: " + descripcion + "\n\n" +
+                    "Este cupón es de un solo uso.\n\n" +
+                    "¿Cómo aplicarlo?\n" +
+                    "1. Ingresa a la tienda de MiFarmaCode y agrega tus productos.\n" +
+                    "2. En el checkout, introduce el código del cupón antes de proceder con el pago.\n" +
+                    "3. ¡Listo! Se aplicará el descuento automáticamente.\n\n" +
+                    "Saludos cordiales,\nEquipo MiFarmaCode";
+
+            message.setText(contenido);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.out.println("Error enviando email de cupón de campaña: " + e.getMessage());
+        }
+    }
 }
