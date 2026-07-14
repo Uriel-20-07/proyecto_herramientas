@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthModalService } from '../../../services/auth-modal.service';
+import { RecetasService, RecetaMedica } from '../../../services/recetas.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -13,8 +14,14 @@ import { AuthModalService } from '../../../services/auth-modal.service';
   styleUrl: './admin.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
-  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' = 'resumen';
+  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas' = 'resumen';
   adminUser: any = null;
+
+  // Variables Recetas Médicas
+  recetas: RecetaMedica[] = [];
+  cargandoRecetas: boolean = false;
+  recetaParaRechazar: RecetaMedica | null = null;
+  motivoRechazo: string = '';
 
   productos: any[] = [];
   ventas: any[] = [];
@@ -73,6 +80,7 @@ export class AdminDashboardComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private authModalService: AuthModalService,
+    private recetasService: RecetasService,
   ) { }
 
   ngOnInit(): void {
@@ -87,10 +95,13 @@ export class AdminDashboardComponent implements OnInit {
     // Sincronizar tab desde la URL al inicializar o al navegar
     this.route.params.subscribe(params => {
       const tab = params['tab'];
-      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones'].includes(tab)) {
-        this.activeTab = tab as 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones';
+      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones', 'recetas'].includes(tab)) {
+        this.activeTab = tab as 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas';
         if (tab === 'reportes') {
           this.cargarReportes();
+        }
+        if (tab === 'recetas') {
+          this.cargarRecetasEnEspera();
         }
       } else {
         // Redirigir por defecto a resumen si el parámetro es vacío o inválido
@@ -210,11 +221,14 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
-  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones'): void {
+  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas'): void {
     this.activeTab = tab;
     this.router.navigate(['/dashboard/admin', tab]);
     if (tab === 'reportes') {
       this.cargarReportes();
+    }
+    if (tab === 'recetas') {
+      this.cargarRecetasEnEspera();
     }
   }
 
@@ -1117,5 +1131,62 @@ export class AdminDashboardComponent implements OnInit {
         document.body.removeChild(iframe);
       }, 1000);
     }, 400);
+  }
+  // =========================================================================
+  // RECETAS MÉDICAS
+  // =========================================================================
+  cargarRecetasEnEspera(): void {
+    this.cargandoRecetas = true;
+    this.recetasService.getRecetasEnEspera().subscribe({
+      next: (data: RecetaMedica[]) => {
+        this.recetas = data;
+        this.cargandoRecetas = false;
+      },
+      error: (err: any) => {
+        console.error('Error al cargar recetas en espera:', err);
+        this.cargandoRecetas = false;
+      }
+    });
+  }
+
+  aprobarReceta(id: string | number | undefined): void {
+    if (!id) return;
+    this.recetasService.actualizarEstadoReceta(id.toString(), 'aprobada').subscribe({
+      next: () => {
+        this.mostrarNotificacion('Receta aprobada correctamente.');
+        this.cargarRecetasEnEspera();
+      },
+      error: (err: any) => {
+        console.error('Error al aprobar receta:', err);
+        alert('No se pudo aprobar la receta. Intente nuevamente.');
+      }
+    });
+  }
+
+  abrirRechazoReceta(receta: RecetaMedica): void {
+    this.recetaParaRechazar = receta;
+    this.motivoRechazo = '';
+  }
+
+  cerrarRechazoReceta(): void {
+    this.recetaParaRechazar = null;
+    this.motivoRechazo = '';
+  }
+
+  confirmarRechazoReceta(): void {
+    const id = this.recetaParaRechazar?.id || this.recetaParaRechazar?.idReceta;
+    if (!id || !this.motivoRechazo.trim()) return;
+
+    this.recetasService.actualizarEstadoReceta(id.toString(), 'rechazada', this.motivoRechazo).subscribe({
+      next: () => {
+        this.mostrarNotificacion('Receta rechazada.');
+        this.cerrarRechazoReceta();
+        this.cargarRecetasEnEspera();
+      },
+      error: (err: any) => {
+        console.error('Error al rechazar receta:', err);
+        alert('No se pudo rechazar la receta. Intente nuevamente.');
+      }
+    });
   }
 }
