@@ -135,7 +135,7 @@ public class AdminController {
 
     @GetMapping("/ventas")
     public ResponseEntity<?> listarVentas() {
-        List<Pedido> pedidos = pedidoRepository.findAll();
+        List<Pedido> pedidos = pedidoRepository.findAllByOrderByFechaDesc();
         List<Integer> pedidoIds = pedidos.stream().map(Pedido::getIdPedido).collect(Collectors.toList());
 
         List<DetallePedido> todosLosDetalles = pedidoIds.isEmpty() ? new ArrayList<>() : detallePedidoRepository.findByPedido_IdPedidoIn(pedidoIds);
@@ -150,8 +150,9 @@ public class AdminController {
             map.put("fecha", pedido.getFecha());
             map.put("estado", pedido.getEstado());
             map.put("total", pedido.getTotal());
-            map.put("metodoPago", pedido.getMetodoPago() != null ? pedido.getMetodoPago() : "N/A");
-            map.put("distrito", pedido.getDistrito() != null ? pedido.getDistrito() : "");
+            map.put("metodoPago", pedido.getMetodoPago());
+            map.put("direccionEnvio", pedido.getDireccionEnvio());
+            map.put("distrito", pedido.getDistrito());
             map.put("usuario", Map.of(
                     "nombre", pedido.getUsuario().getNombre(),
                     "apellido", pedido.getUsuario().getApellido(),

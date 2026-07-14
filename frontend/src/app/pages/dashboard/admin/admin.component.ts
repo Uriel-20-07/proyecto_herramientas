@@ -70,7 +70,6 @@ export class AdminDashboardComponent implements OnInit {
   reporteData: any = null;
   cargandoReportes: boolean = false;
 
-  // Top productos por distrito
   readonly distritosArequipa: string[] = [
     'Alto Selva Alegre', 'Arequipa (Cercado)', 'Cayma', 'Cerro Colorado',
     'Characato', 'Chiguata', 'Jacobo Hunter', 'José Luis Bustamante y Rivero',
@@ -79,6 +78,7 @@ export class AdminDashboardComponent implements OnInit {
     'San Juan de Tarucani', 'Santa Isabel de Siguas', 'Santa Rita de Siguas',
     'Socabaya', 'Tiabaya', 'Uchumayo', 'Vitor', 'Yanahuara', 'Yarabamba', 'Yura'
   ];
+
   distritoSeleccionado: string = '';
   topProductosDistrito: any[] = [];
   cargandoDistrito: boolean = false;
@@ -258,7 +258,10 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         this.reporteData = data;
         this.cargandoReportes = false;
-        // Cargar top por distrito inicial (todos los distritos)
+        // Si hay distritos y no se ha seleccionado ninguno, seleccionamos el primero por defecto
+        if (this.reporteData?.distritos?.length && !this.distritoSeleccionado) {
+          this.distritoSeleccionado = this.reporteData.distritos[0];
+        }
         this.cargarTopPorDistrito();
       },
       error: (err: any) => {
@@ -269,6 +272,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   cargarTopPorDistrito(): void {
+    if (!this.distritoSeleccionado) return;
     this.cargandoDistrito = true;
     this.adminService.getTopProductosPorDistrito(this.distritoSeleccionado).subscribe({
       next: (data: any[]) => {
@@ -965,31 +969,49 @@ export class AdminDashboardComponent implements OnInit {
   // ── PDF 2: Top 10 Productos ───────────────────────────────────────────────
   descargarReporteTopProductos(): void {
     if (!this.reporteData) return;
+    const items = this.topProductosFiltrados !== null ? this.topProductosFiltrados : (this.reporteData.topProductos || []);
+    const label = this.topProductosFiltrados !== null ? this.fechaFiltroLabel : 'últimos 30 días';
+    const labelTotal = this.topProductosFiltrados !== null ? this.fechaFiltroLabel.replace('Más vendidos en ', '').replace('Ventas del ', '') : '30 días';
+
     const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const totalUnidades = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
-    const totalIngresos = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
-    const filas = (this.reporteData.topProductos || []).map((item: any, i: number) => `
-      <tr>
-        <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
-        <td><strong>${item.nombre}</strong></td>
-        <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
-        <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
-      </tr>`).join('');
+    const totalUnidades = items.reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
+    const totalIngresos = items.reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
+
+    let tablaContenido = '';
+    if (items.length === 0) {
+      tablaContenido = `
+        <div style="padding:24px;text-align:center;color:#475569;font-weight:700;font-size:13px;background:#f8fafc;border-radius:4px;border:1px solid #cbd5e1;margin-bottom:20px;">
+          Ese día no se realizaron ventas.
+        </div>`;
+    } else {
+      const filas = items.map((item: any, i: number) => `
+        <tr>
+          <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
+          <td><strong>${item.nombre}</strong></td>
+          <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
+          <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
+        </tr>`).join('');
+
+      tablaContenido = `
+        <table>
+          <thead><tr>
+            <th class="td-center" style="width:8%">Rank</th>
+            <th style="width:52%">Producto / Medicamento</th>
+            <th class="td-center" style="width:20%">Unidades Vendidas</th>
+            <th class="td-right" style="width:20%">Ingreso Generado</th>
+          </tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+        <div class="total-box">
+          <span class="total-label">Total general (${labelTotal}): ${totalUnidades} unidades</span>
+          <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
+        </div>`;
+    }
+
     const contenido = `
-      <div class="highlight-note">Período analizado: <strong>últimos 30 días</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
-      <table>
-        <thead><tr>
-          <th class="td-center" style="width:8%">Rank</th>
-          <th style="width:52%">Producto / Medicamento</th>
-          <th class="td-center" style="width:20%">Unidades Vendidas</th>
-          <th class="td-right" style="width:20%">Ingreso Generado</th>
-        </tr></thead>
-        <tbody>${filas}</tbody>
-      </table>
-      <div class="total-box">
-        <span class="total-label">Total general (30 días): ${totalUnidades} unidades</span>
-        <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
-      </div>`;
+      <div class="highlight-note">Período analizado: <strong>${label}</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
+      ${tablaContenido}`;
+
     this._imprimirPDF('TOP_PRODUCTOS_FARMACODE',
       this._pdfShell('Top 10 Productos Más Vendidos', 'R-PROD-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }

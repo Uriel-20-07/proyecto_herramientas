@@ -112,8 +112,9 @@ export class CargaRecetaComponent implements OnInit {
 
   private resetFormulario(): void {
     this.documentoFile = null;
+    const usuario = this.authService.getCurrentUser();
     this.nuevaReceta = {
-      pacienteId: '',
+      pacienteId: usuario?.id ? usuario.id.toString() : '',
       medicoId: '',
       medicamentos: [{ nombre: '', dosis: '' }],
       fechaEmision: new Date().toISOString().split('T')[0],

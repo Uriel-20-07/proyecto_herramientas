@@ -183,7 +183,7 @@
                     @if (calcularEnvio(pedido) === 0) {
                     Gratis
                     } @else {
-                    S/ 5.00
+                    S/ {{ calcularEnvio(pedido).toFixed(2) }}
                     }
                   </span>
                 </div>

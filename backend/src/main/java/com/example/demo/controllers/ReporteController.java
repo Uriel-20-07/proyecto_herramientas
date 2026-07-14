@@ -172,19 +172,18 @@ public class ReporteController {
         // ─────────────────────────────────────────────────────────
         // Respuesta unificada
         // ─────────────────────────────────────────────────────────
+        List<String> distritos = todosLosPedidos.stream()
+                .map(Pedido::getDistrito)
+                .filter(d -> d != null && !d.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+
         Map<String, Object> respuesta = new LinkedHashMap<>();
         respuesta.put("ventasPeriodo", ventasPeriodo);
         respuesta.put("topProductos", topProductos);
         respuesta.put("lotesProximosVencer", lotesVencer);
         respuesta.put("clientesTop", clientesTop);
-
-        // Lista de distritos disponibles (de pedidos que tienen distrito registrado)
-        List<String> distritos = todosLosPedidos.stream()
-                .map(Pedido::getDistrito)
-                .filter(d -> d != null && !d.isBlank())
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
         respuesta.put("distritos", distritos);
 
         return ResponseEntity.ok(respuesta);
@@ -209,141 +208,85 @@ public class ReporteController {
                 })
                 .collect(Collectors.toList());
 
-        if (pedidosFiltrados.isEmpty()) {
-            return ResponseEntity.ok(List.of());
-        }
-
-        Set<Integer> pedidoIds = pedidosFiltrados.stream()
-                .map(Pedido::getIdPedido)
-                .collect(Collectors.toSet());
-
-        // Mapa pedidoId → metodoPago para joinear luego
-        Map<Integer, String> metodoPagoPorPedido = pedidosFiltrados.stream()
-                .filter(p -> p.getMetodoPago() != null)
-                .collect(Collectors.toMap(
-                        Pedido::getIdPedido,
-                        Pedido::getMetodoPago,
-                        (a, b) -> a
-                ));
-
-        List<DetallePedido> detalles = pedidoIds.isEmpty()
-                ? new ArrayList<>()
-                : detallePedidoRepository.findByPedido_IdPedidoIn(pedidoIds).stream()
-                        .filter(d -> d.getProducto() != null)
-                        .collect(Collectors.toList());
-
-        // Agrupar por producto
-        Map<String, long[]> conteo = new LinkedHashMap<>();
-        Map<String, BigDecimal> ingresos = new LinkedHashMap<>();
-        // Contar votos de método de pago por producto
-        Map<String, Map<String, Long>> metodoVotos = new LinkedHashMap<>();
-
-        for (DetallePedido d : detalles) {
-            String nombre = d.getProducto().getNombre();
-            int cant = d.getCantidad() != null ? d.getCantidad() : 0;
-            BigDecimal ingreso = d.getPrecioHistorico() != null
-                    ? d.getPrecioHistorico().multiply(BigDecimal.valueOf(cant))
-                    : BigDecimal.ZERO;
-
-            conteo.merge(nombre, new long[]{cant}, (old, n) -> { old[0] += cant; return old; });
-            ingresos.merge(nombre, ingreso, BigDecimal::add);
-
-            // Acumular método de pago del pedido correspondiente
-            int pedidoId = d.getPedido().getIdPedido();
-            String metodo = metodoPagoPorPedido.getOrDefault(pedidoId, "N/A");
-            metodoVotos.computeIfAbsent(nombre, k -> new LinkedHashMap<>())
-                    .merge(metodo, 1L, Long::sum);
-        }
-
-        List<Map<String, Object>> resultado = conteo.entrySet().stream()
-                .sorted((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]))
-                .limit(10)
-                .map(e -> {
-                    String nombre = e.getKey();
-                    // Método de pago predominante para este producto en el distrito
-                    String metodoPredominante = metodoVotos.getOrDefault(nombre, Map.of())
-                            .entrySet().stream()
-                            .max(Map.Entry.comparingByValue())
-                            .map(Map.Entry::getKey)
-                            .orElse("N/A");
-
-                    Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("nombre", nombre);
-                    m.put("cantidadVendida", e.getValue()[0]);
-                    m.put("ingresoGenerado", ingresos.getOrDefault(nombre, BigDecimal.ZERO));
-                    m.put("metodoPago", metodoPredominante);
-                    return m;
-                })
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(resultado);
+        List<Map<String, Object>> top = calcularTopProductos(pedidosFiltrados);
+        return ResponseEntity.ok(top);
     }
 
-    /**
-     * GET /api/admin/reportes/top-por-fecha?dia=YYYY-MM-DD
-     * GET /api/admin/reportes/top-por-fecha?mes=YYYY-MM
-     *
-     * Retorna el Top 10 productos más vendidos filtrados por día exacto o mes.
-     */
-    @GetMapping("/top-por-fecha")
-    public ResponseEntity<?> topProductosPorFecha(
-            @RequestParam(value = "dia", required = false) String dia,
-            @RequestParam(value = "mes", required = false) String mes) {
-
-        List<Pedido> pedidosFiltrados = pedidoRepository.findAll().stream()
-                .filter(p -> {
-                    if (p.getFecha() == null) return false;
-                    LocalDate fecha = p.getFecha().toLocalDate();
-                    if (dia != null && !dia.isBlank()) {
-                        return fecha.toString().equals(dia);
-                    }
-                    if (mes != null && !mes.isBlank()) {
-                        // mes = "YYYY-MM"
-                        String pedidoMes = String.format("%04d-%02d", fecha.getYear(), fecha.getMonthValue());
-                        return pedidoMes.equals(mes);
-                    }
-                    return true;
-                })
-                .collect(Collectors.toList());
-
-        if (pedidosFiltrados.isEmpty()) {
-            return ResponseEntity.ok(List.of());
-        }
-
+    private List<Map<String, Object>> calcularTopProductos(List<Pedido> pedidosFiltrados) {
         Set<Integer> pedidoIds = pedidosFiltrados.stream()
                 .map(Pedido::getIdPedido)
                 .collect(Collectors.toSet());
 
-        List<DetallePedido> detalles = detallePedidoRepository
-                .findByPedido_IdPedidoIn(pedidoIds).stream()
+        List<DetallePedido> detalles = pedidoIds.isEmpty() ? new ArrayList<>() : detallePedidoRepository.findByPedido_IdPedidoIn(pedidoIds).stream()
                 .filter(d -> d.getProducto() != null)
                 .collect(Collectors.toList());
 
-        Map<String, long[]> conteo = new LinkedHashMap<>();
-        Map<String, BigDecimal> ingresos = new LinkedHashMap<>();
-
-        for (DetallePedido d : detalles) {
+        Map<String, long[]> conteoProductos = new LinkedHashMap<>();
+        Map<String, BigDecimal> ingresosProductos = new LinkedHashMap<>();
+        detalles.forEach(d -> {
             String nombre = d.getProducto().getNombre();
             int cant = d.getCantidad() != null ? d.getCantidad() : 0;
             BigDecimal ingreso = d.getPrecioHistorico() != null
                     ? d.getPrecioHistorico().multiply(BigDecimal.valueOf(cant))
                     : BigDecimal.ZERO;
-            conteo.merge(nombre, new long[]{cant}, (old, n) -> { old[0] += cant; return old; });
-            ingresos.merge(nombre, ingreso, BigDecimal::add);
-        }
+            conteoProductos.merge(nombre, new long[]{cant}, (old, n) -> { old[0] += cant; return old; });
+            ingresosProductos.merge(nombre, ingreso, BigDecimal::add);
+        });
 
-        List<Map<String, Object>> resultado = conteo.entrySet().stream()
+        return conteoProductos.entrySet().stream()
                 .sorted((a, b) -> Long.compare(b.getValue()[0], a.getValue()[0]))
                 .limit(10)
                 .map(e -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("nombre", e.getKey());
                     m.put("cantidadVendida", e.getValue()[0]);
-                    m.put("ingresoGenerado", ingresos.getOrDefault(e.getKey(), BigDecimal.ZERO));
+                    m.put("ingresoGenerado", ingresosProductos.getOrDefault(e.getKey(), BigDecimal.ZERO));
                     return m;
                 })
                 .collect(Collectors.toList());
+    }
 
-        return ResponseEntity.ok(resultado);
+    @GetMapping("/top-productos-filtrados")
+    public ResponseEntity<?> obtenerTopProductosFiltrados(
+            @RequestParam(required = false) String dia,
+            @RequestParam(required = false) String mes) {
+
+        List<Pedido> pedidos = pedidoRepository.findAll();
+        List<Pedido> filtrados = new ArrayList<>();
+
+        if (dia != null && !dia.isEmpty()) {
+            LocalDate targetDia = LocalDate.parse(dia);
+            filtrados = pedidos.stream()
+                    .filter(p -> p.getFecha() != null && p.getFecha().toLocalDate().equals(targetDia))
+                    .collect(Collectors.toList());
+        } else if (mes != null && !mes.isEmpty()) {
+            String[] parts = mes.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]);
+            filtrados = pedidos.stream()
+                    .filter(p -> p.getFecha() != null 
+                            && p.getFecha().getYear() == year 
+                            && p.getFecha().getMonthValue() == month)
+                    .collect(Collectors.toList());
+        } else {
+            LocalDateTime limite = LocalDateTime.now().minusDays(30);
+            filtrados = pedidos.stream()
+                    .filter(p -> p.getFecha() != null && p.getFecha().isAfter(limite))
+                    .collect(Collectors.toList());
+        }
+
+        List<Map<String, Object>> top = calcularTopProductos(filtrados);
+        return ResponseEntity.ok(top);
+    }
+
+    @GetMapping("/top-productos-distrito")
+    public ResponseEntity<?> obtenerTopProductosPorDistrito(@RequestParam String distrito) {
+        List<Pedido> pedidos = pedidoRepository.findAll();
+        List<Pedido> filtrados = pedidos.stream()
+                .filter(p -> p.getDistrito() != null && p.getDistrito().equalsIgnoreCase(distrito))
+                .collect(Collectors.toList());
+
+        List<Map<String, Object>> top = calcularTopProductos(filtrados);
+        return ResponseEntity.ok(top);
     }
 }

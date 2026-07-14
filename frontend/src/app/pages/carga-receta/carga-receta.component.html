@@ -5,13 +5,10 @@
   <div *ngIf="mensajeError" class="alerta alerta-error">{{ mensajeError }}</div>
 
   <form (ngSubmit)="enviarReceta()">
-    <div class="campo">
-      <label for="pacienteId">ID Paciente</label>
-      <input type="text" id="pacienteId" [(ngModel)]="nuevaReceta.pacienteId" name="pacienteId" required>
-    </div>
+    <input type="hidden" [(ngModel)]="nuevaReceta.pacienteId" name="pacienteId">
 
     <div class="campo">
-      <label for="medicoId">ID Médico</label>
+      <label for="medicoId">Nombre del Médico</label>
       <input type="text" id="medicoId" [(ngModel)]="nuevaReceta.medicoId" name="medicoId" required>
     </div>
 

@@ -125,16 +125,18 @@ export class AdminService {
     return this.http.get<any>(`${this.apiUrl}/reportes`, { headers: this.getHeaders() });
   }
 
-  getTopProductosPorDistrito(distrito: string): Observable<any[]> {
-    const params = distrito ? `?distrito=${encodeURIComponent(distrito)}` : '';
-    return this.http.get<any[]>(`${this.apiUrl}/reportes/por-distrito${params}`, { headers: this.getHeaders() });
+  getTopProductosFiltrados(dia: string | null, mes: string | null): Observable<any[]> {
+    let url = `${this.apiUrl}/reportes/top-productos-filtrados`;
+    const params: string[] = [];
+    if (dia) params.push(`dia=${dia}`);
+    if (mes) params.push(`mes=${mes}`);
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+    return this.http.get<any[]>(url, { headers: this.getHeaders() });
   }
 
-  getTopProductosFiltrados(dia: string | null, mes: string | null): Observable<any[]> {
-    const params = new URLSearchParams();
-    if (dia) params.set('dia', dia);
-    else if (mes) params.set('mes', mes);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    return this.http.get<any[]>(`${this.apiUrl}/reportes/top-por-fecha${query}`, { headers: this.getHeaders() });
+  getTopProductosPorDistrito(distrito: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/reportes/top-productos-distrito?distrito=${encodeURIComponent(distrito)}`, { headers: this.getHeaders() });
   }
 }

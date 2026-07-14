@@ -54,12 +54,12 @@ export class SeguimientoPedidoComponent implements OnInit {
         this.numeroPedido.set(numeroVisible);
 
         this.calcularEstado(pedido.fecha);
-        this.generarFechasTimeline(pedido.fecha, pedido.direccionEnvio || 'Bodega seleccionada');
+        this.generarFechasTimeline(pedido.fecha, pedido.direccionEnvio || 'Bodega seleccionada', pedido.esUrgente);
       }
     });
   }
 
-  generarFechasTimeline(fechaPedido: string, direccionBodega: string): void {
+  generarFechasTimeline(fechaPedido: string, direccionBodega: string, esUrgente: boolean): void {
 
     const inicio = new Date(fechaPedido);
 
@@ -87,6 +87,14 @@ export class SeguimientoPedidoComponent implements OnInit {
       entregado.getMinutes() + 30
     );
 
+    const descCamino = esUrgente
+      ? `Tu pedido está de camino a tu hogar: ${direccionBodega}`
+      : `Tu pedido está de camino a la bodega: ${direccionBodega}`;
+
+    const descEntregado = esUrgente
+      ? `Pedido entregado exitosamente en tu hogar: ${direccionBodega}`
+      : `Pedido entregado exitosamente. Listo para recoger en: ${direccionBodega}`;
+
     this.pasos = [
       {
         titulo: 'Pedido confirmado',
@@ -105,12 +113,12 @@ export class SeguimientoPedidoComponent implements OnInit {
       },
       {
         titulo: 'En camino',
-        descripcion: `Tu pedido está de camino a la bodega: ${direccionBodega}`,
+        descripcion: descCamino,
         fecha: camino
       },
       {
         titulo: 'Entregado',
-        descripcion: `Pedido entregado exitosamente. Listo para recoger en: ${direccionBodega}`,
+        descripcion: descEntregado,
         fecha: entregado
       }
     ];
