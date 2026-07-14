@@ -60,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/auth/**").permitAll() // Login de administrador (público)
                         .requestMatchers("/api/admin/**").authenticated() // Panel admin (requiere JWT)
                         .requestMatchers("/api/carrito/**").authenticated() // Protegemos el carrito
+                        .requestMatchers("/api/recetas/**").authenticated() // Protegemos recetas médicas
                         .requestMatchers("/api/pedidos/**").authenticated() // Protegemos el historial de pedidos
                         .anyRequest().permitAll() // Resto de rutas: públicas
                 )

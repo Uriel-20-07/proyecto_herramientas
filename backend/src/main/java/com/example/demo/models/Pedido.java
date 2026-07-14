@@ -70,11 +70,11 @@ public class Pedido {
     @Column(name = "es_urgente", nullable = false, columnDefinition = "boolean default false")
     private boolean esUrgente = false;
 
-    /** Distrito de entrega del pedido (ej. "Yanahuara", "Cayma"). */
+    /** Distrito de entrega o recojo. */
     @Column(name = "distrito", nullable = true)
     private String distrito;
 
-    /** Método de pago usado: "YAPE" o "TARJETA". */
+    /** Método de pago utilizado. */
     @Column(name = "metodo_pago", nullable = true)
     private String metodoPago;
 }

@@ -14,6 +14,7 @@ import { PedidosComponent } from './pages/pedidos/pedidos';
 import { ProductoDetalleComponent } from './pages/producto-detalle/producto-detalle';
 import { FavoritosComponent } from './pages/favoritos/favoritos';
 import { SeguimientoPedidoComponent } from './pages/seguimiento-pedido/seguimiento-pedido';
+import { CargaRecetaComponent } from './pages/carga-receta/carga-receta.component';
 
 
 /**
@@ -50,6 +51,9 @@ export const routes: Routes = [
 
   // Página principal
   { path: '', component: InicioComponent, pathMatch: 'full' },
+  
+  // Flujo de recetas médicas
+  { path: 'cargar-receta', component: CargaRecetaComponent },
 
   // Páginas del catálogo y comercio
   { path: 'blog', component: BlogComponent },

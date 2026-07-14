@@ -95,8 +95,10 @@ public class PagoService {
         if (carrito.getDetalles().isEmpty())
             throw new RuntimeException("Carrito vacío.");
 
-        double subtotal = carrito.getDetalles().stream()
-                .mapToDouble(d -> d.getProducto().getPrecioVenta().doubleValue() * d.getCantidad()).sum();
+        double subtotal = 0.0;
+        for (DetalleCarrito d : carrito.getDetalles()) {
+            subtotal += obtenerPrecioConDescuento(d.getProducto()).doubleValue() * d.getCantidad();
+        }
 
         if (request.getCodigoCupon() != null && !request.getCodigoCupon().trim().isEmpty()) {
             Cupon cupon = cuponRepository.findByCodigo(request.getCodigoCupon().trim().toUpperCase())
@@ -123,8 +125,10 @@ public class PagoService {
         if (carrito.getDetalles().isEmpty())
             throw new RuntimeException("Carrito vacío.");
 
-        double subtotal = carrito.getDetalles().stream()
-                .mapToDouble(d -> d.getProducto().getPrecioVenta().doubleValue() * d.getCantidad()).sum();
+        double subtotal = 0.0;
+        for (DetalleCarrito d : carrito.getDetalles()) {
+            subtotal += obtenerPrecioConDescuento(d.getProducto()).doubleValue() * d.getCantidad();
+        }
         BigDecimal totalFinal = BigDecimal.valueOf(subtotal);
 
         if (request.getCodigoCupon() != null && !request.getCodigoCupon().trim().isEmpty()) {
@@ -169,7 +173,7 @@ public class PagoService {
             detPed.setPedido(pedido);
             detPed.setProducto(producto);
             detPed.setCantidad(cantidadComprada);
-            detPed.setPrecioHistorico(producto.getPrecioVenta());
+            detPed.setPrecioHistorico(obtenerPrecioConDescuento(producto));
             detPed = detallePedidoRepository.save(detPed);
             detallesGuardados.add(detPed);
         }
@@ -222,5 +226,38 @@ public class PagoService {
             "tipoDescuento", cupon.getTipoDescuento(),
             "descripcion", cupon.getDescripcion()
         );
+    }
+
+    public BigDecimal obtenerPrecioConDescuento(Producto producto) {
+        if (producto.getFechaCaducidad() == null) {
+            return producto.getPrecioVenta();
+        }
+        
+        java.time.LocalDate expDate = producto.getFechaCaducidad();
+        java.time.LocalDate today = java.time.LocalDate.now();
+        
+        long monthsLeft = (expDate.getYear() - today.getYear()) * 12 
+                + (expDate.getMonthValue() - today.getMonthValue());
+        
+        if (monthsLeft < 0 || (monthsLeft == 0 && expDate.getDayOfMonth() < today.getDayOfMonth())) {
+            return BigDecimal.ZERO;
+        }
+        
+        double percentage = 0.0;
+        if (monthsLeft <= 6) {
+            percentage = 0.30;
+        } else if (monthsLeft <= 12) {
+            percentage = 0.10;
+        } else if (monthsLeft <= 24) {
+            percentage = 0.05;
+        }
+        
+        if (percentage > 0.0) {
+            BigDecimal basePrice = producto.getPrecioVenta();
+            BigDecimal discount = basePrice.multiply(BigDecimal.valueOf(percentage));
+            return basePrice.subtract(discount);
+        }
+        
+        return producto.getPrecioVenta();
     }
 }

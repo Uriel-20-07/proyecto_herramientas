@@ -196,6 +196,15 @@ export class NavbarComponent implements OnDestroy {
     this.router.navigate(['/']);
   }
 
+  handleCargarReceta(event: Event): void {
+    event.preventDefault();
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/cargar-receta']);
+    } else {
+      this.authModalService.open('login');
+    }
+  }
+
   getCartCount(counts: Array<{ cantidad: number }> | null): number {
     return counts?.reduce((total, item) => total + item.cantidad, 0) ?? 0;
   }

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthModalService } from '../../../services/auth-modal.service';
-import { ComboService } from '../../../services/combo.service';
+import { RecetasService, RecetaMedica } from '../../../services/recetas.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -14,8 +14,14 @@ import { ComboService } from '../../../services/combo.service';
   styleUrl: './admin.component.css',
 })
 export class AdminDashboardComponent implements OnInit {
-  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' = 'resumen';
+  activeTab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas' = 'resumen';
   adminUser: any = null;
+
+  // Variables Recetas Médicas
+  recetas: RecetaMedica[] = [];
+  cargandoRecetas: boolean = false;
+  recetaParaRechazar: RecetaMedica | null = null;
+  motivoRechazo: string = '';
 
   productos: any[] = [];
   ventas: any[] = [];
@@ -70,7 +76,6 @@ export class AdminDashboardComponent implements OnInit {
   reporteData: any = null;
   cargandoReportes: boolean = false;
 
-  // Top productos por distrito
   readonly distritosArequipa: string[] = [
     'Alto Selva Alegre', 'Arequipa (Cercado)', 'Cayma', 'Cerro Colorado',
     'Characato', 'Chiguata', 'Jacobo Hunter', 'José Luis Bustamante y Rivero',
@@ -79,6 +84,7 @@ export class AdminDashboardComponent implements OnInit {
     'San Juan de Tarucani', 'Santa Isabel de Siguas', 'Santa Rita de Siguas',
     'Socabaya', 'Tiabaya', 'Uchumayo', 'Vitor', 'Yanahuara', 'Yarabamba', 'Yura'
   ];
+
   distritoSeleccionado: string = '';
   topProductosDistrito: any[] = [];
   cargandoDistrito: boolean = false;
@@ -100,7 +106,7 @@ export class AdminDashboardComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private authModalService: AuthModalService,
-    private comboService: ComboService,
+    private recetasService: RecetasService,
   ) { }
 
   ngOnInit(): void {
@@ -115,10 +121,13 @@ export class AdminDashboardComponent implements OnInit {
     // Sincronizar tab desde la URL al inicializar o al navegar
     this.route.params.subscribe(params => {
       const tab = params['tab'];
-      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones'].includes(tab)) {
-        this.activeTab = tab as 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones';
+      if (tab && ['resumen', 'ventas', 'inventario', 'reportes', 'predicciones', 'recetas'].includes(tab)) {
+        this.activeTab = tab as 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas';
         if (tab === 'reportes') {
           this.cargarReportes();
+        }
+        if (tab === 'recetas') {
+          this.cargarRecetasEnEspera();
         }
       } else {
         // Redirigir por defecto a resumen si el parámetro es vacío o inválido
@@ -336,11 +345,14 @@ export class AdminDashboardComponent implements OnInit {
     );
   }
 
-  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones'): void {
+  setTab(tab: 'resumen' | 'ventas' | 'inventario' | 'reportes' | 'predicciones' | 'recetas'): void {
     this.activeTab = tab;
     this.router.navigate(['/dashboard/admin', tab]);
     if (tab === 'reportes') {
       this.cargarReportes();
+    }
+    if (tab === 'recetas') {
+      this.cargarRecetasEnEspera();
     }
   }
 
@@ -350,7 +362,10 @@ export class AdminDashboardComponent implements OnInit {
       next: (data: any) => {
         this.reporteData = data;
         this.cargandoReportes = false;
-        // Cargar top por distrito inicial (todos los distritos)
+        // Si hay distritos y no se ha seleccionado ninguno, seleccionamos el primero por defecto
+        if (this.reporteData?.distritos?.length && !this.distritoSeleccionado) {
+          this.distritoSeleccionado = this.reporteData.distritos[0];
+        }
         this.cargarTopPorDistrito();
       },
       error: (err: any) => {
@@ -361,6 +376,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   cargarTopPorDistrito(): void {
+    if (!this.distritoSeleccionado) return;
     this.cargandoDistrito = true;
     this.adminService.getTopProductosPorDistrito(this.distritoSeleccionado).subscribe({
       next: (data: any[]) => {
@@ -626,8 +642,14 @@ export class AdminDashboardComponent implements OnInit {
     const distritosCount = new Map<string, number>();
 
     activeVentas.forEach(venta => {
-      const dir = (venta.direccionEnvio || '').toLowerCase();
-      let distritoDetectado = 'Yanahuara'; // Distrito por defecto
+      const dir = (venta.direccionEnvio || '').trim();
+      let distritoDetectado = 'Yanahuara'; // Fallback: distrito con más ventas
+
+      // El formato de direccionEnvio es: "Bodega Nombre - Av. Calle 123, Distrito"
+      // El distrito va siempre en el último segmento después de la última coma
+      const partes = dir.split(',');
+      const ultimaParteRaw = (partes[partes.length - 1] || '').trim().toLowerCase();
+
       const distritosList = [
         'alto selva alegre', 'arequipa', 'cercado', 'cayma', 'cerro colorado',
         'characato', 'chiguata', 'jacobo hunter', 'josé luis bustamante y rivero',
@@ -637,10 +659,22 @@ export class AdminDashboardComponent implements OnInit {
         'socabaya', 'tiabaya', 'uchumayo', 'vitor', 'yanahuara', 'yarabamba', 'yura'
       ];
 
+      // Buscar en la última parte (más preciso)
       for (const d of distritosList) {
-        if (dir.includes(d)) {
+        if (ultimaParteRaw.includes(d)) {
           distritoDetectado = d.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
           break;
+        }
+      }
+
+      // Fallback: buscar el distrito al final de toda la cadena
+      if (distritoDetectado === 'Otro') {
+        const dirCompleto = dir.toLowerCase();
+        for (const d of distritosList) {
+          if (dirCompleto.endsWith(d) || dirCompleto.includes(`, ${d}`)) {
+            distritoDetectado = d.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            break;
+          }
         }
       }
 
@@ -1039,31 +1073,49 @@ export class AdminDashboardComponent implements OnInit {
   // ── PDF 2: Top 10 Productos ───────────────────────────────────────────────
   descargarReporteTopProductos(): void {
     if (!this.reporteData) return;
+    const items = this.topProductosFiltrados !== null ? this.topProductosFiltrados : (this.reporteData.topProductos || []);
+    const label = this.topProductosFiltrados !== null ? this.fechaFiltroLabel : 'últimos 30 días';
+    const labelTotal = this.topProductosFiltrados !== null ? this.fechaFiltroLabel.replace('Más vendidos en ', '').replace('Ventas del ', '') : '30 días';
+
     const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const totalUnidades = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
-    const totalIngresos = (this.reporteData.topProductos || []).reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
-    const filas = (this.reporteData.topProductos || []).map((item: any, i: number) => `
-      <tr>
-        <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
-        <td><strong>${item.nombre}</strong></td>
-        <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
-        <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
-      </tr>`).join('');
+    const totalUnidades = items.reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
+    const totalIngresos = items.reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
+
+    let tablaContenido = '';
+    if (items.length === 0) {
+      tablaContenido = `
+        <div style="padding:24px;text-align:center;color:#475569;font-weight:700;font-size:13px;background:#f8fafc;border-radius:4px;border:1px solid #cbd5e1;margin-bottom:20px;">
+          Ese día no se realizaron ventas.
+        </div>`;
+    } else {
+      const filas = items.map((item: any, i: number) => `
+        <tr>
+          <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
+          <td><strong>${item.nombre}</strong></td>
+          <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
+          <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
+        </tr>`).join('');
+
+      tablaContenido = `
+        <table>
+          <thead><tr>
+            <th class="td-center" style="width:8%">Rank</th>
+            <th style="width:52%">Producto / Medicamento</th>
+            <th class="td-center" style="width:20%">Unidades Vendidas</th>
+            <th class="td-right" style="width:20%">Ingreso Generado</th>
+          </tr></thead>
+          <tbody>${filas}</tbody>
+        </table>
+        <div class="total-box">
+          <span class="total-label">Total general (${labelTotal}): ${totalUnidades} unidades</span>
+          <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
+        </div>`;
+    }
+
     const contenido = `
-      <div class="highlight-note">Período analizado: <strong>últimos 30 días</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
-      <table>
-        <thead><tr>
-          <th class="td-center" style="width:8%">Rank</th>
-          <th style="width:52%">Producto / Medicamento</th>
-          <th class="td-center" style="width:20%">Unidades Vendidas</th>
-          <th class="td-right" style="width:20%">Ingreso Generado</th>
-        </tr></thead>
-        <tbody>${filas}</tbody>
-      </table>
-      <div class="total-box">
-        <span class="total-label">Total general (30 días): ${totalUnidades} unidades</span>
-        <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
-      </div>`;
+      <div class="highlight-note">Período analizado: <strong>${label}</strong> &mdash; Basado en unidades vendidas registradas en el sistema.</div>
+      ${tablaContenido}`;
+
     this._imprimirPDF('TOP_PRODUCTOS_FARMACODE',
       this._pdfShell('Top 10 Productos Más Vendidos', 'R-PROD-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }
@@ -1333,5 +1385,62 @@ export class AdminDashboardComponent implements OnInit {
         document.body.removeChild(iframe);
       }, 1000);
     }, 400);
+  }
+  // =========================================================================
+  // RECETAS MÉDICAS
+  // =========================================================================
+  cargarRecetasEnEspera(): void {
+    this.cargandoRecetas = true;
+    this.recetasService.getRecetasEnEspera().subscribe({
+      next: (data: RecetaMedica[]) => {
+        this.recetas = data;
+        this.cargandoRecetas = false;
+      },
+      error: (err: any) => {
+        console.error('Error al cargar recetas en espera:', err);
+        this.cargandoRecetas = false;
+      }
+    });
+  }
+
+  aprobarReceta(id: string | number | undefined): void {
+    if (!id) return;
+    this.recetasService.actualizarEstadoReceta(id.toString(), 'aprobada').subscribe({
+      next: () => {
+        this.mostrarNotificacion('Receta aprobada correctamente.');
+        this.cargarRecetasEnEspera();
+      },
+      error: (err: any) => {
+        console.error('Error al aprobar receta:', err);
+        alert('No se pudo aprobar la receta. Intente nuevamente.');
+      }
+    });
+  }
+
+  abrirRechazoReceta(receta: RecetaMedica): void {
+    this.recetaParaRechazar = receta;
+    this.motivoRechazo = '';
+  }
+
+  cerrarRechazoReceta(): void {
+    this.recetaParaRechazar = null;
+    this.motivoRechazo = '';
+  }
+
+  confirmarRechazoReceta(): void {
+    const id = this.recetaParaRechazar?.id || this.recetaParaRechazar?.idReceta;
+    if (!id || !this.motivoRechazo.trim()) return;
+
+    this.recetasService.actualizarEstadoReceta(id.toString(), 'rechazada', this.motivoRechazo).subscribe({
+      next: () => {
+        this.mostrarNotificacion('Receta rechazada.');
+        this.cerrarRechazoReceta();
+        this.cargarRecetasEnEspera();
+      },
+      error: (err: any) => {
+        console.error('Error al rechazar receta:', err);
+        alert('No se pudo rechazar la receta. Intente nuevamente.');
+      }
+    });
   }
 }
