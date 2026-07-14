@@ -70,7 +70,15 @@ export class AdminDashboardComponent implements OnInit {
   reporteData: any = null;
   cargandoReportes: boolean = false;
 
-  // Top productos por distrito
+  readonly distritosArequipa: string[] = [
+    'Alto Selva Alegre', 'Arequipa (Cercado)', 'Cayma', 'Cerro Colorado',
+    'Characato', 'Chiguata', 'Jacobo Hunter', 'José Luis Bustamante y Rivero',
+    'La Joya', 'Mariano Melgar', 'Miraflores', 'Mollebaya', 'Paucarpata',
+    'Pocsi', 'Polobaya', 'Quequeña', 'Sabandía', 'Sachaca', 'San Juan de Siguas',
+    'San Juan de Tarucani', 'Santa Isabel de Siguas', 'Santa Rita de Siguas',
+    'Socabaya', 'Tiabaya', 'Uchumayo', 'Vitor', 'Yanahuara', 'Yarabamba', 'Yura'
+  ];
+
   distritoSeleccionado: string = '';
   topProductosDistrito: any[] = [];
   cargandoDistrito: boolean = false;
@@ -281,6 +289,7 @@ export class AdminDashboardComponent implements OnInit {
   // ── Filtro calendario Top 10 ─────────────────────────────────────────────
 
   onFiltroFechaChange(): void {
+    // Si se seleccionó un día, el mes se sincroniza automáticamente
     if (this.filtroDia) {
       this.filtroMes = this.filtroDia.substring(0, 7); // YYYY-MM
     }
@@ -304,6 +313,7 @@ export class AdminDashboardComponent implements OnInit {
     this.cargandoTopFiltrado = true;
     this.topProductosFiltrados = null;
 
+    // Actualizar label descriptivo
     if (this.filtroDia) {
       const [y, m, d] = this.filtroDia.split('-');
       const fecha = new Date(+y, +m - 1, +d);
@@ -324,37 +334,6 @@ export class AdminDashboardComponent implements OnInit {
         this.cargandoTopFiltrado = false;
       }
     });
-  }
-
-  descargarReporteDistrito(): void {
-    if (!this.distritoSeleccionado || this.topProductosDistrito.length === 0) return;
-    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const filas = this.topProductosDistrito.map((item: any, i: number) => `
-      <tr>
-        <td class="td-center" style="font-weight:800;color:#ea580c;font-size:15px;">${i + 1}</td>
-        <td><strong>${item.nombre}</strong></td>
-        <td class="td-center" style="font-weight:700;">${item.cantidadVendida} u.</td>
-        <td class="td-right" style="font-weight:700;">S/ ${Number(item.ingresoGenerado || 0).toFixed(2)}</td>
-      </tr>`).join('');
-    const totalUnidades = this.topProductosDistrito.reduce((s: number, p: any) => s + (p.cantidadVendida || 0), 0);
-    const totalIngresos = this.topProductosDistrito.reduce((s: number, p: any) => s + Number(p.ingresoGenerado || 0), 0);
-    const contenido = `
-      <div class="highlight-note">Distrito de análisis: <strong>${this.distritoSeleccionado}</strong> &mdash; Basado en las ventas geolocalizadas registradas.</div>
-      <table>
-        <thead><tr>
-          <th class="td-center" style="width:8%">Rank</th>
-          <th style="width:52%">Producto / Medicamento</th>
-          <th class="td-center" style="width:20%">Unidades Vendidas</th>
-          <th class="td-right" style="width:20%">Ingreso Generado</th>
-        </tr></thead>
-        <tbody>${filas}</tbody>
-      </table>
-      <div class="total-box">
-        <span class="total-label">Total general en ${this.distritoSeleccionado}: ${totalUnidades} unidades</span>
-        <span class="total-value">S/ ${totalIngresos.toFixed(2)}</span>
-      </div>`;
-    this._imprimirPDF(`TOP_PRODUCTOS_${this.distritoSeleccionado.toUpperCase().replace(/\s+/g, '_')}_FARMACODE`,
-      this._pdfShell(`Top Productos - ${this.distritoSeleccionado}`, 'R-DST-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }
 
   calcularPredicciones(): void {
@@ -1121,10 +1100,52 @@ export class AdminDashboardComponent implements OnInit {
       this._pdfShell('Top 5 Clientes por Gasto Total', 'R-CLI-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
   }
 
+  // ── PDF 5: Top Productos por Distrito ─────────────────────────────────────
+  descargarReporteDistrito(): void {
+    if (!this.topProductosDistrito) return;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const distrito = this.distritoSeleccionado || 'Todos los distritos';
+    const fmt = (v: any) => `S/ ${Number(v || 0).toFixed(2)}`;
+    const medals = ['🥇', '🥈', '🥉'];
 
-  // =========================================================================
-  // REPORTE PDF PREMIUM COMPLETO (Nombre de Archivo Integrado con Chrome)
-  // =========================================================================
+    const filas = this.topProductosDistrito.length === 0
+      ? `<tr><td colspan="4" style="text-align:center; padding:20px; color:#718096;">Este distrito aún no cuenta con una venta.</td></tr>`
+      : this.topProductosDistrito.map((item: any, i: number) => `
+          <tr>
+            <td class="td-center">${i < 3 ? medals[i] : i + 1}</td>
+            <td>${item.nombre}</td>
+            <td class="td-center">${item.cantidadVendida} u.</td>
+            <td class="td-right" style="color:#ea580c; font-weight:800;">${fmt(item.ingresoGenerado)}</td>
+          </tr>`).join('');
+
+    const totalUnidades = this.topProductosDistrito.reduce((s: number, i: any) => s + (i.cantidadVendida || 0), 0);
+    const totalIngresos = this.topProductosDistrito.reduce((s: number, i: any) => s + Number(i.ingresoGenerado || 0), 0);
+
+    const contenido = `
+      <div class="highlight-note">
+        Distrito filtrado: <strong>${distrito}</strong> &nbsp;|&nbsp; ${this.topProductosDistrito.length} producto(s) con ventas registradas
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="td-center" style="width:56px;">#</th>
+            <th>Producto</th>
+            <th class="td-center" style="width:100px;">Unidades</th>
+            <th class="td-right" style="width:130px;">Ingresos</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <div class="total-box">
+        <span class="total-label">Total unidades vendidas: ${totalUnidades} u.</span>
+        <span class="total-value">${fmt(totalIngresos)}</span>
+      </div>`;
+
+    this._imprimirPDF(`TOP_PRODUCTOS_${distrito.replace(/\s+/g, '_').toUpperCase()}`,
+      this._pdfShell(`Top Productos — ${distrito}`, 'R-DIST-001', this.adminUser?.nombre || 'Administrador', fecha, contenido));
+  }
+
+
 
 
   descargarReporte(tipo: 'semana' | 'mes'): void {
