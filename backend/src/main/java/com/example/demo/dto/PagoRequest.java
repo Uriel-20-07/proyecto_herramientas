@@ -10,6 +10,7 @@ public class PagoRequest {
     private String distrito;
     private String codigoCupon;
     private boolean esUrgente;
+    private Integer idReceta;
 
     private String numeroCelular;
     private String tokenYape;

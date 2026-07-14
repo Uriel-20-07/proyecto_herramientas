@@ -77,4 +77,8 @@ public class Pedido {
     /** Método de pago utilizado. */
     @Column(name = "metodo_pago", nullable = true)
     private String metodoPago;
+
+    /** ID de la receta médica asociada (opcional, null si no requiere). */
+    @Column(name = "id_receta", nullable = true)
+    private Integer idReceta;
 }

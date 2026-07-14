@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HeroCarouselComponent } from '../components/hero-carousel/hero-carousel';
 import { ProductCarouselComponent } from '../components/product-carousel/product-carousel';
-import { ComboService } from '../services/combo.service';
 import { CartService } from '../services/cart.service';
 
 @Component({
@@ -19,18 +18,9 @@ export class InicioComponent {
     combosActivos: any[] = [];
 
     constructor(
-        private readonly comboService: ComboService,
         private readonly cartService: CartService
     ) { }
 
-    ngOnInit(): void {
-        this.comboService.obtenerCombosActivos().subscribe({
-            next: (combos: any[]) => {
-                this.combosActivos = combos;
-            },
-            error: (err: any) => console.error('Error al cargar combos activos para inicio', err)
-        });
-    }
 
     agregarComboAlCarrito(combo: any): void {
         // Agregar producto principal
