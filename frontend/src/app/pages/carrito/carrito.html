@@ -25,14 +25,14 @@
           <p>{{ item.producto.descripcion }}</p>
           <span class="item-category">{{ item.producto.categoria?.nombre || 'General' }}</span>
 
-          <div *ngIf="getDiscountInfo(getFecha(item.producto)).message" class="promo-badge"
-            [class.expired-badge]="getDiscountInfo(getFecha(item.producto)).isExpired">
-            {{ getDiscountInfo(getFecha(item.producto)).message }}
+          <div *ngIf="getDiscountInfo(item.producto).message" class="promo-badge"
+            [class.expired-badge]="getDiscountInfo(item.producto).isExpired">
+            {{ getDiscountInfo(item.producto).message }}
           </div>
         </div>
 
         <div class="item-actions">
-          <div class="qty-control" *ngIf="!getDiscountInfo(getFecha(item.producto)).isExpired">
+          <div class="qty-control" *ngIf="!getDiscountInfo(item.producto).isExpired">
             <button type="button" (click)="decrease(item.producto.idProducto)">-</button>
             <span>{{ item.cantidad }}</span>
             <button type="button" (click)="increase(item.producto.idProducto)">+</button>
@@ -40,11 +40,11 @@
 
           <div class="price-block">
             <span class="old-price" style="text-decoration: line-through; color: #888; font-size: 0.9em;"
-              *ngIf="getDiscountInfo(getFecha(item.producto)).percentage > 0 && !getDiscountInfo(getFecha(item.producto)).isExpired">
+              *ngIf="getDiscountInfo(item.producto).percentage > 0 && !getDiscountInfo(item.producto).isExpired">
               S/ {{ (item.producto.precioVenta * item.cantidad) | number:'1.2-2' }}
             </span>
 
-            <strong *ngIf="!getDiscountInfo(getFecha(item.producto)).isExpired">
+            <strong *ngIf="!getDiscountInfo(item.producto).isExpired">
               S/ {{ (getFinalPrice(item.producto) * item.cantidad) | number:'1.2-2' }}
             </strong>
 

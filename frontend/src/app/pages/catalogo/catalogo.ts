@@ -18,6 +18,7 @@ interface ProductoVista {
   nombre: string;
   descripcion: string;
   precio: number;
+  precioOriginal: number;
   categoriaNombre: string;
   imagen: string;
   etiquetaPromo?: string;
@@ -64,6 +65,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ordenamiento: 'relevancia' | 'precio_asc' | 'precio_desc' | 'nombre_asc' = 'relevancia';
   precioMaximo = 500;
   precioMaximoTotal = 500;
+  soloOfertas = false;
 
   // ─── Internos ─────────────────────────────────────────────────────────────
   private queryBusqueda = '';
@@ -156,7 +158,11 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       next: (resultados) => {
         // Convertir AlgoliaProducto → ProductoVista
         const productosAlgolia = resultados.map((hit) => this.mapAlgoliaHit(hit));
-        this.productosFiltrados = this.filtrarPorPrecio(productosAlgolia);
+        let filtrados = this.filtrarPorPrecio(productosAlgolia);
+        if (this.soloOfertas) {
+          filtrados = filtrados.filter(p => p.descuentoInfo && p.descuentoInfo.percentage > 0 && !p.descuentoInfo.isExpired);
+        }
+        this.productosFiltrados = filtrados;
         this.ordenarProductos();
         this.cargando = false;
       },
@@ -184,6 +190,25 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.ordenarProductos();
   }
 
+  toggleSoloOfertas(): void {
+    this.soloOfertas = !this.soloOfertas;
+    if (this.busqueda.trim()) {
+      this.buscar();
+    } else {
+      this.aplicarFiltros();
+    }
+  }
+
+  verOfertas(): void {
+    this.busqueda = '';
+    this.categoriaSeleccionadaId = null;
+    this.queryBusqueda = '';
+    this.queryCategoria = '';
+    this.soloOfertas = true;
+    this.precioMaximo = this.precioMaximoTotal;
+    this.aplicarFiltros();
+  }
+
   limpiarFiltros(): void {
     this.busqueda = '';
     this.categoriaSeleccionadaId = null;
@@ -191,6 +216,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.queryCategoria = '';
     this.ordenamiento = 'relevancia';
     this.precioMaximo = this.precioMaximoTotal;
+    this.soloOfertas = false;
     this.productosFiltrados = [...this.productos];
   }
 
@@ -199,12 +225,13 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       this.busqueda ||
       this.categoriaSeleccionadaId !== null ||
       this.precioMaximo < this.precioMaximoTotal ||
-      this.ordenamiento !== 'relevancia'
+      this.ordenamiento !== 'relevancia' ||
+      this.soloOfertas
     );
   }
 
   /**
-   * Aplica filtros locales (categoría + precio) sobre la lista de productos.
+   * Aplica filtros locales (categoría + precio + ofertas) sobre la lista de productos.
    * Se usa cuando no hay texto de búsqueda (Algolia no es necesario).
    */
   aplicarFiltros(): void {
@@ -221,7 +248,11 @@ export class CatalogoComponent implements OnInit, OnDestroy {
         p.descripcion.toLowerCase().includes(termino) ||
         p.categoriaNombre.toLowerCase().includes(termino);
 
-      return coincideCategoria && coincideBusqueda;
+      const coincideOferta =
+        !this.soloOfertas ||
+        (p.descuentoInfo && p.descuentoInfo.percentage > 0 && !p.descuentoInfo.isExpired);
+
+      return coincideCategoria && coincideBusqueda && coincideOferta;
     });
 
     filtrados = this.filtrarPorPrecio(filtrados);
@@ -285,30 +316,6 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     return fecha;
   }
 
-  getDiscountInfo(fechaCaducidad: string): {
-    percentage: number;
-    message: string;
-    isExpired: boolean;
-  } {
-    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
-    const expDate = new Date(fechaCaducidad);
-    const today = new Date();
-    const monthsLeft =
-      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
-
-    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
-      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
-    }
-
-    if (monthsLeft <= 6)
-      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
-    if (monthsLeft <= 12)
-      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
-    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
-
-    return { percentage: 0, message: '', isExpired: false };
-  }
-
   agregarProducto(producto: ProductoVista): void {
     const productoApi: ProductoApi = {
       idProducto: producto.id,
@@ -316,7 +323,9 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       descripcion: producto.descripcion,
       precioVenta: producto.precio,
       categoria: this.categorias.find((c) => c.nombre === producto.categoriaNombre) ?? null,
-      fechaCaducidad: producto.fechaCaducidad
+      fechaCaducidad: producto.fechaCaducidad,
+      precioConDescuento: producto.descuentoInfo ? (producto.precio * (1 - producto.descuentoInfo.percentage)) : producto.precio,
+      descuentoPorcentaje: producto.descuentoInfo ? producto.descuentoInfo.percentage : 0
     };
 
     this.cartService.add(productoApi);
@@ -341,13 +350,14 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     const imagen = producto.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
     
     const fechaCad = this.getFecha(producto);
-    const descuento = this.getDiscountInfo(fechaCad);
+    const descuento = this.cartService.getDiscountInfo(producto);
 
     return {
       id: producto.idProducto,
       nombre: producto.nombre,
       descripcion: producto.descripcion ?? 'Producto del catálogo FarmaCode',
-      precio: Number(producto.precioVenta),
+      precio: producto.precioConDescuento != null ? Number(producto.precioConDescuento) : Number(producto.precioVenta),
+      precioOriginal: Number(producto.precioVenta),
       categoriaNombre,
       imagen,
       etiquetaPromo: descuento.message || this.obtenerPromo(producto.nombre, categoriaNombre),
@@ -363,13 +373,14 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     const imagen = hit.imgUrl || this.imagenPorCategoria[categoriaKey] || 'assets/img/placeholder-pill.png';
     
     const fechaCad = this.getFecha(hit);
-    const descuento = this.getDiscountInfo(fechaCad);
+    const descuento = this.cartService.getDiscountInfo(hit);
 
     return {
       id: hit.idProducto,
       nombre: hit.nombre,
       descripcion: hit.descripcion ?? 'Producto del catálogo FarmaCode',
-      precio: hit.precioVenta,
+      precio: hit.precioConDescuento != null ? Number(hit.precioConDescuento) : Number(hit.precioVenta),
+      precioOriginal: Number(hit.precioVenta),
       categoriaNombre: hit.categoriaNombre ?? 'General',
       imagen,
       etiquetaPromo: descuento.message || this.obtenerPromo(hit.nombre, hit.categoriaNombre ?? ''),

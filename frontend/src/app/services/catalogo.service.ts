@@ -37,6 +37,8 @@ export interface ProductoApi {
   imgUrl?: string;           // URL de la imagen del producto (opcional)
   fechaCaducidad?: any;
   fecha_caducidad?: any;
+  precioConDescuento?: number;
+  descuentoPorcentaje?: number;
 }
 
 /**

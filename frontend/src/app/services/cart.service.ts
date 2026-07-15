@@ -260,35 +260,48 @@ export class CartService {
     return fecha;
   }
 
-  getDiscountInfo(fechaCaducidad: string): {
+  getDiscountInfo(producto: any): {
     percentage: number;
     message: string;
     isExpired: boolean;
   } {
-    if (!fechaCaducidad) return { percentage: 0, message: '', isExpired: false };
-    const expDate = new Date(fechaCaducidad);
-    const today = new Date();
-    const monthsLeft =
-      (expDate.getFullYear() - today.getFullYear()) * 12 + (expDate.getMonth() - today.getMonth());
-
-    if (monthsLeft < 0 || (monthsLeft === 0 && expDate.getDate() < today.getDate())) {
-      return { percentage: 0, message: 'PRODUCTO VENCIDO', isExpired: true };
+    if (!producto) return { percentage: 0, message: '', isExpired: false };
+    
+    // Leer valores precalculados de la base de datos
+    const percentage = producto.descuentoPorcentaje != null ? Number(producto.descuentoPorcentaje) : 0;
+    
+    // Verificar si expiró comparando la fecha de caducidad
+    const fechaCad = this.getFecha(producto);
+    let isExpired = false;
+    if (fechaCad) {
+      const expDate = new Date(fechaCad);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expDate.setHours(0, 0, 0, 0);
+      isExpired = expDate < today;
     }
 
-    if (monthsLeft <= 6)
-      return { percentage: 0.3, message: 'Liquidación 30% dscto.', isExpired: false };
-    if (monthsLeft <= 12)
-      return { percentage: 0.1, message: 'Oferta 10% dscto.', isExpired: false };
-    if (monthsLeft <= 24) return { percentage: 0.05, message: 'Promo 5% dscto.', isExpired: false };
+    let message = '';
+    if (isExpired) {
+      message = 'PRODUCTO VENCIDO';
+    } else if (percentage === 0.30) {
+      message = 'Liquidación 30% dscto.';
+    } else if (percentage === 0.10) {
+      message = 'Oferta 10% dscto.';
+    } else if (percentage === 0.05) {
+      message = 'Promo 5% dscto.';
+    } else if (percentage > 0) {
+      message = `Oferta ${Math.round(percentage * 100)}% dscto.`;
+    }
 
-    return { percentage: 0, message: '', isExpired: false };
+    return { percentage, message, isExpired };
   }
 
   getFinalPrice(producto: any): number {
-    const discountInfo = this.getDiscountInfo(this.getFecha(producto));
+    if (!producto) return 0;
+    const discountInfo = this.getDiscountInfo(producto);
     if (discountInfo.isExpired) return 0;
-    const discountAmount = producto.precioVenta * discountInfo.percentage;
-    return producto.precioVenta - discountAmount;
+    return producto.precioConDescuento != null ? Number(producto.precioConDescuento) : Number(producto.precioVenta);
   }
 
   /**
@@ -298,8 +311,7 @@ export class CartService {
    */
   getTotal(): number {
     return this.itemsSubject.value.reduce((total, item) => {
-      const fecha = this.getFecha(item.producto);
-      const discountInfo = this.getDiscountInfo(fecha);
+      const discountInfo = this.getDiscountInfo(item.producto);
       if (discountInfo.isExpired) return total;
       return total + this.getFinalPrice(item.producto) * item.cantidad;
     }, 0);

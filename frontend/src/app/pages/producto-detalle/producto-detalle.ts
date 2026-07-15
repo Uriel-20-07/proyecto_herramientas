@@ -90,13 +90,14 @@ export class ProductoDetalleComponent implements OnInit {
           const catKey = catNombre.toLowerCase();
           const imagen = found.imgUrl || this.imagenPorCategoria[catKey] || 'assets/img/placeholder-pill.png';
           const fechaCad = this.getFecha(found);
-          this.descuentoInfo = this.cartService.getDiscountInfo(fechaCad);
+          this.descuentoInfo = this.cartService.getDiscountInfo(found);
 
           this.producto = {
             id: found.idProducto,
             nombre: found.nombre,
             descripcion: found.descripcion ?? 'Producto de la farmacia FarmaCode',
             precioVenta: found.precioVenta,
+            precioConDescuento: found.precioConDescuento != null ? Number(found.precioConDescuento) : Number(found.precioVenta),
             categoriaNombre: catNombre,
             imagen: imagen,
             fechaCaducidad: fechaCad,
@@ -129,10 +130,8 @@ export class ProductoDetalleComponent implements OnInit {
   }
 
   getPrecioFinal(): number {
-    if (this.descuentoInfo && this.descuentoInfo.percentage > 0) {
-      return this.producto.precioVenta * (1 - this.descuentoInfo.percentage);
-    }
-    return this.producto.precioVenta;
+    if (!this.producto) return 0;
+    return this.producto.precioConDescuento != null ? this.producto.precioConDescuento : this.producto.precioVenta;
   }
 
   incrementar(): void {

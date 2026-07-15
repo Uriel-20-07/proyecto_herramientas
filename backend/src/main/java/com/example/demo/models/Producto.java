@@ -2,6 +2,7 @@ package com.example.demo.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.Formula;
 import java.math.BigDecimal;
 
 /**
@@ -77,6 +78,23 @@ public class Producto {
     // Añade esto si no lo tienes en Producto.java
     @Column(name = "fecha_caducidad")
     private java.time.LocalDate fechaCaducidad;
+
+    @Formula(
+        "CASE " +
+        "  WHEN en_oferta = true AND precio_oferta IS NOT NULL THEN precio_oferta " +
+        "  ELSE precio_venta " +
+        "END"
+    )
+    private BigDecimal precioConDescuento;
+
+    @Formula(
+        "CASE " +
+        "  WHEN precio_venta IS NULL OR precio_venta = 0 THEN 0.00 " +
+        "  WHEN en_oferta = true AND precio_oferta IS NOT NULL THEN (precio_venta - precio_oferta) / precio_venta " +
+        "  ELSE 0.00 " +
+        "END"
+    )
+    private BigDecimal descuentoPorcentaje;
 
     // Y asegúrate de tener sus respectivos Getters y Setters
     public java.time.LocalDate getFechaCaducidad() {
