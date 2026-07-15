@@ -2,7 +2,7 @@
     <section class="hero-carousel">
         <div class="carousel-overlay">
             <div class="carousel-text">
-                <button class="btn-banner" (click)="limpiarFiltros()">Ver ofertas</button>
+                <button class="btn-banner" (click)="verOfertas()">Ver ofertas</button>
             </div>
         </div>
     </section>
@@ -32,6 +32,18 @@
                         [class.active]="categoriaSeleccionadaId === categoria.idCategoria"
                         (click)="seleccionarCategoria(categoria.idCategoria)">
                         {{ categoria.nombre }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtro de Promociones -->
+            <div class="filtro-grupo-sidebar">
+                <h4 class="filtro-titulo-sidebar">Promociones</h4>
+                <div class="categorias-vertical-list">
+                    <button type="button" class="categoria-item-sidebar"
+                        [class.active]="soloOfertas"
+                        (click)="toggleSoloOfertas()">
+                        Solo en Oferta %
                     </button>
                 </div>
             </div>
