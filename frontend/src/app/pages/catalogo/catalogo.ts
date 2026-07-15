@@ -65,6 +65,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
   ordenamiento: 'relevancia' | 'precio_asc' | 'precio_desc' | 'nombre_asc' = 'relevancia';
   precioMaximo = 500;
   precioMaximoTotal = 500;
+  soloOfertas = false;
 
   // ─── Internos ─────────────────────────────────────────────────────────────
   private queryBusqueda = '';
@@ -157,7 +158,11 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       next: (resultados) => {
         // Convertir AlgoliaProducto → ProductoVista
         const productosAlgolia = resultados.map((hit) => this.mapAlgoliaHit(hit));
-        this.productosFiltrados = this.filtrarPorPrecio(productosAlgolia);
+        let filtrados = this.filtrarPorPrecio(productosAlgolia);
+        if (this.soloOfertas) {
+          filtrados = filtrados.filter(p => p.descuentoInfo && p.descuentoInfo.percentage > 0 && !p.descuentoInfo.isExpired);
+        }
+        this.productosFiltrados = filtrados;
         this.ordenarProductos();
         this.cargando = false;
       },
@@ -185,6 +190,25 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.ordenarProductos();
   }
 
+  toggleSoloOfertas(): void {
+    this.soloOfertas = !this.soloOfertas;
+    if (this.busqueda.trim()) {
+      this.buscar();
+    } else {
+      this.aplicarFiltros();
+    }
+  }
+
+  verOfertas(): void {
+    this.busqueda = '';
+    this.categoriaSeleccionadaId = null;
+    this.queryBusqueda = '';
+    this.queryCategoria = '';
+    this.soloOfertas = true;
+    this.precioMaximo = this.precioMaximoTotal;
+    this.aplicarFiltros();
+  }
+
   limpiarFiltros(): void {
     this.busqueda = '';
     this.categoriaSeleccionadaId = null;
@@ -192,6 +216,7 @@ export class CatalogoComponent implements OnInit, OnDestroy {
     this.queryCategoria = '';
     this.ordenamiento = 'relevancia';
     this.precioMaximo = this.precioMaximoTotal;
+    this.soloOfertas = false;
     this.productosFiltrados = [...this.productos];
   }
 
@@ -200,12 +225,13 @@ export class CatalogoComponent implements OnInit, OnDestroy {
       this.busqueda ||
       this.categoriaSeleccionadaId !== null ||
       this.precioMaximo < this.precioMaximoTotal ||
-      this.ordenamiento !== 'relevancia'
+      this.ordenamiento !== 'relevancia' ||
+      this.soloOfertas
     );
   }
 
   /**
-   * Aplica filtros locales (categoría + precio) sobre la lista de productos.
+   * Aplica filtros locales (categoría + precio + ofertas) sobre la lista de productos.
    * Se usa cuando no hay texto de búsqueda (Algolia no es necesario).
    */
   aplicarFiltros(): void {
@@ -222,7 +248,11 @@ export class CatalogoComponent implements OnInit, OnDestroy {
         p.descripcion.toLowerCase().includes(termino) ||
         p.categoriaNombre.toLowerCase().includes(termino);
 
-      return coincideCategoria && coincideBusqueda;
+      const coincideOferta =
+        !this.soloOfertas ||
+        (p.descuentoInfo && p.descuentoInfo.percentage > 0 && !p.descuentoInfo.isExpired);
+
+      return coincideCategoria && coincideBusqueda && coincideOferta;
     });
 
     filtrados = this.filtrarPorPrecio(filtrados);
